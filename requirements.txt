@@ -1,0 +1,7 @@
+ttkbootstrap
+numpy
+python-dotenv
+requests
+pandas
+matplotlib
+seaborn

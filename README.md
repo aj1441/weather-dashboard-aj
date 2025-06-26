@@ -1,0 +1,1 @@
+## pip install ttkbootstrap requests matplotlib numpy pandas pillow

@@ -1,0 +1,11 @@
+[
+  {
+    "timestamp": "2025-06-24T16:59:42.128431",
+    "city": "Phoenix",
+    "temperature": 102.15,
+    "description": "clear sky",
+    "humidity": 10,
+    "pressure": 1007,
+    "wind_speed": 5.01
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "default_location": "",
+  "temperature_unit": "celsius",
+  "wind_speed_unit": "kmh",
+  "pressure_unit": "hPa",
+  "visibility_unit": "km",
+  "time_format": "24h",
+  "theme": "superhero",
+  "auto_refresh": true,
+  "refresh_interval": 300,
+  "show_notifications": true,
+  "save_history": true,
+  "max_history_days": 30
+}
