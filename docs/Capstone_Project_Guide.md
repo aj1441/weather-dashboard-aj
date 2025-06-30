@@ -1,5 +1,6 @@
 
 # Fellow's Step-by-Step Guide to the Capstone Project
+# Always check link as the documentation has and could change: https://docs.google.com/document/d/1kvKpYdQsoFYvZ0b6GqzzfltmZ862f__eh1r4lvtVWrI/edit?tab=t.0
 
 ## Overview
 

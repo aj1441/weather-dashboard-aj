@@ -7,5 +7,71 @@
     "humidity": 10,
     "pressure": 1007,
     "wind_speed": 5.01
+  },
+  {
+    "timestamp": "2025-06-28T18:55:49.856878",
+    "city": "Phoenix",
+    "temperature": 105.3,
+    "description": "clear sky"
+  },
+  {
+    "timestamp": "2025-06-28T18:55:56.610146",
+    "city": "Phoenix",
+    "temperature": 40.67,
+    "description": "clear sky"
+  },
+  {
+    "timestamp": "2025-06-28T18:56:03.357313",
+    "city": "Phoenix",
+    "temperature": 105.3,
+    "description": "clear sky"
+  },
+  {
+    "timestamp": "2025-06-28T18:57:09.154300",
+    "city": "Phoenix",
+    "temperature": 105.3,
+    "description": "clear sky"
+  },
+  {
+    "timestamp": "2025-06-28T19:01:01.705959",
+    "city": "Phoenix",
+    "temperature": 105.3,
+    "description": "clear sky"
+  },
+  {
+    "timestamp": "2025-06-28T19:07:53.272697",
+    "city": "Los Angeles",
+    "temperature": 76.06,
+    "description": "clear sky"
+  },
+  {
+    "timestamp": "2025-06-28T19:19:45.677771",
+    "city": "Seattle",
+    "temperature": 70.5,
+    "description": "clear sky"
+  },
+  {
+    "timestamp": "2025-06-29T19:56:57.304431",
+    "city": "Phoenix",
+    "temperature": 105.91,
+    "description": "clear sky"
+  },
+  {
+    "timestamp": "2025-06-29T19:57:02.371508",
+    "city": "Phoenix",
+    "temperature": 105.91,
+    "description": "clear sky"
+  },
+  {
+    "timestamp": "2025-06-29T19:59:20.039277",
+    "city": "Phoenix",
+    "temperature": 105.91,
+    "description": "clear sky"
+  },
+  {
+    "timestamp": "2025-06-29T19:59:31.170278",
+    "city": "Phoenix",
+    "temperature": 105.91,
+    "description": "clear sky"
   }
 ]

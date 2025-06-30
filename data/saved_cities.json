@@ -1,0 +1,18 @@
+[
+  {
+    "city": "Seattle",
+    "state": "wa",
+    "country": "US",
+    "lat": 47.6062,
+    "lon": -122.3321,
+    "last_updated": "2025-06-28T19:19:49.810165"
+  },
+  {
+    "city": "Phoenix",
+    "state": "az",
+    "country": "US",
+    "lat": 33.4484,
+    "lon": -112.074,
+    "last_updated": "2025-06-29T19:59:25.520925"
+  }
+]
