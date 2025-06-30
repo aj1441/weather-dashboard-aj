@@ -2,3 +2,8 @@
 /planning_docs
 __pycache__/
 *.pyc
+old_py_files/
+*.DS_Store
+venv/
+.vscode/
+*.log
