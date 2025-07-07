@@ -1,145 +1,136 @@
 """Saved cities component for managing favorite locations"""
 
-import ttkbootstrap as tb
-from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
+import customtkinter as ctk
 from core.data_handler import WeatherDataHandler
+import logging
 
 class SavedCitiesComponent:
-    """Handles displaying and managing saved cities"""
-    
-    def __init__(self, parent):
+    """Handles displaying and managing saved cities (customtkinter only)"""
+
+    def __init__(self, parent, data_directory=None):
         self.parent = parent
-        self.data_handler = WeatherDataHandler()
-        self.setup_component()
-    
-    def setup_component(self):
-        """Create the saved cities section"""
-        self.cities_frame = tb.Frame(self.parent)
+        self.logger = logging.getLogger(__name__)
+        self.weather_callback = None
         
+        # Use the same data directory as the main app if provided
+        self.data_handler = WeatherDataHandler(data_directory=data_directory or "data")
+        self.forecast_items = {}  # Store forecast widgets by city
+
+    def setup_component(self):
+        """Create the saved cities section (customtkinter only)"""
+        self.cities_frame = ctk.CTkFrame(self.parent)
+
         # Title
-        title_label = tb.Label(
+        title_label = ctk.CTkLabel(
             self.cities_frame,
             text="💾 Saved Cities",
-            font=("Helvetica Neue", 16, "bold")
+            font=("Helvetica Neue", 20, "bold")
         )
         title_label.pack(pady=10)
-        
+
         # Scrollable frame for cities list
-        self.cities_list_frame = tb.Frame(self.cities_frame)
-        self.cities_list_frame.pack(fill=BOTH, expand=True, padx=20, pady=10)
-        
+        self.cities_list_frame = ctk.CTkScrollableFrame(self.cities_frame, height=180)
+        self.cities_list_frame.pack(fill="x", padx=20, pady=10)
+
         # No cities message (initially shown)
-        self.no_cities_label = tb.Label(
+        self.no_cities_label = ctk.CTkLabel(
             self.cities_list_frame,
             text="No saved cities yet.\nGet weather for a city and click '💾 Save City' to add it here!",
-            font=("Helvetica Neue", 12),
+            font=("Helvetica Neue", 14),
             justify="center"
         )
         self.no_cities_label.pack(pady=40)
-        
+
+        # Separator
+        separator = ctk.CTkLabel(self.cities_frame, text="", height=2)
+        separator.pack(fill="x", padx=20, pady=10)
+
         return self.cities_frame
-    
-    def refresh_cities_list(self):
-        """Refresh the display of saved cities"""
+
+    def set_weather_callback(self, callback):
+        """Set the callback for when a city is selected"""
+        self.weather_callback = callback
+
+    def update_cities_list(self, cities):
+        """Update the display with the provided cities list"""
+        self.logger.info(f"Updating cities list with {len(cities)} cities")
+        
         # Clear existing city widgets
         for widget in self.cities_list_frame.winfo_children():
             widget.destroy()
-        
-        # Load saved cities
-        saved_cities = self.data_handler.load_saved_cities()
-        
-        if not saved_cities:
+
+        if not cities:
+            self.logger.debug("No cities to display")
             # Show no cities message
-            self.no_cities_label = tb.Label(
+            self.no_cities_label = ctk.CTkLabel(
                 self.cities_list_frame,
                 text="No saved cities yet.\nGet weather for a city and click '💾 Save City' to add it here!",
-                font=("Helvetica Neue", 12),
+                font=("Helvetica Neue", 14),
                 justify="center"
             )
             self.no_cities_label.pack(pady=40)
         else:
+            self.logger.debug(f"Displaying {len(cities)} cities")
             # Create city cards
-            for i, city_data in enumerate(saved_cities):
-                self.create_city_card(city_data, i)
-    
-    def create_city_card(self, city_data, index):
-        """Create a card widget for a saved city"""
-        # Main card frame
-        card_frame = tb.Frame(self.cities_list_frame, bootstyle="secondary")
-        card_frame.pack(fill=X, pady=5, padx=10)
-        
-        # City info frame (left side)
-        info_frame = tb.Frame(card_frame)
-        info_frame.pack(side=LEFT, fill=X, expand=True, padx=10, pady=10)
-        
-        # City name and state
-        city_name = city_data.get('city', 'Unknown')
-        state_name = city_data.get('state', '')
-        location_text = f"{city_name}, {state_name}" if state_name else city_name
-        
-        city_label = tb.Label(
-            info_frame,
-            text=location_text,
+            for city_data in cities:
+                self._create_city_card(city_data)
+
+    def _create_city_card(self, city_data):
+        """Create a card for a saved city"""
+        # Create card frame
+        card = ctk.CTkFrame(self.cities_list_frame)
+        card.pack(fill="x", padx=10, pady=5)
+
+        # City info
+        city_name = f"{city_data.get('city')}"
+        if city_data.get('state'):
+            city_name += f", {city_data.get('state')}"
+        if city_data.get('country') and city_data.get('country') != 'US':
+            city_name += f", {city_data.get('country')}"
+
+        city_label = ctk.CTkLabel(
+            card,
+            text=city_name,
             font=("Helvetica Neue", 14, "bold")
         )
-        city_label.pack(anchor="w")
-        
-        # Last updated info
-        last_updated = city_data.get('last_updated', 'Unknown')
-        if last_updated != 'Unknown':
-            try:
-                from datetime import datetime
-                dt = datetime.fromisoformat(last_updated)
-                time_str = dt.strftime("%b %d, %Y at %I:%M %p")
-                last_updated = time_str
-            except:
-                pass
-        
-        time_label = tb.Label(
-            info_frame,
-            text=f"Saved: {last_updated}",
-            font=("Helvetica Neue", 10),
-            bootstyle="secondary"
+        city_label.pack(side="left", padx=10, pady=5)
+
+        # Get Weather button
+        def get_weather():
+            if self.weather_callback:
+                self.weather_callback(
+                    city_data.get('city'),
+                    city_data.get('state'),
+                    city_data.get('country')
+                )
+
+        weather_btn = ctk.CTkButton(
+            card,
+            text="🌤️ Get Weather",
+            command=get_weather,
+            width=120,
+            font=("Helvetica Neue", 12)
         )
-        time_label.pack(anchor="w")
-        
-        # Button frame (right side)
-        button_frame = tb.Frame(card_frame)
-        button_frame.pack(side=RIGHT, padx=10, pady=10)
-        
-        # Load weather button
-        load_btn = tb.Button(
-            button_frame,
-            text="🌡️ Get Weather",
-            bootstyle="primary-outline",
-            command=lambda: self.on_load_city(city_data)
+        weather_btn.pack(side="right", padx=10, pady=5)
+
+        # Delete button
+        def delete_city():
+            self.data_handler.delete_city(
+                city_data.get('city'),
+                city_data.get('state'),
+                city_data.get('country')
+            )
+            # Refresh the list after deletion
+            saved_cities = self.data_handler.load_saved_cities()
+            self.update_cities_list(saved_cities)
+
+        delete_btn = ctk.CTkButton(
+            card,
+            text="🗑️ Delete",
+            command=delete_city,
+            width=80,
+            font=("Helvetica Neue", 12),
+            fg_color="red",
+            hover_color="darkred"
         )
-        load_btn.pack(side=LEFT, padx=5)
-        
-        # Remove city button
-        remove_btn = tb.Button(
-            button_frame,
-            text="🗑️ Remove",
-            bootstyle="danger-outline",
-            command=lambda: self.on_remove_city(index)
-        )
-        remove_btn.pack(side=LEFT, padx=5)
-    
-    def on_load_city(self, city_data):
-        """Handle loading weather for a saved city"""
-        if hasattr(self, 'load_city_callback'):
-            self.load_city_callback(city_data)
-    
-    def on_remove_city(self, index):
-        """Handle removing a saved city"""
-        if hasattr(self, 'remove_city_callback'):
-            self.remove_city_callback(index)
-        self.refresh_cities_list()
-    
-    def set_load_city_callback(self, callback):
-        """Set callback for when a city is loaded"""
-        self.load_city_callback = callback
-    
-    def set_remove_city_callback(self, callback):
-        """Set callback for when a city is removed"""
-        self.remove_city_callback = callback
+        delete_btn.pack(side="right", padx=5, pady=5)

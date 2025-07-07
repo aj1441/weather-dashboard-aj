@@ -4,6 +4,7 @@ from datetime import datetime
 import json
 import os
 from typing import Dict, Optional
+from .theme_manager import ThemeManager
 
 class UserSettingsManager:
     """Handles all user settings and preferences"""
@@ -11,7 +12,10 @@ class UserSettingsManager:
     def __init__(self, settings_file: str = "data/user_settings.json"):
         self.settings_file = settings_file
         self.default_settings = {
-            "theme": "vapor",
+            "theme": "aj_darkly",  # Use custom dark theme as default
+            "auto_theme_mode": True,  # Enable auto day/night mode by default
+            "light_theme": "pulse",  # Theme to use during daytime
+            "dark_theme": "aj_darkly",  # Theme to use during nighttime
             "default_location": "",
             "temperature_unit": "celsius",
             "wind_speed_unit": "kmh",
@@ -25,7 +29,7 @@ class UserSettingsManager:
         if data_dir:
             os.makedirs(data_dir, exist_ok=True)
     
-    def load_user_theme(self, default: str = "vapor") -> str:
+    def load_user_theme(self, default: str = "aj_darkly") -> str:
         """
         Load saved theme from file, or use default
         
@@ -141,7 +145,7 @@ class WeatherFormatter:
                 return "🌡️"
 
 # Legacy functions for backward compatibility
-def load_user_theme(default="vapor"):
+def load_user_theme(default="aj_darkly"):
     """Legacy function - wraps the new class-based approach"""
     manager = UserSettingsManager()
     return manager.load_user_theme(default)
@@ -150,6 +154,75 @@ def save_user_theme(theme_name):
     """Legacy function - wraps the new class-based approach"""
     manager = UserSettingsManager()
     return manager.save_user_theme(theme_name)
+
+def save_auto_theme_settings(auto_mode: bool, light_theme: str = "pulse", dark_theme: str = "aj_darkly"):
+    """
+    Save auto theme mode settings
+    
+    Args:
+        auto_mode: Whether auto mode is enabled
+        light_theme: Theme to use during daytime
+        dark_theme: Theme to use during nighttime
+    
+    Returns:
+        True if successful, False otherwise
+    """
+    manager = UserSettingsManager()
+    settings = manager.load_settings()
+    settings["auto_theme_mode"] = auto_mode
+    settings["light_theme"] = light_theme
+    settings["dark_theme"] = dark_theme
+    return manager.save_settings(settings)
+
+def load_auto_theme_settings():
+    """
+    Load auto theme mode settings
+    
+    Returns:
+        Tuple of (auto_mode, light_theme, dark_theme)
+    """
+    manager = UserSettingsManager()
+    settings = manager.load_settings()
+    return (
+        settings.get("auto_theme_mode", True),
+        settings.get("light_theme", "pulse"),
+        settings.get("dark_theme", "aj_darkly")
+    )
+
+def get_auto_theme() -> str:
+    """
+    Get the appropriate theme based on auto mode and current time
+    
+    Returns:
+        Theme name to use
+    """
+    from .location_service import LocationService
+    
+    # Initialize theme manager and register custom themes
+    theme_manager = ThemeManager()
+    theme_manager.register_all_custom_themes()
+    
+    auto_mode, light_theme, dark_theme = load_auto_theme_settings()
+    
+    if not auto_mode:
+        # Auto mode disabled, use saved theme
+        manager = UserSettingsManager()
+        saved_theme = manager.load_user_theme()
+        return theme_manager.get_fallback_theme(saved_theme)
+    
+    # Auto mode enabled, determine theme based on time
+    location_service = LocationService()
+    is_daytime = location_service.is_daytime_now()
+    
+    if is_daytime is None:
+        # Unable to determine time, use saved theme as fallback
+        manager = UserSettingsManager()
+        saved_theme = manager.load_user_theme()
+        return theme_manager.get_fallback_theme(saved_theme)
+    
+    # Get appropriate theme and ensure it exists
+    theme_to_use = light_theme if is_daytime else dark_theme
+    return theme_manager.get_fallback_theme(theme_to_use)
 
 def format_timestamp(timestamp):
     """Legacy function - wraps the new class-based approach"""

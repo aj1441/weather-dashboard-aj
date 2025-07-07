@@ -14,5 +14,21 @@
     "lat": 33.4484,
     "lon": -112.074,
     "last_updated": "2025-06-29T19:59:25.520925"
+  },
+  {
+    "city": "Denver",
+    "state": "co",
+    "country": "US",
+    "lat": 39.7392364,
+    "lon": -104.984862,
+    "last_updated": "2025-07-03T16:27:22.555503"
+  },
+  {
+    "city": "Las Vegas",
+    "state": "nv",
+    "country": "US",
+    "lat": 36.1672559,
+    "lon": -115.148516,
+    "last_updated": "2025-07-03T14:50:59.322628"
   }
 ]

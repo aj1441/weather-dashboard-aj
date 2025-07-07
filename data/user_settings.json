@@ -1,3 +1,10 @@
 {
-  "theme": "vapor"
+  "theme": "aj_darkly",
+  "auto_theme_mode": false,
+  "light_theme": "pulse",
+  "dark_theme": "aj_darkly",
+  "default_location": "",
+  "temperature_unit": "celsius",
+  "wind_speed_unit": "kmh",
+  "pressure_unit": "hPa"
 }

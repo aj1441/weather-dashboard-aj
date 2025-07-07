@@ -1,4 +1,13 @@
-"""Weather input component for the weather dashboard"""
+"""Weather input com        # Unit toggle (F/C)
+        self.unit_toggle = tb.Checkbutton(
+            self.input_frame,
+            text="°F / °C",
+            variable=self.unit_var,
+            onvalue="metric",
+            offvalue="imperial",
+            command=self.toggle_units,
+            bootstyle="round-toggle"
+        ) the weather dashboard"""
 
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
@@ -26,7 +35,7 @@ class WeatherInputComponent:
             onvalue="metric",
             offvalue="imperial",
             command=self.toggle_units,
-            bootstyle="round-toggle"
+            bootstyle="primary-round-toggle"
         )
         self.unit_toggle.pack(side=RIGHT, padx=5)
         

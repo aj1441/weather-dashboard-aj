@@ -7,3 +7,11 @@ old_py_files/
 venv/
 .vscode/
 *.log
+
+# Development and test files
+dev_temp/
+test_*.py
+debug_*.py
+demo_*.py
+quick_*.py
+archived_files/

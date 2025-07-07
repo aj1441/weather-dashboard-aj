@@ -1,5 +1,9 @@
 # gui/__init__.py
-"""GUI components for Weather Dashboard"""
+"""GUI package for Weather Dashboard
 
-# Remove problematic imports for now
+Contains:
+- tabbed_main_window: Main application window with tabbed interface
+- components: Reusable UI components (theme, input, display, etc.)
+"""
+
 __all__ = []

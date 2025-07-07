@@ -3,6 +3,15 @@
 import ttkbootstrap as tb
 from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
 from core.icon_manager import get_weather_icon
+from core.weather_utils import parse_weather_data
+
+# Experimental: Try customtkinter for rounded buttons
+try:
+    import customtkinter as ctk
+    CTK_AVAILABLE = True
+except ImportError:
+    CTK_AVAILABLE = False
+    print("CustomTkinter not available, using ttkbootstrap buttons")
 
 class WeatherDisplayComponent:
     """Handles displaying current weather data with emoji and save functionality"""
@@ -36,11 +45,12 @@ class WeatherDisplayComponent:
         self.weather_desc_label.pack(side=LEFT)
         
         # Save city button (initially hidden)
-        self.save_city_btn = tb.Button(
+        from core.save_city_utils import create_save_city_button
+        self.save_city_btn = create_save_city_button(
             desc_frame,
-            text="💾 Save City",
-            bootstyle="success-outline",
-            command=self.on_save_city
+            city_data=None,  # Will be set when weather is loaded
+            on_save_callback=self.on_save_city,
+            style='success-outline'
         )
         # Don't pack initially - will be shown when weather data is displayed
         
@@ -53,55 +63,116 @@ class WeatherDisplayComponent:
         self.pressure_label = tb.Label(self.details_frame, text="")
         self.wind_label = tb.Label(self.details_frame, text="")
         
+        # Progress bar (initially hidden)
+        self.progress_bar = tb.Progressbar(
+            self.display_frame,
+            mode='indeterminate',
+            bootstyle="info-striped"
+        )
+        
         return self.display_frame
     
-    def update_weather_display(self, weather_data, unit_label="°F"):
+    def update_weather_display(self, weather_data, temp_unit="imperial"):
         """
         Update the display with new weather data
         
         Args:
-            weather_data: Dictionary with weather information
-            unit_label: Temperature unit label (°F or °C)
+            weather_data: Dictionary with weather information (cleaned or raw format)
+            temp_unit: 'imperial', 'metric', or 'kelvin'
         """
+        print(f"[DEBUG] update_weather_display called with weather_data: {weather_data}")
+        from core.unit_label_utils import get_unit_label, get_wind_unit_label
+        unit_label = get_unit_label(temp_unit)
+        wind_unit_label = get_wind_unit_label(temp_unit)
         if "error" in weather_data:
+            print(f"[DEBUG] Weather error: {weather_data['error']}")
             self.show_error(weather_data["error"])
             return
         
         # Store current weather data for saving
         self.current_weather_data = weather_data
         
-        # Extract weather information
-        city = weather_data.get("name", "Unknown")
-        temp = weather_data.get("main", {}).get("temp", "N/A")
-        description = weather_data.get("weather", [{}])[0].get("description", "N/A")
-        humidity = weather_data.get("main", {}).get("humidity", "N/A")
-        pressure = weather_data.get("main", {}).get("pressure", "N/A")
-        wind_speed = weather_data.get("wind", {}).get("speed", "N/A")
+        # Use modularized parser
+        parsed = parse_weather_data(weather_data, unit_label)
+        print(f"[DEBUG] Parsed weather data: {parsed}")
         
         # Update emoji using IconManager
-        emoji = get_weather_icon(description)
+        emoji = get_weather_icon(parsed['description'])
         self.weather_icon_label.config(text=emoji)
         
         # Update main description
-        temp_display = f"{round(temp)}" if temp != "N/A" else "N/A"
+        temp_display = f"{round(parsed['temp'])}" if parsed['temp'] != "N/A" and parsed['temp'] is not None else "N/A"
         self.weather_desc_label.config(
-            text=f"{description.title()} | {temp_display}{unit_label}\n{city}"
+            text=f"{parsed['description'].title() if parsed['description'] != 'N/A' else 'Unknown'} | {temp_display}{parsed['unit_label']}\n{parsed['city']}"
         )
+        
+        # Update save_city_btn city_data
+        self.save_city_btn.city_data = weather_data
         
         # Show save button
         self.save_city_btn.pack(side=LEFT, padx=10)
         
         # Update details
-        self.humidity_label.config(text=f"💧 Humidity: {humidity}%")
+        from core.details_row_utils import update_weather_details_row
+        update_weather_details_row(self.humidity_label, self.pressure_label, self.wind_label, {**parsed, 'wind_unit_label': wind_unit_label})
         self.humidity_label.pack(side=LEFT, padx=10)
-        
-        self.pressure_label.config(text=f"🌡️ Pressure: {pressure} hPa")
         self.pressure_label.pack(side=LEFT, padx=10)
-        
-        wind_display = f"{wind_speed} mph" if unit_label == "°F" else f"{wind_speed} m/s"
-        self.wind_label.config(text=f"🌬️ Wind: {wind_display}")
         self.wind_label.pack(side=LEFT, padx=10)
     
+    def update_display(self, weather_data):
+        """Update the weather display with new data"""
+        if isinstance(weather_data, dict) and weather_data.get("error"):
+            self.show_error(weather_data["error"])
+            return
+
+        try:
+            # Store current weather data
+            self.current_weather_data = weather_data
+
+            # Set weather icon/emoji
+            icon = weather_data.get('weather_icon', '')
+            description = weather_data.get('weather_description', '').title()
+            emoji = get_weather_icon(description)
+            self.weather_icon_label.configure(text=emoji)
+
+            # Format temperature
+            temp = weather_data.get('temperature')
+            if temp is not None:
+                temp_str = f"{temp:.1f}°F"
+            else:
+                temp_str = "N/A"
+
+            # Update description label
+            city = weather_data.get('city', '')
+            state = weather_data.get('state', '')
+            location = f"{city}, {state}" if state else city
+            desc_text = f"{location}: {temp_str} - {description}"
+            self.weather_desc_label.configure(text=desc_text)
+
+            # Update details
+            humidity = weather_data.get('humidity', 'N/A')
+            pressure = weather_data.get('pressure', 'N/A')
+            wind_speed = weather_data.get('wind_speed', 'N/A')
+
+            self.humidity_label.configure(text=f"💧 Humidity: {humidity}%")
+            self.humidity_label.pack(side=LEFT, padx=10)
+
+            self.pressure_label.configure(text=f"⭕ Pressure: {pressure} hPa")
+            self.pressure_label.pack(side=LEFT, padx=10)
+
+            self.wind_label.configure(text=f"💨 Wind: {wind_speed} mph")
+            self.wind_label.pack(side=LEFT, padx=10)
+
+            # Update save_city_btn city_data
+            self.save_city_btn.city_data = weather_data
+
+            # Show save button
+            self.save_city_btn.pack(side=RIGHT, padx=10)
+
+        except Exception as e:
+            self.logger.error(f"Error updating weather display: {str(e)}")
+            self.show_error("Failed to update weather display")
+
     def show_error(self, error_message):
         """Display an error message"""
         self.weather_icon_label.config(text="❌")
@@ -125,11 +196,42 @@ class WeatherDisplayComponent:
         self.pressure_label.pack_forget()
         self.wind_label.pack_forget()
     
-    def on_save_city(self):
+    def on_save_city(self, city_data=None):
         """Handle save city button click"""
-        if self.current_weather_data and hasattr(self, 'save_city_callback'):
-            self.save_city_callback(self.current_weather_data)
+        print(f"[DEBUG] on_save_city called with city_data: {city_data}")
+        print(f"[DEBUG] Has save_city_callback: {hasattr(self, 'save_city_callback')}")
+        if city_data and hasattr(self, 'save_city_callback'):
+            print(f"[DEBUG] Calling save_city_callback with city_data: {city_data}")
+            self.save_city_callback(city_data)
+        else:
+            print(f"[DEBUG] Not calling save_city_callback - city_data is None or callback not set")
     
     def set_save_city_callback(self, callback):
         """Set the callback function for when a city is saved"""
         self.save_city_callback = callback
+    
+    def show_loading_indicator(self):
+        """Show loading spinner/indicator"""
+        self.weather_icon_label.config(text="⏳")
+        self.weather_desc_label.config(text="Loading weather data...")
+        
+        # Hide save button and details during loading
+        self.save_city_btn.pack_forget()
+        self.humidity_label.pack_forget()
+        self.pressure_label.pack_forget()
+        self.wind_label.pack_forget()
+        
+        # Start the progress bar animation
+        self.progress_bar.pack(fill=X, padx=10, pady=5)
+        self.progress_bar.start()
+    
+    def hide_loading_indicator(self):
+        """Hide loading indicator"""
+        # Stop and hide the progress bar
+        self.progress_bar.stop()
+        self.progress_bar.pack_forget()
+        
+        # Reset to default state if no data will be shown
+        # The update_weather_display method will override these if data is available
+        self.weather_icon_label.config(text="🌡️")
+        self.weather_desc_label.config(text="Enter a city to get weather data")

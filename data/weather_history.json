@@ -73,5 +73,921 @@
     "city": "Phoenix",
     "temperature": 105.91,
     "description": "clear sky"
+  },
+  {
+    "timestamp": "2025-06-30T12:06:46.249845",
+    "city": "Phoenix",
+    "temperature": 109.47,
+    "description": "clear sky"
+  },
+  {
+    "timestamp": "2025-06-30T12:07:18.477115",
+    "city": "Flagstaff",
+    "temperature": 87.17,
+    "description": "clear sky"
+  },
+  {
+    "timestamp": "2025-07-01T09:09:50.165773",
+    "city": "Scottsdale",
+    "temperature": 98.4,
+    "description": "haze"
+  },
+  {
+    "timestamp": "2025-07-01T10:16:37.768507",
+    "city": "Phoenix",
+    "temperature": 101.71,
+    "description": "dust"
+  },
+  {
+    "timestamp": "2025-07-01T10:16:56.111578",
+    "city": "Scottsdale",
+    "temperature": 100.85,
+    "description": "dust"
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "timestamp": null,
+    "city": null,
+    "temperature": null,
+    "description": null
+  },
+  {
+    "city": "Denver",
+    "state": "CO",
+    "country": "US",
+    "latitude": 39.7392,
+    "longitude": -104.9847,
+    "temperature": 80.33,
+    "feels_like": 79.83,
+    "humidity": 36,
+    "pressure": 1014,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01d",
+    "wind_speed": 7,
+    "wind_direction": 231,
+    "visibility": 10000,
+    "timestamp": "2025-07-05T09:00:44.935241",
+    "raw_data": {
+      "coord": {
+        "lon": -104.9847,
+        "lat": 39.7392
+      },
+      "weather": [
+        {
+          "id": 800,
+          "main": "Clear",
+          "description": "clear sky",
+          "icon": "01d"
+        }
+      ],
+      "base": "stations",
+      "main": {
+        "temp": 80.33,
+        "feels_like": 79.83,
+        "temp_min": 77.77,
+        "temp_max": 83.17,
+        "pressure": 1014,
+        "humidity": 36,
+        "sea_level": 1014,
+        "grnd_level": 840
+      },
+      "visibility": 10000,
+      "wind": {
+        "speed": 7,
+        "deg": 231,
+        "gust": 11.99
+      },
+      "clouds": {
+        "all": 0
+      },
+      "dt": 1751731193,
+      "sys": {
+        "type": 2,
+        "id": 2101246,
+        "country": "US",
+        "sunrise": 1751715468,
+        "sunset": 1751769059
+      },
+      "timezone": -21600,
+      "id": 5419384,
+      "name": "Denver",
+      "cod": 200
+    }
+  },
+  {
+    "city": "Tempe",
+    "state": "az",
+    "country": "US",
+    "latitude": 33.4144,
+    "longitude": -111.9094,
+    "temperature": 92.73,
+    "feels_like": 94.55,
+    "humidity": 39,
+    "pressure": 1016,
+    "weather_main": "Clouds",
+    "weather_description": "few clouds",
+    "weather_icon": "02d",
+    "wind_speed": 5.75,
+    "wind_direction": 60,
+    "visibility": 10000,
+    "timestamp": "2025-07-05T09:23:19.447794",
+    "raw_data": {
+      "coord": {
+        "lon": -111.9094,
+        "lat": 33.4144
+      },
+      "weather": [
+        {
+          "id": 801,
+          "main": "Clouds",
+          "description": "few clouds",
+          "icon": "02d"
+        }
+      ],
+      "base": "stations",
+      "main": {
+        "temp": 92.73,
+        "feels_like": 94.55,
+        "temp_min": 90.86,
+        "temp_max": 95.58,
+        "pressure": 1016,
+        "humidity": 39,
+        "sea_level": 1016,
+        "grnd_level": 972
+      },
+      "visibility": 10000,
+      "wind": {
+        "speed": 5.75,
+        "deg": 60
+      },
+      "clouds": {
+        "all": 20
+      },
+      "dt": 1751732588,
+      "sys": {
+        "type": 2,
+        "id": 2012233,
+        "country": "US",
+        "sunrise": 1751718204,
+        "sunset": 1751769649
+      },
+      "timezone": -25200,
+      "id": 5317058,
+      "name": "Tempe",
+      "cod": 200
+    }
+  },
+  {
+    "city": "Denver",
+    "state": "CO",
+    "country": "US",
+    "latitude": 39.7392,
+    "longitude": -104.9847,
+    "temperature": 83.41,
+    "feels_like": 81.63,
+    "humidity": 31,
+    "pressure": 1013,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01d",
+    "wind_speed": 4,
+    "wind_direction": 165,
+    "visibility": 10000,
+    "timestamp": "2025-07-05T09:48:53.127455",
+    "raw_data": {
+      "coord": {
+        "lon": -104.9847,
+        "lat": 39.7392
+      },
+      "weather": [
+        {
+          "id": 800,
+          "main": "Clear",
+          "description": "clear sky",
+          "icon": "01d"
+        }
+      ],
+      "base": "stations",
+      "main": {
+        "temp": 83.41,
+        "feels_like": 81.63,
+        "temp_min": 80.92,
+        "temp_max": 86.09,
+        "pressure": 1013,
+        "humidity": 31,
+        "sea_level": 1013,
+        "grnd_level": 840
+      },
+      "visibility": 10000,
+      "wind": {
+        "speed": 4,
+        "deg": 165,
+        "gust": 10
+      },
+      "clouds": {
+        "all": 0
+      },
+      "dt": 1751734077,
+      "sys": {
+        "type": 2,
+        "id": 2101246,
+        "country": "US",
+        "sunrise": 1751715468,
+        "sunset": 1751769059
+      },
+      "timezone": -21600,
+      "id": 5419384,
+      "name": "Denver",
+      "cod": 200
+    }
+  },
+  {
+    "city": "Denver",
+    "state": "CO",
+    "country": "US",
+    "latitude": 39.7392,
+    "longitude": -104.9847,
+    "temperature": 83.41,
+    "feels_like": 81.63,
+    "humidity": 31,
+    "pressure": 1013,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01d",
+    "wind_speed": 4,
+    "wind_direction": 165,
+    "visibility": 10000,
+    "timestamp": "2025-07-05T09:50:13.639843",
+    "raw_data": {
+      "coord": {
+        "lon": -104.9847,
+        "lat": 39.7392
+      },
+      "weather": [
+        {
+          "id": 800,
+          "main": "Clear",
+          "description": "clear sky",
+          "icon": "01d"
+        }
+      ],
+      "base": "stations",
+      "main": {
+        "temp": 83.41,
+        "feels_like": 81.63,
+        "temp_min": 80.92,
+        "temp_max": 86.09,
+        "pressure": 1013,
+        "humidity": 31,
+        "sea_level": 1013,
+        "grnd_level": 840
+      },
+      "visibility": 10000,
+      "wind": {
+        "speed": 4,
+        "deg": 165,
+        "gust": 10
+      },
+      "clouds": {
+        "all": 0
+      },
+      "dt": 1751734077,
+      "sys": {
+        "type": 2,
+        "id": 2101246,
+        "country": "US",
+        "sunrise": 1751715468,
+        "sunset": 1751769059
+      },
+      "timezone": -21600,
+      "id": 5419384,
+      "name": "Denver",
+      "cod": 200
+    }
+  },
+  {
+    "city": "Phoenix",
+    "state": "az",
+    "country": "US",
+    "latitude": 33.4486,
+    "longitude": -112.0773,
+    "temperature": 95.04,
+    "feels_like": 96.55,
+    "humidity": 35,
+    "pressure": 1015,
+    "weather_main": "Clouds",
+    "weather_description": "scattered clouds",
+    "weather_icon": "03d",
+    "wind_speed": 8.99,
+    "wind_direction": 71,
+    "visibility": 10000,
+    "timestamp": "2025-07-05T09:51:06.226554",
+    "raw_data": {
+      "coord": {
+        "lon": -112.0773,
+        "lat": 33.4486
+      },
+      "weather": [
+        {
+          "id": 802,
+          "main": "Clouds",
+          "description": "scattered clouds",
+          "icon": "03d"
+        }
+      ],
+      "base": "stations",
+      "main": {
+        "temp": 95.04,
+        "feels_like": 96.55,
+        "temp_min": 91.92,
+        "temp_max": 97.75,
+        "pressure": 1015,
+        "humidity": 35,
+        "sea_level": 1015,
+        "grnd_level": 974
+      },
+      "visibility": 10000,
+      "wind": {
+        "speed": 8.99,
+        "deg": 71,
+        "gust": 10
+      },
+      "clouds": {
+        "all": 26
+      },
+      "dt": 1751734255,
+      "sys": {
+        "type": 2,
+        "id": 2008537,
+        "country": "US",
+        "sunrise": 1751718239,
+        "sunset": 1751769694
+      },
+      "timezone": -25200,
+      "id": 5308655,
+      "name": "Phoenix",
+      "cod": 200
+    }
+  },
+  {
+    "city": "Scottsdale",
+    "state": "AZ",
+    "country": "US",
+    "latitude": 33.5091,
+    "longitude": -111.8992,
+    "temperature": 96.64,
+    "feels_like": 97.29,
+    "humidity": 31,
+    "pressure": 1015,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01d",
+    "wind_speed": 5.75,
+    "wind_direction": 280,
+    "visibility": 10000,
+    "timestamp": "2025-07-05T10:48:14.803706",
+    "raw_data": {
+      "coord": {
+        "lon": -111.8992,
+        "lat": 33.5091
+      },
+      "weather": [
+        {
+          "id": 800,
+          "main": "Clear",
+          "description": "clear sky",
+          "icon": "01d"
+        }
+      ],
+      "base": "stations",
+      "main": {
+        "temp": 96.64,
+        "feels_like": 97.29,
+        "temp_min": 93.94,
+        "temp_max": 99.95,
+        "pressure": 1015,
+        "humidity": 31,
+        "sea_level": 1015,
+        "grnd_level": 969
+      },
+      "visibility": 10000,
+      "wind": {
+        "speed": 5.75,
+        "deg": 280
+      },
+      "clouds": {
+        "all": 0
+      },
+      "dt": 1751737684,
+      "sys": {
+        "type": 2,
+        "id": 2103620,
+        "country": "US",
+        "sunrise": 1751718186,
+        "sunset": 1751769661
+      },
+      "timezone": -25200,
+      "id": 5313457,
+      "name": "Scottsdale",
+      "cod": 200
+    }
+  },
+  {
+    "city": "Scottsdale",
+    "state": "AZ",
+    "country": "US",
+    "latitude": 33.4942189,
+    "longitude": -111.9260184,
+    "temperature": 96.67,
+    "feels_like": 97.34,
+    "humidity": 31,
+    "pressure": 1015.0,
+    "weather_main": "Clouds",
+    "weather_description": "few clouds",
+    "weather_icon": "02d",
+    "wind_speed": 5.75,
+    "wind_direction": 280,
+    "visibility": 10000,
+    "timestamp": "2025-07-05T10:53:03.851795"
+  },
+  {
+    "city": "Los Angeles",
+    "state": "ca",
+    "country": "US",
+    "latitude": 34.0536909,
+    "longitude": -118.242766,
+    "temperature": 76.19,
+    "feels_like": 76.51,
+    "humidity": 64,
+    "pressure": 1018.0,
+    "weather_main": "Haze",
+    "weather_description": "haze",
+    "weather_icon": "50d",
+    "wind_speed": 6.91,
+    "wind_direction": 230,
+    "visibility": 10000,
+    "timestamp": "2025-07-05T10:58:20.294988"
+  },
+  {
+    "city": "Denver",
+    "state": "co",
+    "country": "US",
+    "latitude": 39.7392364,
+    "longitude": -104.984862,
+    "temperature": 88.16,
+    "feels_like": 85.28,
+    "humidity": 26,
+    "pressure": 1010.0,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01d",
+    "wind_speed": 4.0,
+    "wind_direction": 154,
+    "visibility": 10000,
+    "timestamp": "2025-07-05T11:10:21.426457"
+  },
+  {
+    "city": "Phoenix",
+    "state": "az",
+    "country": "US",
+    "latitude": 33.4484367,
+    "longitude": -112.074141,
+    "temperature": 97.93,
+    "feels_like": 98.87,
+    "humidity": 30,
+    "pressure": 1015.0,
+    "weather_main": "Clouds",
+    "weather_description": "few clouds",
+    "weather_icon": "02d",
+    "wind_speed": 3.44,
+    "wind_direction": 0,
+    "visibility": 10000,
+    "timestamp": "2025-07-05T11:19:04.379918"
+  },
+  {
+    "city": "Scottsdale",
+    "state": "AZ",
+    "country": "US",
+    "latitude": 33.4942189,
+    "longitude": -111.9260184,
+    "temperature": 97.84,
+    "feels_like": 98.26,
+    "humidity": 29,
+    "pressure": 1016.0,
+    "weather_main": "Clouds",
+    "weather_description": "few clouds",
+    "weather_icon": "02d",
+    "wind_speed": 5.75,
+    "wind_direction": 360,
+    "visibility": 10000,
+    "timestamp": "2025-07-05T11:24:19.340279"
+  },
+  {
+    "city": "Phoenix",
+    "state": "AZ",
+    "country": "US",
+    "latitude": 33.4484367,
+    "longitude": -112.074141,
+    "temperature": 98.89,
+    "feels_like": 99.9,
+    "humidity": 29,
+    "pressure": 1015.0,
+    "weather_main": "Clouds",
+    "weather_description": "few clouds",
+    "weather_icon": "02d",
+    "wind_speed": 3.44,
+    "wind_direction": 0,
+    "visibility": 10000,
+    "timestamp": "2025-07-05T11:24:46.210264"
+  },
+  {
+    "city": "Seattle",
+    "state": "WA",
+    "country": "US",
+    "latitude": 47.6038321,
+    "longitude": -122.330062,
+    "temperature": 65.01,
+    "feels_like": 64.27,
+    "humidity": 65,
+    "pressure": 1024.0,
+    "weather_main": "Clouds",
+    "weather_description": "broken clouds",
+    "weather_icon": "04d",
+    "wind_speed": 7.0,
+    "wind_direction": 194,
+    "visibility": 10000,
+    "timestamp": "2025-07-05T11:30:59.428638"
+  },
+  {
+    "city": "New York",
+    "state": "ny",
+    "country": "US",
+    "latitude": 40.7127281,
+    "longitude": -74.0060152,
+    "temperature": 85.5,
+    "feels_like": 84.69,
+    "humidity": 39,
+    "pressure": 1020.0,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01d",
+    "wind_speed": 10.36,
+    "wind_direction": 230,
+    "visibility": 10000,
+    "timestamp": "2025-07-05T11:33:20.467265"
+  },
+  {
+    "city": "Scottsdale",
+    "state": "az",
+    "country": "US",
+    "latitude": 33.4942189,
+    "longitude": -111.9260184,
+    "temperature": 107.33,
+    "feels_like": 105.73,
+    "humidity": 17,
+    "pressure": 1005.0,
+    "weather_main": "Clouds",
+    "weather_description": "few clouds",
+    "weather_icon": "02d",
+    "wind_speed": 11.5,
+    "wind_direction": 240,
+    "visibility": 10000,
+    "timestamp": "2025-07-06T17:30:23.146490"
+  },
+  {
+    "city": "Las Vegas",
+    "state": "NV",
+    "country": "US",
+    "latitude": 36.1672559,
+    "longitude": -115.148516,
+    "temperature": 104.88,
+    "feels_like": 98.29,
+    "humidity": 6,
+    "pressure": 1007.0,
+    "weather_main": "Clouds",
+    "weather_description": "few clouds",
+    "weather_icon": "02d",
+    "wind_speed": 12.66,
+    "wind_direction": 90,
+    "visibility": 10000,
+    "timestamp": "2025-07-06T17:30:59.414225"
+  },
+  {
+    "city": "Seattle",
+    "state": "wa",
+    "country": "US",
+    "latitude": 47.6038321,
+    "longitude": -122.330062,
+    "temperature": 76.91,
+    "feels_like": 76.28,
+    "humidity": 42,
+    "pressure": 1019.0,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01d",
+    "wind_speed": 11.5,
+    "wind_direction": 330,
+    "visibility": 10000,
+    "timestamp": "2025-07-06T17:31:09.208108"
+  },
+  {
+    "city": "New York",
+    "state": "ny",
+    "country": "US",
+    "latitude": 40.7127281,
+    "longitude": -74.0060152,
+    "temperature": 83.57,
+    "feels_like": 87.06,
+    "humidity": 61,
+    "pressure": 1016.0,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01n",
+    "wind_speed": 11.99,
+    "wind_direction": 174,
+    "visibility": 10000,
+    "timestamp": "2025-07-06T17:31:20.184085"
+  },
+  {
+    "city": "Seattle",
+    "state": "Wa",
+    "country": "US",
+    "latitude": 47.6038321,
+    "longitude": -122.330062,
+    "temperature": 76.91,
+    "feels_like": 76.28,
+    "humidity": 42,
+    "pressure": 1019.0,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01d",
+    "wind_speed": 11.5,
+    "wind_direction": 330,
+    "visibility": 10000,
+    "timestamp": "2025-07-06T17:32:08.442099"
+  },
+  {
+    "city": "Denver",
+    "state": "CO",
+    "country": "US",
+    "latitude": 39.7392364,
+    "longitude": -104.984862,
+    "temperature": 79.5,
+    "feels_like": 79.5,
+    "humidity": 42,
+    "pressure": 1014.0,
+    "weather_main": "Clouds",
+    "weather_description": "overcast clouds",
+    "weather_icon": "04d",
+    "wind_speed": 13.85,
+    "wind_direction": 22,
+    "visibility": 10000,
+    "timestamp": "2025-07-06T17:32:19.470239"
+  },
+  {
+    "city": "Scottsdale",
+    "state": "az",
+    "country": "US",
+    "latitude": 33.4942189,
+    "longitude": -111.9260184,
+    "temperature": 101.37,
+    "feels_like": 99.27,
+    "humidity": 20,
+    "pressure": 1006.0,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01n",
+    "wind_speed": 5.99,
+    "wind_direction": 216,
+    "visibility": 10000,
+    "timestamp": "2025-07-06T20:27:01.985456"
+  },
+  {
+    "city": "Tempe Junction",
+    "state": "az",
+    "country": "US",
+    "latitude": 33.4255056,
+    "longitude": -111.9400091,
+    "temperature": 101.82,
+    "feels_like": 99.86,
+    "humidity": 20,
+    "pressure": 1006.0,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01n",
+    "wind_speed": 4.0,
+    "wind_direction": 270,
+    "visibility": 10000,
+    "timestamp": "2025-07-06T20:31:58.472021"
+  },
+  {
+    "city": "Tempe Junction",
+    "state": "az",
+    "country": "US",
+    "latitude": 33.4255056,
+    "longitude": -111.9400091,
+    "temperature": 101.82,
+    "feels_like": 99.86,
+    "humidity": 20,
+    "pressure": 1006.0,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01n",
+    "wind_speed": 4.0,
+    "wind_direction": 270,
+    "visibility": 10000,
+    "timestamp": "2025-07-06T20:34:00.277191"
+  },
+  {
+    "city": "Scottsdale",
+    "state": "az",
+    "country": "US",
+    "latitude": 33.4942189,
+    "longitude": -111.9260184,
+    "temperature": 101.01,
+    "feels_like": 99.21,
+    "humidity": 21,
+    "pressure": 1006.0,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01n",
+    "wind_speed": 5.99,
+    "wind_direction": 187,
+    "visibility": 10000,
+    "timestamp": "2025-07-06T20:36:08.216421"
   }
 ]

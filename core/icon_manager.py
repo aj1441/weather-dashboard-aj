@@ -227,22 +227,24 @@ class IconManager:
         d = description.lower()
         
         # Map weather descriptions to icon names
-        if "sun" in d or "clear" in d:
+        if "clear" in d or "sky is clear" in d:
             return self.get_emoji_icon("sunny")
-        elif "partly" in d or "few clouds" in d:
+        elif "few clouds" in d or "partly" in d:
             return self.get_emoji_icon("partly_cloudy")
-        elif "cloud" in d or "overcast" in d:
+        elif "scattered clouds" in d or "broken clouds" in d or "cloud" in d or "overcast" in d:
             return self.get_emoji_icon("cloudy")
         elif "wind" in d:
             return self.get_emoji_icon("windy")
-        elif "rain" in d or "drizzle" in d:
+        elif "rain" in d or "drizzle" in d or "shower" in d:
             return self.get_emoji_icon("rainy")
         elif "thunder" in d or "storm" in d:
             return self.get_emoji_icon("thunderstorm")
         elif "snow" in d or "sleet" in d:
             return self.get_emoji_icon("snowy")
+        elif "mist" in d or "fog" in d:
+            return "🌫️"
         else:
-            return self.get_emoji_icon("temperature")
+            return self.get_emoji_icon("partly_cloudy")
     
     def clear_cache(self) -> None:
         """Clear the image cache to free memory"""
