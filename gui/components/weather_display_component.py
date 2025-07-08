@@ -5,14 +5,6 @@ from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
 from core.icon_manager import get_weather_icon
 from core.weather_utils import parse_weather_data
 
-# Experimental: Try customtkinter for rounded buttons
-try:
-    import customtkinter as ctk
-    CTK_AVAILABLE = True
-except ImportError:
-    CTK_AVAILABLE = False
-    print("CustomTkinter not available, using ttkbootstrap buttons")
-
 class WeatherDisplayComponent:
     """Handles displaying current weather data with emoji and save functionality"""
     

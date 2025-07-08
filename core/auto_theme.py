@@ -183,10 +183,10 @@ class AutoThemeManager:
             longitude: Optional specific longitude
             
         Returns:
-            Theme name ("pulse" for light, "aj_darkly" for dark)
+            Theme name ("aj_lightly" for light, "aj_darkly" for dark)
         """
         use_dark = self.should_use_dark_theme(latitude, longitude)
-        return "aj_darkly" if use_dark else "pulse"
+        return "aj_darkly" if use_dark else "aj_lightly"
     
     def get_location_info(self) -> Optional[Dict]:
         """Get the current location information"""
@@ -206,7 +206,7 @@ def get_auto_theme(latitude: float = None, longitude: float = None) -> str:
         longitude: Optional specific longitude
         
     Returns:
-        Theme name ("pulse" for light, "aj_darkly" for dark)
+        Theme name ("aj_lightly" for light, "aj_darkly" for dark)
     """
     manager = AutoThemeManager()
     return manager.get_recommended_theme(latitude, longitude)
