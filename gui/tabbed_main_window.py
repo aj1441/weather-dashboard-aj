@@ -393,7 +393,7 @@ class TabbedWeatherDashboard:
 
     def handle_save_city(self, city_data):
         """Handle saving a city"""
-        print(f"[DEBUG] handle_save_city called with city_data: {city_data}")
+        self.logger.debug("handle_save_city called with city_data: %s", city_data)
         try:
             if self.data_handler.save_city(city_data):
                 self.logger.info(f"Successfully saved city: {city_data.get('city')}")

@@ -1,5 +1,9 @@
 """Utility for creating a save city button using ttkbootstrap."""
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 def create_save_city_button(parent, city_data, on_save_callback, style='primary'):
     """
     Create a save city button.
@@ -14,7 +18,7 @@ def create_save_city_button(parent, city_data, on_save_callback, style='primary'
     import ttkbootstrap as tb
     def handle_save():
         current_city_data = getattr(btn, 'city_data', None)
-        print(f"[DEBUG] Save button clicked - city_data: {current_city_data}")
+        logger.debug("Save button clicked - city_data: %s", current_city_data)
         on_save_callback(current_city_data)
     btn = tb.Button(parent, text="Save City", command=handle_save)
     if hasattr(btn, 'configure'):
