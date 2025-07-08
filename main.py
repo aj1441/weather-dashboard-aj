@@ -7,6 +7,16 @@ from pathlib import Path
 from config import Config
 from gui.tabbed_main_window import TabbedWeatherDashboard
 
+
+def add_numbers(a, b):
+    """Return the sum of two numbers."""
+    return a + b
+
+
+def convert_to_fahrenheit(celsius):
+    """Convert Celsius to Fahrenheit."""
+    return celsius * 9 / 5 + 32
+
 def setup_logging(config: Config):
     """Configure application logging with file and console handlers"""
     

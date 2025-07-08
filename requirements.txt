@@ -1,6 +1,5 @@
 # Core GUI and Application Framework
 ttkbootstrap
-customtkinter
 
 # API and Environment Management
 requests

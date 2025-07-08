@@ -75,15 +75,6 @@ class TabbedWeatherDashboard:
             self.auto_theme_thread.join(timeout=1.0)
             self.logger.info("Auto theme refresh stopped")
 
-    def sync_customtkinter_theme(self, theme_name):
-        """Synchronize customtkinter theme with ttkbootstrap theme"""
-        import customtkinter as ctk
-        # Map our theme names to customtkinter appearance modes
-        if theme_name == "aj_darkly":
-            ctk.set_appearance_mode("dark")
-        else:
-            ctk.set_appearance_mode("light")
-        self.logger.info(f"Synchronized customtkinter theme to: {theme_name}")
 
     def _auto_theme_loop(self):
         """Background thread for auto theme switching"""
@@ -95,7 +86,6 @@ class TabbedWeatherDashboard:
                 if new_theme != self.current_theme:
                     self.logger.info(f"Auto switching theme to {new_theme}")
                     self.app.style.theme_use(new_theme)
-                    self.sync_customtkinter_theme(new_theme)  # Sync customtkinter theme
                     self.current_theme = new_theme
                 
                 # Sleep for 5 minutes before next check
@@ -311,7 +301,7 @@ class TabbedWeatherDashboard:
         ).pack(pady=(0, 15))
 
         tech_details = [
-            ("Frontend", "ttkbootstrap (modern tkinter), customtkinter integration"),
+            ("Frontend", "ttkbootstrap (modern tkinter)"),
             ("Backend", "Python 3.13+ with asyncio support"),
             ("Database", "SQLite with optimized schema design"),
             ("API Integration", "OpenWeather API with rate limiting and error handling"),

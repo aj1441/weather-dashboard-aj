@@ -1,7 +1,4 @@
-"""
-Reusable widget/function for weather details row (humidity, pressure, wind).
-Compatible with ttkbootstrap or customtkinter.
-"""
+"""Utility functions for updating the weather details row using ttkbootstrap."""
 
 def update_weather_details_row(humidity_label, pressure_label, wind_label, parsed):
     """

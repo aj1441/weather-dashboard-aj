@@ -14,7 +14,7 @@ class UserSettingsManager:
         self.default_settings = {
             "theme": "aj_darkly",  # Use custom dark theme as default
             "auto_theme_mode": True,  # Enable auto day/night mode by default
-            "light_theme": "pulse",  # Theme to use during daytime
+            "light_theme": "aj_lightly",  # Theme to use during daytime
             "dark_theme": "aj_darkly",  # Theme to use during nighttime
             "default_location": "",
             "temperature_unit": "celsius",
@@ -155,7 +155,7 @@ def save_user_theme(theme_name):
     manager = UserSettingsManager()
     return manager.save_user_theme(theme_name)
 
-def save_auto_theme_settings(auto_mode: bool, light_theme: str = "pulse", dark_theme: str = "aj_darkly"):
+def save_auto_theme_settings(auto_mode: bool, light_theme: str = "aj_lightly", dark_theme: str = "aj_darkly"):
     """
     Save auto theme mode settings
     
@@ -185,7 +185,7 @@ def load_auto_theme_settings():
     settings = manager.load_settings()
     return (
         settings.get("auto_theme_mode", True),
-        settings.get("light_theme", "pulse"),
+        settings.get("light_theme", "aj_lightly"),
         settings.get("dark_theme", "aj_darkly")
     )
 
