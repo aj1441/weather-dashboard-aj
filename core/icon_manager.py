@@ -2,9 +2,12 @@
 
 import os
 import tkinter as tk
+import logging
 from typing import Dict, Optional, Tuple
 from PIL import Image, ImageTk
 import ttkbootstrap as tb
+
+logger = logging.getLogger(__name__)
 
 class IconManager:
     """Centralized icon and image management system"""
@@ -111,7 +114,7 @@ class IconManager:
                 break
         
         if not image_path:
-            print(f"Image not found: {image_name}")
+            logger.warning("Image not found: %s", image_name)
             return None
         
         try:
@@ -129,7 +132,7 @@ class IconManager:
             return photo_img
         
         except Exception as e:
-            print(f"Error loading image {image_name}: {e}")
+            logger.error("Error loading image %s: %s", image_name, e)
             return None
     
     def load_icon(self, icon_name: str, size: Tuple[int, int] = (24, 24)) -> Optional[ImageTk.PhotoImage]:
@@ -160,7 +163,7 @@ class IconManager:
                 break
         
         if not icon_path:
-            print(f"Icon not found: {icon_name}")
+            logger.warning("Icon not found: %s", icon_name)
             return None
         
         try:
@@ -177,7 +180,7 @@ class IconManager:
             return photo_img
         
         except Exception as e:
-            print(f"Error loading icon {icon_name}: {e}")
+            logger.error("Error loading icon %s: %s", icon_name, e)
             return None
     
     def create_button_with_icon(self, parent, text: str = "", icon_name: str = "", 

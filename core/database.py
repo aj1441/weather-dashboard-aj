@@ -3,9 +3,12 @@
 import sqlite3
 import json
 import os
+import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from contextlib import contextmanager
+
+logger = logging.getLogger(__name__)
 
 class WeatherDatabase:
     """Handles all database operations for weather data storage"""
@@ -16,11 +19,11 @@ class WeatherDatabase:
         self._ensure_database_directory()
         self._initialize_database()
         if not self._verify_tables():
-            print("Re-initializing database tables...")
+            logger.info("Re-initializing database tables...")
             self._initialize_database()  # Try to create tables again
             if not self._verify_tables():
                 raise RuntimeError("Failed to initialize database tables")
-        print(f"Database initialized successfully at {self.db_path}")
+        logger.info("Database initialized successfully at %s", self.db_path)
     
     def _ensure_database_directory(self):
         """Create the data directory if it doesn't exist"""
@@ -31,9 +34,9 @@ class WeatherDatabase:
                 # Verify the directory is writable
                 if not os.access(directory, os.W_OK):
                     raise PermissionError(f"Database directory {directory} is not writable")
-            print(f"Database directory verified: {directory}")
+            logger.debug("Database directory verified: %s", directory)
         except Exception as e:
-            print(f"Error ensuring database directory exists: {e}")
+            logger.error("Error ensuring database directory exists: %s", e)
             raise
     
     @contextmanager
@@ -64,14 +67,14 @@ class WeatherDatabase:
                 missing_tables = required_tables - existing_tables
                 
                 if missing_tables:
-                    print(f"Missing tables detected: {missing_tables}")
+                    logger.warning("Missing tables detected: %s", missing_tables)
                     return False
                 else:
-                    print("All required database tables verified")
+                    logger.debug("All required database tables verified")
                 
                 return True
         except Exception as e:
-            print(f"Error verifying tables: {e}")
+            logger.error("Error verifying tables: %s", e)
             return False
 
     def _initialize_database(self):
@@ -201,7 +204,7 @@ class WeatherDatabase:
                 return True
                 
         except Exception as e:
-            print(f"Error saving current weather: {e}")
+            logger.error("Error saving current weather: %s", e)
             return False
     
     def save_forecast_data(self, forecast_data: List[Dict], city: str, state: str = None) -> bool:
@@ -247,7 +250,7 @@ class WeatherDatabase:
                 return True
                 
         except Exception as e:
-            print(f"Error saving forecast data: {e}")
+            logger.error("Error saving forecast data: %s", e)
             return False
     
     def get_current_weather(self, city: str, state: str = None, max_age_hours: int = 1) -> Optional[Dict]:
@@ -271,7 +274,7 @@ class WeatherDatabase:
                 return None
                 
         except Exception as e:
-            print(f"Error retrieving current weather: {e}")
+            logger.error("Error retrieving current weather: %s", e)
             return None
     
     def get_forecast_data(self, city: str, state: str = None, max_age_hours: int = 6) -> List[Dict]:
@@ -293,43 +296,61 @@ class WeatherDatabase:
                 return [dict(row) for row in rows]
                 
         except Exception as e:
-            print(f"Error retrieving forecast data: {e}")
+            logger.error("Error retrieving forecast data: %s", e)
             return []
     
-    def save_location(self, city: str, state: str = None, nickname: str = None, 
-                        latitude: float = None, longitude: float = None) -> bool:
-            """Save a location to saved locations"""
-            try:
-                print(f"Attempting to save location: city={city}, state={state}, nickname={nickname}, "
-                    f"lat={latitude}, lon={longitude}")
-                
-                with self.get_connection() as conn:
-                    cursor = conn.cursor()
-                    
-                    # First check if location already exists
-                    cursor.execute('''
-                        SELECT id FROM saved_locations 
+    def save_location(
+        self,
+        city: str,
+        state: str = None,
+        nickname: str = None,
+        latitude: float = None,
+        longitude: float = None,
+    ) -> bool:
+        """Save a location to saved locations"""
+        try:
+            logger.debug(
+                "Attempting to save location: city=%s, state=%s, nickname=%s, lat=%s, lon=%s",
+                city,
+                state,
+                nickname,
+                latitude,
+                longitude,
+            )
+
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # First check if location already exists
+                cursor.execute(
+                    """
+                        SELECT id FROM saved_locations
                         WHERE city = ? AND state = ?
-                    ''', (city, state))
-                    
-                    existing = cursor.fetchone()
-                    if existing:
-                        print(f"Location already exists with id {existing[0]}, updating...")
-                    
-                    cursor.execute('''
+                    """,
+                    (city, state),
+                )
+
+                existing = cursor.fetchone()
+                if existing:
+                    logger.debug("Location already exists with id %s, updating...", existing[0])
+
+                cursor.execute(
+                    """
                         INSERT OR REPLACE INTO saved_locations (
                             city, state, nickname, latitude, longitude, last_accessed
                         ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                    ''', (city, state, nickname, latitude, longitude))
-                    
-                    conn.commit()
-                    print(f"Successfully saved location: {city}, {state}")
-                    return True
-                    
-            except Exception as e:
-                print(f"Error saving location: {e}")
-                print(f"Full error details: ", e.__class__.__name__)
-                return False
+                    """,
+                    (city, state, nickname, latitude, longitude),
+                )
+
+                conn.commit()
+                logger.info("Successfully saved location: %s, %s", city, state)
+                return True
+
+        except Exception as e:
+            logger.error("Error saving location: %s", e)
+            logger.debug("Full error details: %s", e.__class__.__name__)
+            return False
     
     def get_saved_locations(self) -> List[Dict]:
         """Get all saved locations"""
@@ -344,7 +365,7 @@ class WeatherDatabase:
                 return [dict(row) for row in rows]
                 
         except Exception as e:
-            print(f"Error retrieving saved locations: {e}")
+            logger.error("Error retrieving saved locations: %s", e)
             return []
     
     def remove_saved_location(self, location_id: int) -> bool:
@@ -357,7 +378,7 @@ class WeatherDatabase:
                 return cursor.rowcount > 0
                 
         except Exception as e:
-            print(f"Error removing saved location: {e}")
+            logger.error("Error removing saved location: %s", e)
             return False
     
     def save_user_preference(self, key: str, value: str) -> bool:
@@ -373,7 +394,7 @@ class WeatherDatabase:
                 return True
                 
         except Exception as e:
-            print(f"Error saving user preference: {e}")
+            logger.error("Error saving user preference: %s", e)
             return False
     
     def get_user_preference(self, key: str, default: str = None) -> Optional[str]:
@@ -386,7 +407,7 @@ class WeatherDatabase:
                 return row[0] if row else default
                 
         except Exception as e:
-            print(f"Error retrieving user preference: {e}")
+            logger.error("Error retrieving user preference: %s", e)
             return default
     
     def cleanup_old_data(self, days_to_keep: int = 30) -> bool:
@@ -411,7 +432,7 @@ class WeatherDatabase:
                 return True
                 
         except Exception as e:
-            print(f"Error cleaning up old data: {e}")
+            logger.error("Error cleaning up old data: %s", e)
             return False
 
 

@@ -1,9 +1,12 @@
 """Weather display component for showing current weather"""
 
+import logging
 import ttkbootstrap as tb
 from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
 from core.icon_manager import get_weather_icon
 from core.weather_utils import parse_weather_data
+
+logger = logging.getLogger(__name__)
 
 class WeatherDisplayComponent:
     """Handles displaying current weather data with emoji and save functionality"""
@@ -72,12 +75,12 @@ class WeatherDisplayComponent:
             weather_data: Dictionary with weather information (cleaned or raw format)
             temp_unit: 'imperial', 'metric', or 'kelvin'
         """
-        print(f"[DEBUG] update_weather_display called with weather_data: {weather_data}")
+        logger.debug("update_weather_display called with weather_data: %s", weather_data)
         from core.unit_label_utils import get_unit_label, get_wind_unit_label
         unit_label = get_unit_label(temp_unit)
         wind_unit_label = get_wind_unit_label(temp_unit)
         if "error" in weather_data:
-            print(f"[DEBUG] Weather error: {weather_data['error']}")
+            logger.debug("Weather error: %s", weather_data['error'])
             self.show_error(weather_data["error"])
             return
         
@@ -86,7 +89,7 @@ class WeatherDisplayComponent:
         
         # Use modularized parser
         parsed = parse_weather_data(weather_data, unit_label)
-        print(f"[DEBUG] Parsed weather data: {parsed}")
+        logger.debug("Parsed weather data: %s", parsed)
         
         # Update emoji using IconManager
         emoji = get_weather_icon(parsed['description'])
@@ -190,13 +193,13 @@ class WeatherDisplayComponent:
     
     def on_save_city(self, city_data=None):
         """Handle save city button click"""
-        print(f"[DEBUG] on_save_city called with city_data: {city_data}")
-        print(f"[DEBUG] Has save_city_callback: {hasattr(self, 'save_city_callback')}")
+        logger.debug("on_save_city called with city_data: %s", city_data)
+        logger.debug("Has save_city_callback: %s", hasattr(self, 'save_city_callback'))
         if city_data and hasattr(self, 'save_city_callback'):
-            print(f"[DEBUG] Calling save_city_callback with city_data: {city_data}")
+            logger.debug("Calling save_city_callback with city_data: %s", city_data)
             self.save_city_callback(city_data)
         else:
-            print(f"[DEBUG] Not calling save_city_callback - city_data is None or callback not set")
+            logger.debug("Not calling save_city_callback - city_data is None or callback not set")
     
     def set_save_city_callback(self, callback):
         """Set the callback function for when a city is saved"""

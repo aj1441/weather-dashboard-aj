@@ -2,9 +2,12 @@
 
 import json
 import os
+import logging
 from datetime import datetime
 from typing import Dict, List, Optional
 from core.database import get_database
+
+logger = logging.getLogger(__name__)
 
 class DatabaseDataHandler:
     """Enhanced data handler that uses SQLite database for persistence"""
@@ -33,10 +36,13 @@ class DatabaseDataHandler:
                 # Backup and remove JSON file after migration
                 backup_file = f"{self.json_file}.backup"
                 os.rename(self.json_file, backup_file)
-                print(f"Migrated JSON data to database. Backup saved as {backup_file}")
+                logger.info(
+                    "Migrated JSON data to database. Backup saved as %s",
+                    backup_file,
+                )
                 
             except Exception as e:
-                print(f"Migration warning: {e}")
+                logger.warning("Migration warning: %s", e)
     
     def save_weather_data(self, weather_data: Dict, city: str, state: str = None) -> bool:
         """Save current weather data to database"""
@@ -130,7 +136,7 @@ class DatabaseDataHandler:
                 return [dict(row) for row in rows]
                 
         except Exception as e:
-            print(f"Error getting weather history: {e}")
+            logger.error("Error getting weather history: %s", e)
             return []
     
     def cleanup_old_data(self, days: int = 30) -> bool:

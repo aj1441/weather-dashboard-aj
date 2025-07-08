@@ -3,8 +3,11 @@
 from datetime import datetime
 import json
 import os
+import logging
 from typing import Dict, Optional
 from .theme_manager import ThemeManager
+
+logger = logging.getLogger(__name__)
 
 class UserSettingsManager:
     """Handles all user settings and preferences"""
@@ -68,7 +71,7 @@ class UserSettingsManager:
                 with open(self.settings_file, "r") as f:
                     return json.load(f)
             except Exception as e:
-                print(f"Error loading settings: {e}")
+                logger.warning("Error loading settings: %s", e)
         return self.default_settings.copy()
     
     def save_settings(self, settings: Dict) -> bool:
@@ -86,7 +89,7 @@ class UserSettingsManager:
                 json.dump(settings, f, indent=2)
             return True
         except Exception as e:
-            print(f"Failed to save settings: {e}")
+            logger.error("Failed to save settings: %s", e)
             return False
 
 class WeatherFormatter:
