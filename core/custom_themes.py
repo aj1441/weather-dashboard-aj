@@ -46,7 +46,8 @@ def get_available_themes():
     # Standard light and dark themes
     standard_themes = {
         "light": ["aj_lightly", "pulse", "flatly", "litera", "minty", "lumen"],
-        "dark": ["aj_darkly", "darkly", "cyborg", "superhero", "solar"]
+        "dark": ["aj_darkly", "darkly", "cyborg", "superhero", "solar"],
     }
-        return standard_themes
+
+    return standard_themes
 
