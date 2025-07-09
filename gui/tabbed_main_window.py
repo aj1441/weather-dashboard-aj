@@ -15,7 +15,7 @@ from ttkbootstrap.dialogs import Messagebox
 from core.utils import load_user_theme
 from core.api import WeatherAPI
 from core.data_handler import WeatherDataHandler
-from core.custom_themes import register_custom_themes
+from core.custom_themes import register_custom_themes, get_fallback_theme
 from gui.components import ThemeComponent, WeatherInputComponent, WeatherDisplayComponent, SavedCitiesComponent, ForecastDisplayComponent
 
 class TabbedWeatherDashboard:
@@ -39,9 +39,12 @@ class TabbedWeatherDashboard:
         try:
             self.app = tb.Window(themename=self.current_theme)
         except Exception as e:
-            self.logger.warning(f"Failed to load custom theme {self.current_theme}, using default: {e}")
-            self.app = tb.Window(themename="aj_darkly")
-            self.current_theme = "aj_darkly"
+            fallback = get_fallback_theme(self.current_theme)
+            self.logger.warning(
+                f"Failed to load theme {self.current_theme}, falling back to {fallback}: {e}"
+            )
+            self.app = tb.Window(themename=fallback)
+            self.current_theme = fallback
         
         self.app.title("Advanced Weather Dashboard")
         self.app.geometry("1000x700")  # Increased from 800x600
