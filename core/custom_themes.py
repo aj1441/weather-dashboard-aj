@@ -5,13 +5,26 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def register_custom_themes():
+from user import USER_THEMES
+from ttkbootstrap.style import ThemeDefinition
+
+
+def register_custom_themes() -> bool:
     """Register custom themes using ttkbootstrap style system"""
     try:
-        logger.info("Custom theme registration temporarily disabled")
-        # Let's get the basic toggle working first, then add custom themes
+        style = tb.Style()
+
+        for name, definition in USER_THEMES.items():
+            if name not in style.theme_names():
+                theme_def = ThemeDefinition(
+                    name=name,
+                    themetype=definition.get("type", "dark"),
+                    colors=definition.get("colors", {}),
+                )
+                style.register_theme(theme_def)
+        logger.info("Custom themes registered")
         return True
-        
+
     except Exception as e:
         logger.error(f"Custom theme registration failed: {e}")
         return False
@@ -35,5 +48,5 @@ def get_available_themes():
         "light": ["aj_lightly", "pulse", "flatly", "litera", "minty", "lumen"],
         "dark": ["aj_darkly", "darkly", "cyborg", "superhero", "solar"]
     }
-    
-    return standard_themes
+        return standard_themes
+
