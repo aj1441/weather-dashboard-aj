@@ -200,10 +200,14 @@ def get_auto_theme() -> str:
         Theme name to use
     """
     from .location_service import LocationService
+    from core.custom_themes import register_custom_themes
     
     # Initialize theme manager and register custom themes
     theme_manager = ThemeManager()
     theme_manager.register_all_custom_themes()
+
+    #Register themes safely
+    register_custom_themes()
     
     auto_mode, light_theme, dark_theme = load_auto_theme_settings()
     
@@ -211,6 +215,7 @@ def get_auto_theme() -> str:
         # Auto mode disabled, use saved theme
         manager = UserSettingsManager()
         saved_theme = manager.load_user_theme()
+        theme_manager = ThemeManager()
         return theme_manager.get_fallback_theme(saved_theme)
     
     # Auto mode enabled, determine theme based on time
@@ -225,6 +230,7 @@ def get_auto_theme() -> str:
     
     # Get appropriate theme and ensure it exists
     theme_to_use = light_theme if is_daytime else dark_theme
+    theme_manager = ThemeManager()
     return theme_manager.get_fallback_theme(theme_to_use)
 
 def format_timestamp(timestamp):

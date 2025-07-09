@@ -26,25 +26,30 @@ class TabbedWeatherDashboard:
         self.config = config
         self.logger = logging.getLogger(__name__)
         
-        # Register custom themes first
-        register_custom_themes()
-        
         # Load last used theme
         self.current_theme = load_user_theme()
         self.auto_theme = False
         self.auto_theme_thread = None
         self.auto_theme_running = False
+
+        #1. Create the actual window BEFORE theme registration
+        self.app = tb.Window()
+
+        #2. Register themes now that we have a root window
+        register_custom_themes()
         
-        # Initialize the window with the current theme
+        #3. Apply the user's theme
         try:
-            self.app = tb.Window(themename=self.current_theme)
+            style = tb.Style()
+            style.theme_use(self.current_theme)
         except Exception as e:
             fallback = get_fallback_theme(self.current_theme)
             self.logger.warning(
                 f"Failed to load theme {self.current_theme}, falling back to {fallback}: {e}"
             )
-            self.app = tb.Window(themename=fallback)
+            style.theme_use(fallback)
             self.current_theme = fallback
+
         
         self.app.title("Advanced Weather Dashboard")
         self.app.geometry("1000x700")  # Increased from 800x600
@@ -83,6 +88,7 @@ class TabbedWeatherDashboard:
         """Background thread for auto theme switching"""
         while self.auto_theme_running:
             try:
+                self.logger.info(f"[auto_theme_loop] Checking time-based theme at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                 current_hour = datetime.now().hour
                 new_theme = "aj_darkly" if current_hour >= 18 or current_hour < 6 else "aj_lightly"
                 
@@ -90,6 +96,13 @@ class TabbedWeatherDashboard:
                     self.logger.info(f"Auto switching theme to {new_theme}")
                     self.app.style.theme_use(new_theme)
                     self.current_theme = new_theme
+                    self.app.update_idletasks()
+
+                    #Notify all components to refresh
+                    if hasattr(self, "restyle_all_components"):
+                        self.restyle_all_components()
+                        self.logger.info("[auto_theme_loop] Called restyle_all_components() after theme switch")
+
                 
                 # Sleep for 5 minutes before next check
                 for _ in range(300):  # 5 minutes * 60 seconds = 300
@@ -105,7 +118,7 @@ class TabbedWeatherDashboard:
         """Create the tabbed interface"""
         # Theme controls at top
         self.theme_component = ThemeComponent(self.app, self.current_theme)
-        theme_controls = self.theme_component.setup_component()
+        theme_controls = self.theme_component.theme_frame
         theme_controls.pack(pady=10)
 
         # Create notebook for tabs
@@ -539,6 +552,18 @@ class TabbedWeatherDashboard:
                 "end",
                 values=("Error", "Failed to load weather history", "", "")
             )
+
+    def restyle_all_components(self):
+        """Refresh the styles of all major components after a theme change."""
+        if hasattr(self.input_component, "restyle"):
+            self.input_component.restyle()
+        if hasattr(self.display_component, "restyle"):
+            self.display_component.restyle()
+        if hasattr(self.forecast_component, "restyle"):
+            self.forecast_component.restyle()
+        if hasattr(self.saved_cities_component, "restyle"):
+            self.saved_cities_component.restyle()
+
 
     def run(self):
         """Start the application main loop with proper cleanup"""

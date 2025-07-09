@@ -41,8 +41,10 @@ class SavedCitiesComponent:
         )
         self.no_cities_label.pack(pady=40)
 
-        # Separator
-        separator = tb.Label(self.cities_frame, text="", height=2)
+        # Separator- do i want the background to be light gray? or I could use a ttk.Frame as a vertical separator
+        # This will visually separate the title from the cities list
+        # Using a Label with padding to create a visual separator
+        separator = tb.Label(self.cities_frame, text="", padding=(0, 10), background="lightgray")
         separator.pack(fill="x", padx=20, pady=10)
 
         return self.cities_frame
@@ -132,3 +134,19 @@ class SavedCitiesComponent:
             bootstyle="danger-outline"
         )
         delete_btn.pack(side="right", padx=5, pady=5)
+
+    def restyle(self):
+        """Force a style refresh for saved cities widgets."""
+        try:
+            if hasattr(self, "cities_frame"):
+                self.cities_frame.update_idletasks()
+
+                for widget in self.cities_frame.winfo_children():
+                    try:
+                        widget.configure()  # Re-apply styles
+                    except Exception:
+                        pass  # Ignore widgets that don't support configure()
+
+            self.logger.info("SavedCitiesComponent restyled.")
+        except Exception as e:
+            self.logger.error(f"Error during restyle in SavedCitiesComponent: {e}")

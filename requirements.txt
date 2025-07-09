@@ -1,18 +1,11 @@
-# Core GUI and Application Framework
-ttkbootstrap
-
-# API and Environment Management
-requests
-python-dotenv
-
-# Data Processing and Analysis
+ttkbootstrap>=1.14.0
 numpy
 pandas
 matplotlib
+scikit-learn
+scipy
 seaborn
-
-# Image and Icon Processing
-Pillow
-
-# Date/Time Handling
-python-dateutil
+statsmodels
+plotly
+scikit-image
+pillow

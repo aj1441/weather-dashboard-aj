@@ -230,3 +230,22 @@ class WeatherDisplayComponent:
         # The update_weather_display method will override these if data is available
         self.weather_icon_label.config(text="🌡️")
         self.weather_desc_label.config(text="Enter a city to get weather data")
+
+    def restyle(self):
+        try:
+            def refresh_widget(widget):
+                try:
+                    widget.configure()
+                except:
+                    pass
+                for child in widget.winfo_children():
+                    refresh_widget(child)
+
+            if hasattr(self, "display_frame"):
+                self.display_frame.update_idletasks()
+                refresh_widget(self.display_frame)
+
+            self.logger.info("WeatherDisplayComponent restyled.")
+        except Exception as e:
+            self.logger.error(f"Error during restyle in WeatherDisplayComponent: {e}")
+

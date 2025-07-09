@@ -2,6 +2,8 @@
 
 import logging
 import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+import tkinter as tk
 
 from core.utils import (
     save_user_theme,
@@ -26,6 +28,25 @@ class ThemeComponent:
 
         # Register custom themes first
         register_custom_themes()
+
+        from core.custom_themes import get_fallback_theme
+
+        try:
+            # Attempt to apply the theme before building any widgets
+            style = tb.Style()
+            style.theme_use(self.current_theme)
+
+        except Exception as e:
+            fallback = get_fallback_theme(self.current_theme)
+            logging.warning(f"Falling back to default theme: {fallback} due to error: {e}")
+            style = tb.Style()
+            style.theme_use(fallback)
+            self.current_theme = fallback
+
+
+        # ✅ Confirm themes are loaded AFTER registration and before widget creation
+        print("Available themes:", style.theme_names())
+
 
         # Load auto theme settings
         self.auto_mode, self.light_theme, self.dark_theme = load_auto_theme_settings()
@@ -66,7 +87,7 @@ class ThemeComponent:
             text="☀ Light / 🌙 Dark",
             variable=self.theme_var,
             command=self.toggle_theme,
-            bootstyle="info-round-toggle",
+            bootstyle="success-round-toggle",
         )
         self.manual_toggle.pack(side="left")
 
@@ -153,6 +174,9 @@ class ThemeComponent:
             style = tb.Style()
             style.theme_use(theme_name)
             logger.debug(f"Applied theme: {theme_name}")
+            self.parent.update_idletasks()  # Force UI refresh
+
+
         except Exception as e:
             logger.error(f"Failed to apply theme {theme_name}: {e}")
             fallback_theme = "pulse" if theme_name in [
@@ -167,11 +191,17 @@ class ThemeComponent:
                 style.theme_use(fallback_theme)
                 self.current_theme = fallback_theme
                 logger.info(f"Fell back to theme: {fallback_theme}")
+                self.parent.update_idletasks()
             except Exception as e2:
                 logger.error(f"Fallback theme failed: {e2}")
 
+        # Trigger internal callback (optional override)
         if hasattr(self, "on_theme_change"):
             self.on_theme_change(self.current_theme)
+
+        #Call app-wide theme restyling method if it exists
+        if hasattr(self.parent, "restyle_all_components"):
+            self.parent.restyle_all_components()
 
     def refresh_auto_theme(self, latitude=None, longitude=None):
         """Refresh auto theme if auto mode is active."""

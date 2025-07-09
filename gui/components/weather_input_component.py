@@ -91,3 +91,18 @@ class WeatherInputComponent:
         self.city_var.set("")
         self.state_var.set("")
 
+    def restyle(self):
+        """Force a style refresh for weather input widgets."""
+        try:
+            if hasattr(self, "input_frame"):
+                self.input_frame.update_idletasks()
+
+                for widget in self.input_frame.winfo_children():
+                    try:
+                        widget.configure()
+                    except Exception:
+                        pass  # Some widgets might not need reconfiguration
+
+            print("[restyle] WeatherInputComponent restyled.")
+        except Exception as e:
+            print(f"[restyle] Error restyling WeatherInputComponent: {e}")

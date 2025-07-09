@@ -1,7 +1,7 @@
 {
-  "theme": "aj_darkly",
+  "theme": "aj_lightly",
   "auto_theme_mode": false,
-  "light_theme": "pulse",
+  "light_theme": "aj_lightly",
   "dark_theme": "aj_darkly",
   "default_location": "",
   "temperature_unit": "celsius",
