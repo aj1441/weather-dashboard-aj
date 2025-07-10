@@ -8,6 +8,7 @@ import tkinter as tk
 import ttkbootstrap as tb
 import logging
 import threading
+from core.state_utils import normalize_state_abbreviation
 import time
 from datetime import datetime
 from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
@@ -434,6 +435,9 @@ class TabbedWeatherDashboard:
     def handle_weather_request(self, city, state=None, country=None):
         """Handle weather data request and display"""
         try:
+            # Normalize state abbreviation to uppercase
+            state = normalize_state_abbreviation(state)
+            
             # Get comprehensive weather data from API (current + forecast)
             comprehensive_data = self.weather_api.fetch_comprehensive_weather(city, state)
             if comprehensive_data and 'error' not in comprehensive_data:
@@ -489,15 +493,29 @@ class TabbedWeatherDashboard:
             else:
                 error_msg = comprehensive_data.get('error', 'Unknown error') if comprehensive_data else 'No data received'
                 self.logger.error(f"Failed to get weather data for {city}: {error_msg}")
+                
+                # Show a more user-friendly error message based on the error type
+                if "city not found" in error_msg.lower() or "not found" in error_msg.lower():
+                    error_display = f"City '{city}' was not found. Please check your spelling or try another city."
+                elif "api key" in error_msg.lower() or "unauthorized" in error_msg.lower():
+                    error_display = "Weather service access error. Please try again later."
+                elif "limit" in error_msg.lower() and "rate" in error_msg.lower():
+                    error_display = "Too many requests to the weather service. Please try again in a few minutes."
+                elif "timeout" in error_msg.lower() or "connection" in error_msg.lower():
+                    error_display = "Connection timeout. Please check your internet connection and try again."
+                else:
+                    error_display = f"Failed to get weather data for '{city}'. Please try again later."
+                
+                # Display the popup error message
                 Messagebox.show_error(
-                    "Error",
-                    f"Failed to get weather data for {city}. Please try again."
+                    message="Error: PLEASE ENTER A VALID CITY AND STATE",
+                    title="Invalid City"
                 )
         except Exception as e:
             self.logger.error(f"Error in handle_weather_request: {str(e)}")
             Messagebox.show_error(
-                "Error",
-                "An unexpected error occurred while getting weather data."
+                message="Error: PLEASE ENTER A VALID CITY AND STATE",
+                title="Invalid City"
             )
 
     def load_history_data(self):

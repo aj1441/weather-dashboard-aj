@@ -2,6 +2,7 @@
 
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
+from core.state_utils import normalize_state_abbreviation
 
 class WeatherInputComponent:
     """Handles weather input fields and unit selection"""
@@ -60,7 +61,7 @@ class WeatherInputComponent:
     def on_get_weather(self):
         """Handle get weather button click"""
         city = self.city_var.get().strip()
-        state = self.state_var.get().strip()
+        state = normalize_state_abbreviation(self.state_var.get())
         units = self.unit_var.get()
 
         if hasattr(self, 'weather_callback'):

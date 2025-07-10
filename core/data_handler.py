@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Dict, List, Optional
 from config import Config
 from core.data_validator import WeatherDataValidator
+from core.state_utils import normalize_state_abbreviation
 from core.database import WeatherDatabase
 
 class WeatherDataHandler:
@@ -101,7 +102,10 @@ class WeatherDataHandler:
     def save_city(self, city_data: Dict) -> bool:
         """Save a city to saved locations"""
         try:
-            self.logger.info(f"Attempting to save city: {city_data.get('city')}, {city_data.get('state')}")
+            # Normalize state abbreviation to uppercase
+            state = normalize_state_abbreviation(city_data.get('state', ''))
+            
+            self.logger.info(f"Attempting to save city: {city_data.get('city')}, {state}")
             with self.db.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
@@ -110,7 +114,7 @@ class WeatherDataHandler:
                     ) VALUES (?, ?, ?, ?, ?)
                 ''', (
                     city_data.get('city'),
-                    city_data.get('state'),
+                    state,  # Use normalized state
                     city_data.get('country', 'US'),
                     city_data.get('latitude'),
                     city_data.get('longitude')

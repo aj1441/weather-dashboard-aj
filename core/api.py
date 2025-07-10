@@ -76,23 +76,30 @@ class WeatherAPI:
                     return json_data
                 elif response.status_code == 401:
                     self.logger.error("Invalid API key")
-                    return {"error": "Invalid API key"}
+                    return {"error": "API Error: Invalid API key or unauthorized access"}
                 elif response.status_code == 404:
                     self.logger.warning("Location not found")
-                    return {"error": "Location not found"}
+                    return {"error": "City not found"}
                 elif response.status_code == 429:
                     self.logger.warning("Rate limited by API. Waiting...")
                     time.sleep(60)  # Wait 1 minute for rate limit reset
                     continue
                 else:
                     self.logger.warning(f"API returned status {response.status_code}: {response.text}")
+                    return {"error": f"API Error: Server returned status {response.status_code}"}
                     
             except requests.exceptions.Timeout:
                 self.logger.warning(f"Request timeout (attempt {attempt + 1})")
+                if attempt == self.max_retries - 1:
+                    return {"error": "Connection timeout - please check your internet connection"}
             except requests.exceptions.ConnectionError:
                 self.logger.warning(f"Connection error (attempt {attempt + 1})")
+                if attempt == self.max_retries - 1:
+                    return {"error": "Connection error - please check your internet connection"}
             except requests.exceptions.RequestException as e:
                 self.logger.warning(f"Request failed (attempt {attempt + 1}): {e}")
+                if attempt == self.max_retries - 1:
+                    return {"error": f"Network error: {str(e)}"}
             
             # Wait before retry (except on last attempt)
             if attempt < self.max_retries - 1:
@@ -101,7 +108,7 @@ class WeatherAPI:
                 time.sleep(sleep_time)
         
         self.logger.error(f"Failed to fetch data after {self.max_retries} attempts")
-        return {"error": "API request failed after retries"}
+        return {"error": "API request failed after multiple attempts - please try again later"}
 
     def _validate_basic_structure(self, data: Dict) -> bool:
         """Validate that the API response has the expected basic structure"""
@@ -252,7 +259,7 @@ class WeatherAPI:
                     'country': location.get('country', 'US')
                 }
             else:
-                return {"error": "Location not found"}
+                return {"error": "City not found"}
         
         return raw_data
 

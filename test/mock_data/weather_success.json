@@ -1,0 +1,23 @@
+{
+  "name": "New York",
+  "main": {
+    "temp": 75.2,
+    "feels_like": 74.8,
+    "humidity": 65,
+    "pressure": 1012
+  },
+  "weather": [
+    {
+      "main": "Clear",
+      "description": "clear sky",
+      "icon": "01d"
+    }
+  ],
+  "wind": {
+    "speed": 5.82,
+    "deg": 250
+  },
+  "sys": {
+    "country": "US"
+  }
+}

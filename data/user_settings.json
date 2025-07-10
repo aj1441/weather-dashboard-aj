@@ -1,6 +1,6 @@
 {
   "theme": "aj_lightly",
-  "auto_theme_mode": false,
+  "auto_theme_mode": true,
   "light_theme": "aj_lightly",
   "dark_theme": "aj_darkly",
   "default_location": "",

@@ -3,6 +3,7 @@
 import logging
 import ttkbootstrap as tb
 from core.data_handler import WeatherDataHandler
+from core.state_utils import normalize_state_abbreviation
 
 class SavedCitiesComponent:
     """Handles displaying and managing saved cities using ttkbootstrap widgets."""
@@ -100,9 +101,10 @@ class SavedCitiesComponent:
         # Get Weather button
         def get_weather():
             if self.weather_callback:
+                state = normalize_state_abbreviation(city_data.get('state', ''))
                 self.weather_callback(
                     city_data.get('city'),
-                    city_data.get('state'),
+                    state,
                     city_data.get('country')
                 )
 

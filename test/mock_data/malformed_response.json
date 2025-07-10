@@ -1,0 +1,8 @@
+{
+  "name": "Broken Data",
+  "main": {
+    "temp": null,
+    "humidity": "invalid"
+  },
+  "weather": []
+}

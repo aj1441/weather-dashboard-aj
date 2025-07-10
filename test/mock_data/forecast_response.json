@@ -1,0 +1,20 @@
+{
+  "list": [
+    {
+      "dt": 1688558400,
+      "main": {"temp": 75.2, "humidity": 65},
+      "weather": [{"main": "Clear", "description": "clear sky", "icon": "01d"}],
+      "dt_txt": "2025-07-05 12:00:00"
+    },
+    {
+      "dt": 1688569200,
+      "main": {"temp": 80.1, "humidity": 60},
+      "weather": [{"main": "Clouds", "description": "few clouds", "icon": "02d"}],
+      "dt_txt": "2025-07-05 15:00:00"
+    }
+  ],
+  "city": {
+    "name": "Denver",
+    "country": "US"
+  }
+}

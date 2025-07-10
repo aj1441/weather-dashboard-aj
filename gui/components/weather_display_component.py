@@ -101,7 +101,7 @@ class WeatherDisplayComponent:
             text=f"{parsed['description'].title() if parsed['description'] != 'N/A' else 'Unknown'} | {temp_display}{parsed['unit_label']}\n{parsed['city']}"
         )
         
-        # Update save_city_btn city_data
+        # Update save_city_btn city_data - make sure we're using the proper city name from API response
         self.save_city_btn.city_data = weather_data
         
         # Show save button
@@ -171,7 +171,18 @@ class WeatherDisplayComponent:
     def show_error(self, error_message):
         """Display an error message"""
         self.weather_icon_label.config(text="❌")
-        self.weather_desc_label.config(text=f"Error: {error_message}")
+        
+        # Check for specific error messages and make them more user-friendly
+        if error_message == "City not found" or "not found" in error_message.lower():
+            display_message = "PLEASE ENTER A VALID CITY AND STATE"
+        elif "api" in error_message.lower() and "error" in error_message.lower():
+            display_message = "WEATHER SERVICE UNAVAILABLE - Please try again later"
+        elif "timeout" in error_message.lower() or "connection" in error_message.lower():
+            display_message = "CONNECTION ERROR - Please check your internet connection"
+        else:
+            display_message = error_message
+            
+        self.weather_desc_label.config(text=f"Error: {display_message}")
         
         # Hide save button and details
         self.save_city_btn.pack_forget()
