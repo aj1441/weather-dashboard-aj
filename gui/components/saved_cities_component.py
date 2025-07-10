@@ -117,6 +117,73 @@ class SavedCitiesComponent:
         )
         weather_btn.pack(side="right", padx=10, pady=5)
 
+        # Get History Button
+        def get_history():
+            from core.historical_coordinator import HistoricalDataCoordinator
+            
+            try:
+                coordinator = HistoricalDataCoordinator()
+                state = normalize_state_abbreviation(city_data.get('state', ''))
+                
+                # Get latitude and longitude from city data
+                lat = float(city_data.get('latitude', 0))
+                lon = float(city_data.get('longitude', 0))
+                
+                if lat == 0 or lon == 0:
+                    tb.dialogs.Messagebox.show_error(
+                        title="Location Error",
+                        message="Missing location coordinates for historical data"
+                    )
+                    return
+                
+                # Show loading message
+                self.logger.info(f"Fetching historical data for {city_data.get('city')}")
+                loading_label = tb.Label(
+                    card,
+                    text="Loading historical data...",
+                    font=("Helvetica Neue", 10, "italic")
+                )
+                loading_label.pack(side="right", padx=5)
+                card.update()
+                
+                # Fetch and store historical data
+                success, error = coordinator.fetch_and_store_historical_data(
+                    city=city_data.get('city'),
+                    state=state,
+                    latitude=lat,
+                    longitude=lon
+                )
+                
+                # Remove loading message
+                loading_label.destroy()
+                
+                if success:
+                    tb.dialogs.Messagebox.show_info(
+                        title="Success",
+                        message=f"Historical data for {city_data.get('city')} has been fetched and stored"
+                    )
+                else:
+                    tb.dialogs.Messagebox.show_error(
+                        title="Error",
+                        message=f"Failed to fetch historical data: {error}"
+                    )
+                    
+            except Exception as e:
+                self.logger.error(f"Error getting historical data: {e}")
+                tb.dialogs.Messagebox.show_error(
+                    title="Error",
+                    message=f"An error occurred while fetching historical data: {str(e)}"
+                )
+
+        history_btn = tb.Button(
+            card,
+            text="📊 History",
+            command=get_history,
+            width=10,
+            bootstyle="info-outline"
+        )
+        history_btn.pack(side="right", padx=10, pady=5)
+
         # Delete button
         def delete_city():
             self.data_handler.delete_city(

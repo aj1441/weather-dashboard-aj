@@ -5,6 +5,7 @@ import os
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional
+import pandas as pd
 from core.database import get_database
 
 logger = logging.getLogger(__name__)
@@ -142,3 +143,49 @@ class DatabaseDataHandler:
     def cleanup_old_data(self, days: int = 30) -> bool:
         """Clean up old weather data"""
         return self.db.cleanup_old_data(days)
+    
+    def save_historical_data(self, city: str, state: str, historical_df: pd.DataFrame) -> bool:
+        """
+        Save historical weather data from DataFrame
+        
+        Args:
+            city: City name
+            state: State abbreviation
+            historical_df: DataFrame containing historical weather data
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            success = True
+            for _, row in historical_df.iterrows():
+                if not self.db.save_historical_weather(city, state, row):
+                    success = False
+            return success
+        except Exception as e:
+            logger.error(f"Error saving historical data: {str(e)}")
+            return False
+    
+    def get_historical_data(self, city: str, state: str, start_date: datetime, end_date: datetime) -> List[Dict]:
+        """
+        Get historical weather data for a city
+        
+        Args:
+            city: City name
+            state: State abbreviation
+            start_date: Start date
+            end_date: End date
+            
+        Returns:
+            List of historical weather data dictionaries
+        """
+        try:
+            return self.db.get_historical_weather(
+                city=city,
+                state=state,
+                start_date=start_date.strftime("%Y-%m-%d"),
+                end_date=end_date.strftime("%Y-%m-%d")
+            )
+        except Exception as e:
+            logger.error(f"Error getting historical data: {str(e)}")
+            return []

@@ -1151,5 +1151,23 @@
     "wind_direction": 260,
     "visibility": 10000,
     "timestamp": "2025-07-09T17:21:44.991014"
+  },
+  {
+    "city": "Scottsdale",
+    "state": "AZ",
+    "country": "US",
+    "latitude": 33.4942189,
+    "longitude": -111.9260184,
+    "temperature": 112.68,
+    "feels_like": 109.83,
+    "humidity": 13,
+    "pressure": 1005.0,
+    "weather_main": "Clouds",
+    "weather_description": "broken clouds",
+    "weather_icon": "04d",
+    "wind_speed": 14.97,
+    "wind_direction": 260,
+    "visibility": 10000,
+    "timestamp": "2025-07-09T18:19:19.603544"
   }
 ]

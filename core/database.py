@@ -60,10 +60,10 @@ class WeatherDatabase:
                 cursor.execute("""
                     SELECT name FROM sqlite_master 
                     WHERE type='table' AND name IN 
-                    ('current_weather', 'forecast_weather', 'saved_locations', 'user_preferences')
+                    ('current_weather', 'forecast_weather', 'saved_locations', 'user_preferences', 'historical_weather')
                 """)
                 existing_tables = {row[0] for row in cursor.fetchall()}
-                required_tables = {'current_weather', 'forecast_weather', 'saved_locations', 'user_preferences'}
+                required_tables = {'current_weather', 'forecast_weather', 'saved_locations', 'user_preferences', 'historical_weather'}
                 missing_tables = required_tables - existing_tables
                 
                 if missing_tables:
@@ -161,6 +161,30 @@ class WeatherDatabase:
                 )
             ''')
             
+            # Historical weather table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS historical_weather (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    city TEXT NOT NULL,
+                    state TEXT,
+                    date DATE NOT NULL,
+                    temperature_max REAL,
+                    temperature_min REAL,
+                    temperature_mean REAL,
+                    precipitation REAL,
+                    rain REAL,
+                    wind_speed_max REAL,
+                    wind_gusts_max REAL,
+                    cloud_cover INTEGER,
+                    humidity INTEGER,
+                    latitude REAL,
+                    longitude REAL,
+                    sunrise INTEGER,
+                    sunset INTEGER,
+                    UNIQUE(city, state, date)
+                )
+            ''')
+            
             conn.commit()
     
     def save_current_weather(self, weather_data: Dict, city: str, state: str = None) -> bool:
@@ -253,6 +277,51 @@ class WeatherDatabase:
             logger.error("Error saving forecast data: %s", e)
             return False
     
+    def save_historical_weather(self, city: str, state: str, data: Dict) -> bool:
+        """
+        Save historical weather data to database
+        
+        Args:
+            city: City name
+            state: State code
+            data: Dictionary with historical weather data
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT OR REPLACE INTO historical_weather
+                    (city, state, date, temperature_max, temperature_min, temperature_mean,
+                     precipitation, rain, wind_speed_max, wind_gusts_max, cloud_cover,
+                     humidity, latitude, longitude, sunrise, sunset)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    city,
+                    state,
+                    data['date'],
+                    data['temperature_2m_max'],
+                    data['temperature_2m_min'],
+                    data['temperature_2m_mean'],
+                    data['precipitation_sum'],
+                    data['rain_sum'],
+                    data['wind_speed_10m_max'],
+                    data['wind_gusts_10m_max'],
+                    data['cloud_cover_mean'],
+                    data['relative_humidity_2m_mean'],
+                    data['latitude'],
+                    data['longitude'],
+                    data['sunrise'],
+                    data['sunset']
+                ))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Error saving historical weather data: {str(e)}")
+            return False
+    
     def get_current_weather(self, city: str, state: str = None, max_age_hours: int = 1) -> Optional[Dict]:
         """Retrieve current weather data from database if recent enough"""
         try:
@@ -297,6 +366,36 @@ class WeatherDatabase:
                 
         except Exception as e:
             logger.error("Error retrieving forecast data: %s", e)
+            return []
+    
+    def get_historical_weather(self, city: str, state: str, start_date: str, end_date: str) -> List[Dict]:
+        """
+        Get historical weather data for a city between dates
+        
+        Args:
+            city: City name
+            state: State code
+            start_date: Start date string (YYYY-MM-DD)
+            end_date: End date string (YYYY-MM-DD)
+            
+        Returns:
+            List of weather data dictionaries
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT *
+                    FROM historical_weather
+                    WHERE city = ? AND state = ?
+                    AND date BETWEEN ? AND ?
+                    ORDER BY date ASC
+                ''', (city, state, start_date, end_date))
+                
+                return [dict(row) for row in cursor.fetchall()]
+                
+        except Exception as e:
+            logger.error(f"Error retrieving historical weather data: {str(e)}")
             return []
     
     def save_location(
@@ -426,6 +525,12 @@ class WeatherDatabase:
                 cursor.execute('''
                     DELETE FROM forecast_weather 
                     WHERE datetime(created_timestamp) < datetime('now', '-{} days')
+                '''.format(days_to_keep))
+                
+                # Clean up old historical weather data
+                cursor.execute('''
+                    DELETE FROM historical_weather 
+                    WHERE date < date('now', '-{} days')
                 '''.format(days_to_keep))
                 
                 conn.commit()
