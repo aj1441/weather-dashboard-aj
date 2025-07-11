@@ -143,6 +143,7 @@ class TabbedWeatherDashboard:
         # Weather input component
         self.input_component = WeatherInputComponent(weather_tab)
         self.input_component.set_weather_callback(self.handle_weather_request)
+        self.input_component.set_unit_change_callback(self.handle_unit_change)  # Add this line
         input_frame = self.input_component.setup_component()
         input_frame.pack(pady=10, padx=20, fill=X)
 
@@ -582,6 +583,76 @@ class TabbedWeatherDashboard:
         if hasattr(self.saved_cities_component, "restyle"):
             self.saved_cities_component.restyle()
 
+    def handle_unit_change(self, new_unit):
+        """Handle temperature unit change and update displays"""
+        self.logger.debug(f"Temperature unit changed to {new_unit}")
+        
+        # Get the currently displayed city and state
+        city = self.input_component.get_city()
+        state = self.input_component.get_state()
+        
+        if not city:
+            return
+            
+        # Get current weather data from display
+        current_data = self.weather_display.get_current_data()
+        if not current_data:
+            return
+            
+        # Get current unit before switching
+        old_unit = 'metric' if new_unit == 'imperial' else 'imperial'
+        
+        # Convert temperatures without making API calls
+        converted_data = self._convert_temperature_data(current_data, old_unit, new_unit)
+        
+        # Update displays with converted data
+        self.weather_display.update_display(converted_data)
+        if hasattr(self, 'forecast_display'):
+            self.forecast_display.update_forecast(converted_data.get('forecast', []))
+
+    def _convert_temperature_data(self, data: dict, from_unit: str, to_unit: str) -> dict:
+        """Convert temperature values in weather data between units
+        
+        Args:
+            data: Weather data dictionary
+            from_unit: Current unit ('imperial' or 'metric')
+            to_unit: Target unit ('imperial' or 'metric')
+            
+        Returns:
+            Dictionary with converted temperature values
+        """
+        from core.conversion_utils import convert_to_celsius, convert_to_fahrenheit
+        
+        if from_unit == to_unit:
+            return data
+            
+        converted = data.copy()
+        
+        # Convert main temperature values
+        if 'temp' in converted.get('current', {}):
+            if to_unit == 'metric':
+                converted['current']['temp'] = convert_to_celsius(data['current']['temp'])
+                if 'feels_like' in converted['current']:
+                    converted['current']['feels_like'] = convert_to_celsius(data['current']['feels_like'])
+            else:
+                converted['current']['temp'] = convert_to_fahrenheit(data['current']['temp'])
+                if 'feels_like' in converted['current']:
+                    converted['current']['feels_like'] = convert_to_fahrenheit(data['current']['feels_like'])
+        
+        # Convert forecast temperatures
+        for forecast in converted.get('forecast', []):
+            if to_unit == 'metric':
+                forecast['temp_min'] = convert_to_celsius(forecast['temp_min'])
+                forecast['temp_max'] = convert_to_celsius(forecast['temp_max'])
+                forecast['temp_day'] = convert_to_celsius(forecast['temp_day'])
+                forecast['temp_night'] = convert_to_celsius(forecast['temp_night'])
+            else:
+                forecast['temp_min'] = convert_to_fahrenheit(forecast['temp_min'])
+                forecast['temp_max'] = convert_to_fahrenheit(forecast['temp_max'])
+                forecast['temp_day'] = convert_to_fahrenheit(forecast['temp_day'])
+                forecast['temp_night'] = convert_to_fahrenheit(forecast['temp_night'])
+        
+        return converted
 
     def run(self):
         """Start the application main loop with proper cleanup"""

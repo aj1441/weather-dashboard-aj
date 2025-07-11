@@ -1,4 +1,14 @@
-"""Main entry point for the Weather Dashboard application."""
+"""Main entry point for the Weather Dashboard application.
+
+This module serves as the application's entry point and handles:
+1. Environment validation and configuration loading
+2. Logging setup and initialization
+3. Application startup coordination
+4. High-level error handling and graceful shutdown
+
+The main.py file is kept focused on application bootstrapping,
+with all business logic and utilities moved to appropriate modules.
+"""
 
 import logging
 import sys
@@ -8,17 +18,19 @@ from config import Config
 from gui.tabbed_main_window import TabbedWeatherDashboard
 
 
-def add_numbers(a, b):
-    """Return the sum of two numbers."""
-    return a + b
-
-
-def convert_to_fahrenheit(celsius):
-    """Convert Celsius to Fahrenheit."""
-    return celsius * 9 / 5 + 32
-
 def setup_logging(config: Config):
-    """Configure application logging with file and console handlers"""
+    """
+    Configure application-wide logging with both file and console handlers.
+    
+    Args:
+        config: Application configuration object containing log settings
+        
+    This function:
+    1. Creates log directory if needed
+    2. Sets up console and file logging handlers
+    3. Configures external library log levels
+    4. Establishes unified log format
+    """
     
     # Ensure log directory exists
     log_dir = Path(config.database_path).parent
@@ -43,7 +55,18 @@ def setup_logging(config: Config):
     logging.getLogger('urllib3').setLevel(logging.WARNING)
 
 def validate_environment():
-    """Validate that required environment is set up correctly"""
+    """
+    Validate that required environment is set up correctly.
+    
+    Returns:
+        Config: Validated configuration object or None if validation fails
+        
+    This function:
+    1. Loads and validates environment variables
+    2. Validates API key format
+    3. Ensures required directories exist
+    4. Provides helpful error messages for common issues
+    """
     try:
         config = Config.from_environment()
         
@@ -69,7 +92,22 @@ def validate_environment():
         return None
 
 def main():
-    """Launch the weather dashboard application with enhanced configuration and error handling"""
+    """
+    Launch the weather dashboard application with enhanced configuration and error handling.
+    
+    The startup sequence:
+    1. Environment validation
+    2. Logging setup
+    3. Configuration logging
+    4. GUI initialization
+    5. Application main loop
+    6. Graceful shutdown
+    
+    Handles common startup errors:
+    - Missing dependencies
+    - Configuration errors
+    - Unexpected exceptions
+    """
     
     # Validate environment and load configuration
     config = validate_environment()

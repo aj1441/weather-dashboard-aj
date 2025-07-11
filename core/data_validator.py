@@ -40,6 +40,8 @@ class ValidationRules:
     # Visibility range (meters)
     max_visibility: int = 50000
 
+    # No special initialization needed by default
+
 class WeatherDataValidator:
     """Validates and cleans weather data from API responses"""
     
@@ -548,4 +550,8 @@ class WeatherDataValidator:
         except Exception as e:
             self.logger.error(f"Error validating weather data: {str(e)}")
             return False
+    
+    # Internal validation methods are handled within the main validation methods
+    
+    # Default initialization is sufficient
 

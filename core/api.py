@@ -4,10 +4,14 @@ import requests
 import time
 import logging
 from datetime import datetime
+from functools import wraps
 from typing import Dict, Optional
 from config import Config
 from core.data_validator import WeatherDataValidator
 from core.decorators import rate_limit, retry_on_failure, log_execution_time
+from core.open_meteo_client import OpenMeteoClient
+from core.decorators import rate_limit, retry_on_failure, log_execution_time
+from core.open_meteo_client import OpenMeteoClient
 
 class WeatherAPI:
     """Enhanced weather API client with rate limiting, retries, and data validation"""
@@ -38,6 +42,9 @@ class WeatherAPI:
         # Initialize data validator with correct temperature unit and logger
         self.validator = WeatherDataValidator(temperature_unit=self.units)
         self.logger = logging.getLogger(__name__)
+        
+        # Initialize fallback API client
+        self.fallback_client = OpenMeteoClient(timeout=self.timeout)
         
         self.logger.info(f"WeatherAPI initialized with base_url={self.base_url}, units={self.units}")
     
@@ -188,7 +195,32 @@ class WeatherAPI:
             else:
                 return {"error": "Data validation failed"}
         
-        return raw_data  # Return error if request failed
+        # If primary API failed, try the fallback
+        self.logger.warning("Primary API failed, attempting fallback to OpenMeteo")
+        fallback_data = self.fallback_client.fetch_weather(
+            lat=coords['lat'],
+            lon=coords['lon'],
+            units=units
+        )
+        
+        if fallback_data and "error" not in fallback_data:
+            # Add location information to the fallback data
+            fallback_data.update({
+                'city': coords['name'],
+                'state': coords['state'],
+                'country': coords['country'],
+                'latitude': coords['lat'],
+                'longitude': coords['lon']
+            })
+            
+            # Validate and clean the fallback data
+            cleaned_fallback = self.validator.validate_and_clean_current_weather(fallback_data)
+            if cleaned_fallback:
+                self.logger.info("Successfully fetched weather data from fallback API")
+                return cleaned_fallback
+        
+        # If both primary and fallback failed, return the original error
+        return raw_data
 
     def fetch_weather(self, city: str) -> Optional[Dict]:
         """
@@ -711,22 +743,54 @@ class WeatherAPI:
             self.logger.error(f"Error getting weather data: {str(e)}")
             return {"error": f"Failed to get weather data: {str(e)}"}
 
-# Legacy functions for backward compatibility
-def fetch_weather_data(city, state, units=None):
-    """Legacy function - wraps the new class-based approach"""
-    try:
-        config = Config.from_environment()
-        api = WeatherAPI(config)
-    except:
-        # Fallback to old approach
-        api = WeatherAPI()
-    return api.fetch_weather_data(city, state, units)
+    @staticmethod
+    def _convert_temperature(temp: float, from_unit: str, to_unit: str) -> float:
+        """Convert temperature between units
+        
+        Args:
+            temp: Temperature value to convert
+            from_unit: Current unit ('imperial', 'metric')
+            to_unit: Target unit ('imperial', 'metric')
+            
+        Returns:
+            Converted temperature value
+        """
+        if from_unit == to_unit or temp is None:
+            return temp
+            
+        if from_unit == 'imperial' and to_unit == 'metric':
+            return round((temp - 32) * 5/9, 1)  # F to C
+        elif from_unit == 'metric' and to_unit == 'imperial':
+            return round((temp * 9/5) + 32, 1)  # C to F
+        return temp
 
-def fetch_weather(city):
-    """Legacy function - wraps the new class-based approach"""
-    try:
-        config = Config.from_environment()
-        api = WeatherAPI(config)
-    except:
-        api = WeatherAPI()
-    return api.fetch_weather(city)
+    def _convert_weather_data(self, data: Dict, to_unit: str) -> Dict:
+        """Convert all temperature values in weather data to specified unit
+        
+        Args:
+            data: Weather data dictionary
+            to_unit: Target temperature unit
+            
+        Returns:
+            Weather data with converted temperatures
+        """
+        if not data or 'error' in data:
+            return data
+            
+        from_unit = self.units  # Current unit
+        
+        # Convert current weather temperatures
+        if 'temperature' in data:
+            data['temperature'] = self._convert_temperature(data['temperature'], from_unit, to_unit)
+        if 'feels_like' in data:
+            data['feels_like'] = self._convert_temperature(data['feels_like'], from_unit, to_unit)
+            
+        # Convert forecast temperatures if present
+        if 'forecast' in data:
+            for day in data['forecast']:
+                day['temp_min'] = self._convert_temperature(day.get('temp_min'), from_unit, to_unit)
+                day['temp_max'] = self._convert_temperature(day.get('temp_max'), from_unit, to_unit)
+                day['temp_day'] = self._convert_temperature(day.get('temp_day'), from_unit, to_unit)
+                day['temp_night'] = self._convert_temperature(day.get('temp_night'), from_unit, to_unit)
+                
+        return data

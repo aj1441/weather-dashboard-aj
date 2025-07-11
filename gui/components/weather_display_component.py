@@ -260,3 +260,11 @@ class WeatherDisplayComponent:
         except Exception as e:
             self.logger.error(f"Error during restyle in WeatherDisplayComponent: {e}")
 
+    def get_current_data(self) -> dict:
+        """Get the currently displayed weather data
+        
+        Returns:
+            Dictionary containing the current weather data and forecast
+        """
+        return self.current_data
+

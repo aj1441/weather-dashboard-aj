@@ -1,22 +1,18 @@
 # Quick Setup Guide
 
-## ✅ What We've Fixed:
+## ✅ Features Ready to Use:
 
-1. **Custom Theme Integration**: Your `aj_darkly` theme is now properly integrated
-2. **Theme Toggle Logic**: Fixed the backwards light/dark mode issue
-3. **Default Theme**: Changed default from "darkly" to "aj_darkly"
+1. **Weather Data**: Real-time weather information using Open-Meteo API (no API key required)
+2. **Custom Themes**: Both `aj_darkly` and `aj_lightly` themes integrated
+3. **Auto Day/Night**: Location-aware automatic theme switching
+4. **Historical Data**: Weather history from 2010 to present
+5. **Saved Cities**: Quick access to favorite locations
 
-## 🔧 What You Need To Do:
+## 🔧 Setup Steps:
 
-### 1. Fix the API Key Warning
-Replace this line in your `.env` file:
-```
-API_KEY=your_actual_32_character_api_key_here
-```
-
-With your real API key from OpenWeatherMap:
-```
-API_KEY=your_real_32_character_api_key
+### 1. Install Dependencies
+```bash
+pip install -r requirements.txt
 ```
 
 ### 2. Test the Application
@@ -24,23 +20,35 @@ API_KEY=your_real_32_character_api_key
 python3 main.py
 ```
 
-### 3. Clean Up (Optional)
-You can now delete the old theme file:
-```bash
-rm features/user.py
-```
+### 3. First Launch Tips
+- The app will automatically detect your location for weather and theme settings
+- You can toggle between auto and manual theme modes
+- Save your favorite cities for quick access
 
-## 🎨 How the Theme System Now Works:
+## 🎨 Advanced Theme System:
 
-- **Light Mode**: Uses "pulse" theme (clean, bright)
-- **Dark Mode**: Uses your custom "aj_darkly" theme with your color scheme
-- **Toggle**: ☀ Light / 🌙 Dark button correctly switches between them
-- **Persistence**: Your theme choice is saved and restored
+### Auto Day/Night Mode
+- **🌅 Auto Mode**: Automatically switches between light and dark themes based on local sunrise/sunset
+- **Location Aware**: Updates theme based on the city you're viewing
+- **Manual Override**: Full control with light/dark toggle when auto mode is disabled
 
-## 🚀 Your Custom Theme Colors:
-- Primary Blue: `#00bce9`
-- Background: `#121212` (dark)
-- Text: `#f5f5f5` (light)
-- Accent: `#ccb9ec` (purple selection)
+### Theme Options
+- **Light Mode**: Uses custom `aj_lightly` theme (clean, modern design)
+- **Dark Mode**: Uses custom `aj_darkly` theme (eye-friendly dark scheme)
+- **Persistence**: All theme preferences are saved automatically
 
-The theme system is now properly set up to use your custom dark theme!
+### Custom Theme Integration
+- **aj_darkly Colors**:
+  - Primary: `#00bce9` (blue)
+  - Background: `#121212` (dark)
+  - Text: `#f5f5f5` (light)
+  - Accent: `#ccb9ec` (purple)
+- **aj_lightly Colors**:
+  - [Your light theme colors here]
+
+## 🔄 Auto-updating Features
+- **30-minute Theme Refresh**: Keeps theme in sync with day/night cycle
+- **Real-time Weather**: Current conditions and forecasts
+- **Historical Data**: Automatically updates and maintains historical weather records
+
+For detailed documentation on the theme system, see `docs/AUTO_THEME_IMPLEMENTATION.md`.

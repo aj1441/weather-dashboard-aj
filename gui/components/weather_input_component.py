@@ -87,6 +87,10 @@ class WeatherInputComponent:
         """Set the callback function for when weather is requested"""
         self.weather_callback = callback
 
+    def set_unit_change_callback(self, callback):
+        """Set the callback function for when the temperature unit is changed"""
+        self.on_unit_change = callback
+
     def clear_inputs(self):
         """Clear all input fields"""
         self.city_var.set("")
