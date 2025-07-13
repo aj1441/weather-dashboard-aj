@@ -16,20 +16,7 @@ import os
 from pathlib import Path
 from config import Config
 from gui.tabbed_main_window import TabbedWeatherDashboard
-from core.conversion_utils import (
-    add_numbers as _add_numbers_util,
-    convert_to_fahrenheit as _convert_to_fahrenheit_util,
-)
-
-
-def add_numbers(a: float, b: float) -> float:
-    """Expose simple addition for tests."""
-    return _add_numbers_util(a, b)
-
-
-def convert_to_fahrenheit(celsius: float) -> float:
-    """Expose Celsius to Fahrenheit conversion for tests."""
-    return _convert_to_fahrenheit_util(celsius)
+from core.conversion_utils import add_numbers, convert_to_fahrenheit
 
 
 def setup_logging(config: Config):

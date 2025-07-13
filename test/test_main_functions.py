@@ -17,7 +17,12 @@
    For example, if a function processes a list, test it with an empty list, a single element list, and a large list with thousands of elements.
    This helps in identifying any performance bottlenecks in the code.
 '''
-from main import add_numbers, convert_to_fahrenheit
+import os
+import sys
+# Import conversion utilities directly from the module to avoid pulling in the
+# entire core package (which has heavy GUI dependencies).
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'core')))
+from conversion_utils import add_numbers, convert_to_fahrenheit
 
 def test_add_numbers():
     """Test the add_numbers function."""
