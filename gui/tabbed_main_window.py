@@ -13,7 +13,7 @@ import time
 from datetime import datetime
 from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
 from ttkbootstrap.dialogs import Messagebox
-from core.utils import load_user_theme
+from core.utils import load_user_theme, load_auto_theme_settings
 from core.api import WeatherAPI
 from core.data_handler import WeatherDataHandler
 from core.custom_themes import register_custom_themes, get_fallback_theme
@@ -27,9 +27,9 @@ class TabbedWeatherDashboard:
         self.config = config
         self.logger = logging.getLogger(__name__)
         
-        # Load last used theme
+        # Load last used theme and auto mode preference
         self.current_theme = load_user_theme()
-        self.auto_theme = False
+        self.auto_mode, _, _ = load_auto_theme_settings()
         self.auto_theme_thread = None
         self.auto_theme_running = False
 
@@ -69,16 +69,20 @@ class TabbedWeatherDashboard:
         self.load_saved_cities()
 
     def start_auto_theme_refresh(self):
-        """Start the auto theme refresh thread if auto theme is enabled"""
-        self.auto_theme = True
+        """Start the auto theme refresh thread if auto mode is enabled"""
+        if not self.auto_mode:
+            self.logger.info("Auto mode disabled - not starting refresh thread")
+            return
+
         if not self.auto_theme_thread or not self.auto_theme_thread.is_alive():
-                self.auto_theme_running = True
-                self.auto_theme_thread = threading.Thread(target=self._auto_theme_loop, daemon=True)
-                self.auto_theme_thread.start()
-                self.logger.info("Auto theme refresh started")
+            self.auto_theme_running = True
+            self.auto_theme_thread = threading.Thread(target=self._auto_theme_loop, daemon=True)
+            self.auto_theme_thread.start()
+            self.logger.info("Auto theme refresh started")
 
     def stop_auto_theme_refresh(self):
         """Stop the auto theme refresh thread"""
+        self.auto_mode = False
         self.auto_theme_running = False
         if self.auto_theme_thread and self.auto_theme_thread.is_alive():
             self.auto_theme_thread.join(timeout=1.0)
@@ -122,6 +126,10 @@ class TabbedWeatherDashboard:
         theme_controls = self.theme_component.theme_frame
         theme_controls.pack(pady=10)
 
+        # Apply the appropriate theme on startup using IP location
+        self.theme_component.apply_auto_theme()
+        self.auto_mode = self.theme_component.auto_mode
+
         # Create notebook for tabs
         self.notebook = tb.Notebook(self.app, bootstyle="primary")
         self.notebook.pack(expand=True, fill="both", padx=10, pady=10)
@@ -131,8 +139,9 @@ class TabbedWeatherDashboard:
         self.setup_history_tab()
         self.setup_about_tab()
         
-        # Start periodic auto theme refresh if auto mode is enabled
-        self.start_auto_theme_refresh()
+        # Start periodic auto theme refresh only when auto mode is enabled
+        if self.auto_mode:
+            self.start_auto_theme_refresh()
 
     def setup_weather_tab(self):
         """Setup the main weather tab"""
