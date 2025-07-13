@@ -45,7 +45,7 @@ class ThemeComponent:
 
 
         # ✅ Confirm themes are loaded AFTER registration and before widget creation
-        print("Available themes:", style.theme_names())
+        logger.debug("Available themes: %s", style.theme_names())
 
 
         # Load auto theme settings
