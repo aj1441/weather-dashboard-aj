@@ -266,5 +266,5 @@ class WeatherDisplayComponent:
         Returns:
             Dictionary containing the current weather data and forecast
         """
-        return self.current_data
+        return self.current_weather_data
 
