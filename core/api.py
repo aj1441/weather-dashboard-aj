@@ -10,8 +10,6 @@ from config import Config
 from core.data_validator import WeatherDataValidator
 from core.decorators import rate_limit, retry_on_failure, log_execution_time
 from core.open_meteo_client import OpenMeteoClient
-from core.decorators import rate_limit, retry_on_failure, log_execution_time
-from core.open_meteo_client import OpenMeteoClient
 
 class WeatherAPI:
     """Enhanced weather API client with rate limiting, retries, and data validation"""

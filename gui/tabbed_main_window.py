@@ -13,10 +13,12 @@ import time
 from datetime import datetime
 from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
 from ttkbootstrap.dialogs import Messagebox
-from core.utils import load_user_theme
+from core.utils import load_user_theme, load_auto_theme_settings
 from core.api import WeatherAPI
 from core.data_handler import WeatherDataHandler
 from core.custom_themes import register_custom_themes, get_fallback_theme
+from core.auto_theme import AutoThemeManager
+from core.location_service import LocationService
 from gui.components import ThemeComponent, WeatherInputComponent, WeatherDisplayComponent, SavedCitiesComponent, ForecastDisplayComponent
 
 class TabbedWeatherDashboard:
@@ -27,11 +29,13 @@ class TabbedWeatherDashboard:
         self.config = config
         self.logger = logging.getLogger(__name__)
         
-        # Load last used theme
+        # Load last used theme and auto mode preference
         self.current_theme = load_user_theme()
-        self.auto_theme = False
+        self.auto_mode, _, _ = load_auto_theme_settings()
         self.auto_theme_thread = None
         self.auto_theme_running = False
+        self.auto_theme_manager = AutoThemeManager()
+        self.location_service = LocationService()
 
         #1. Create the actual window BEFORE theme registration
         self.app = tb.Window()
@@ -69,16 +73,20 @@ class TabbedWeatherDashboard:
         self.load_saved_cities()
 
     def start_auto_theme_refresh(self):
-        """Start the auto theme refresh thread if auto theme is enabled"""
-        self.auto_theme = True
+        """Start the auto theme refresh thread if auto mode is enabled"""
+        if not self.auto_mode:
+            self.logger.info("Auto mode disabled - not starting refresh thread")
+            return
+
         if not self.auto_theme_thread or not self.auto_theme_thread.is_alive():
-                self.auto_theme_running = True
-                self.auto_theme_thread = threading.Thread(target=self._auto_theme_loop, daemon=True)
-                self.auto_theme_thread.start()
-                self.logger.info("Auto theme refresh started")
+            self.auto_theme_running = True
+            self.auto_theme_thread = threading.Thread(target=self._auto_theme_loop, daemon=True)
+            self.auto_theme_thread.start()
+            self.logger.info("Auto theme refresh started")
 
     def stop_auto_theme_refresh(self):
         """Stop the auto theme refresh thread"""
+        self.auto_mode = False
         self.auto_theme_running = False
         if self.auto_theme_thread and self.auto_theme_thread.is_alive():
             self.auto_theme_thread.join(timeout=1.0)
@@ -89,28 +97,37 @@ class TabbedWeatherDashboard:
         """Background thread for auto theme switching"""
         while self.auto_theme_running:
             try:
-                self.logger.info(f"[auto_theme_loop] Checking time-based theme at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-                current_hour = datetime.now().hour
-                new_theme = "aj_darkly" if current_hour >= 18 or current_hour < 6 else "aj_lightly"
-                
+                self.logger.info(
+                    f"[auto_theme_loop] Checking location-based theme at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                )
+
+                location = self.location_service.get_user_location()
+                if location:
+                    new_theme = self.auto_theme_manager.get_recommended_theme(
+                        location.latitude, location.longitude
+                    )
+                else:
+                    self.logger.warning("Location unavailable, falling back to default auto theme logic")
+                    new_theme = self.auto_theme_manager.get_recommended_theme()
+
                 if new_theme != self.current_theme:
                     self.logger.info(f"Auto switching theme to {new_theme}")
                     self.app.style.theme_use(new_theme)
                     self.current_theme = new_theme
                     self.app.update_idletasks()
 
-                    #Notify all components to refresh
                     if hasattr(self, "restyle_all_components"):
                         self.restyle_all_components()
-                        self.logger.info("[auto_theme_loop] Called restyle_all_components() after theme switch")
+                        self.logger.info(
+                            "[auto_theme_loop] Called restyle_all_components() after theme switch"
+                        )
 
-                
-                # Sleep for 5 minutes before next check
-                for _ in range(300):  # 5 minutes * 60 seconds = 300
+                # Sleep for 30 minutes before next check
+                for _ in range(1800):
                     if not self.auto_theme_running:
                         break
                     time.sleep(1)
-                    
+
             except Exception as e:
                 self.logger.error(f"Error in auto theme refresh: {str(e)}")
                 time.sleep(60)  # Wait a minute before trying again
@@ -122,6 +139,10 @@ class TabbedWeatherDashboard:
         theme_controls = self.theme_component.theme_frame
         theme_controls.pack(pady=10)
 
+        # Apply the appropriate theme on startup using IP location
+        self.theme_component.apply_auto_theme()
+        self.auto_mode = self.theme_component.auto_mode
+
         # Create notebook for tabs
         self.notebook = tb.Notebook(self.app, bootstyle="primary")
         self.notebook.pack(expand=True, fill="both", padx=10, pady=10)
@@ -131,8 +152,9 @@ class TabbedWeatherDashboard:
         self.setup_history_tab()
         self.setup_about_tab()
         
-        # Start periodic auto theme refresh if auto mode is enabled
-        self.start_auto_theme_refresh()
+        # Start periodic auto theme refresh only when auto mode is enabled
+        if self.auto_mode:
+            self.start_auto_theme_refresh()
 
     def setup_weather_tab(self):
         """Setup the main weather tab"""
@@ -148,14 +170,14 @@ class TabbedWeatherDashboard:
         input_frame.pack(pady=10, padx=20, fill=X)
 
         # Weather display component
-        self.display_component = WeatherDisplayComponent(weather_tab)
-        self.display_component.set_save_city_callback(self.handle_save_city)
-        display_frame = self.display_component.setup_component()
+        self.weather_display = WeatherDisplayComponent(weather_tab)
+        self.weather_display.set_save_city_callback(self.handle_save_city)
+        display_frame = self.weather_display.setup_component()
         display_frame.pack(pady=20, fill=X)
 
         # Forecast display component
-        self.forecast_component = ForecastDisplayComponent(weather_tab)
-        forecast_frame = self.forecast_component.setup_component()
+        self.forecast_display = ForecastDisplayComponent(weather_tab)
+        forecast_frame = self.forecast_display.setup_component()
         forecast_frame.pack(pady=20, fill=BOTH, expand=True)  # Added expand=True
 
     def setup_saved_cities_tab(self):
@@ -467,7 +489,7 @@ class TabbedWeatherDashboard:
                 }
                 
                 # Update display with current weather data
-                self.display_component.update_display(weather_data)
+                self.weather_display.update_display(weather_data)
                 
                 # Save weather data
                 self.data_handler.save_weather_data_validated(weather_data)
@@ -475,7 +497,7 @@ class TabbedWeatherDashboard:
                 # Update forecast if available
                 forecast_data = comprehensive_data.get('forecast', [])
                 if forecast_data:
-                    self.forecast_component.update_forecast_display(forecast_data)
+                    self.forecast_display.update_forecast_display(forecast_data)
                     
                     # Save forecast data to database
                     location_data = comprehensive_data.get('location', {})
@@ -576,10 +598,10 @@ class TabbedWeatherDashboard:
         """Refresh the styles of all major components after a theme change."""
         if hasattr(self.input_component, "restyle"):
             self.input_component.restyle()
-        if hasattr(self.display_component, "restyle"):
-            self.display_component.restyle()
-        if hasattr(self.forecast_component, "restyle"):
-            self.forecast_component.restyle()
+        if hasattr(self.weather_display, "restyle"):
+            self.weather_display.restyle()
+        if hasattr(self.forecast_display, "restyle"):
+            self.forecast_display.restyle()
         if hasattr(self.saved_cities_component, "restyle"):
             self.saved_cities_component.restyle()
 
