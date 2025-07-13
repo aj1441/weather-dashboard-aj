@@ -17,6 +17,8 @@ from core.utils import load_user_theme
 from core.api import WeatherAPI
 from core.data_handler import WeatherDataHandler
 from core.custom_themes import register_custom_themes, get_fallback_theme
+from core.auto_theme import AutoThemeManager
+from core.location_service import LocationService
 from gui.components import ThemeComponent, WeatherInputComponent, WeatherDisplayComponent, SavedCitiesComponent, ForecastDisplayComponent
 
 class TabbedWeatherDashboard:
@@ -32,6 +34,8 @@ class TabbedWeatherDashboard:
         self.auto_theme = False
         self.auto_theme_thread = None
         self.auto_theme_running = False
+        self.auto_theme_manager = AutoThemeManager()
+        self.location_service = LocationService()
 
         #1. Create the actual window BEFORE theme registration
         self.app = tb.Window()
@@ -89,28 +93,37 @@ class TabbedWeatherDashboard:
         """Background thread for auto theme switching"""
         while self.auto_theme_running:
             try:
-                self.logger.info(f"[auto_theme_loop] Checking time-based theme at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-                current_hour = datetime.now().hour
-                new_theme = "aj_darkly" if current_hour >= 18 or current_hour < 6 else "aj_lightly"
-                
+                self.logger.info(
+                    f"[auto_theme_loop] Checking location-based theme at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                )
+
+                location = self.location_service.get_user_location()
+                if location:
+                    new_theme = self.auto_theme_manager.get_recommended_theme(
+                        location.latitude, location.longitude
+                    )
+                else:
+                    self.logger.warning("Location unavailable, falling back to default auto theme logic")
+                    new_theme = self.auto_theme_manager.get_recommended_theme()
+
                 if new_theme != self.current_theme:
                     self.logger.info(f"Auto switching theme to {new_theme}")
                     self.app.style.theme_use(new_theme)
                     self.current_theme = new_theme
                     self.app.update_idletasks()
 
-                    #Notify all components to refresh
                     if hasattr(self, "restyle_all_components"):
                         self.restyle_all_components()
-                        self.logger.info("[auto_theme_loop] Called restyle_all_components() after theme switch")
+                        self.logger.info(
+                            "[auto_theme_loop] Called restyle_all_components() after theme switch"
+                        )
 
-                
-                # Sleep for 5 minutes before next check
-                for _ in range(300):  # 5 minutes * 60 seconds = 300
+                # Sleep for 30 minutes before next check
+                for _ in range(1800):
                     if not self.auto_theme_running:
                         break
                     time.sleep(1)
-                    
+
             except Exception as e:
                 self.logger.error(f"Error in auto theme refresh: {str(e)}")
                 time.sleep(60)  # Wait a minute before trying again

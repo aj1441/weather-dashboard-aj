@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 from config import Config
 from gui.tabbed_main_window import TabbedWeatherDashboard
+from core.conversion_utils import add_numbers, convert_to_fahrenheit
 
 
 def setup_logging(config: Config):
