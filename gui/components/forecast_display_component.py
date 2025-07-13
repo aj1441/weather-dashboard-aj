@@ -92,33 +92,33 @@ class ForecastDisplayComponent:
         for widget in self.forecast_cards_frame.winfo_children():
             widget.destroy()
         self.forecast_cards.clear()
-        
+
         self.show_placeholder()
 
-def restyle(self):
-    """Force a style refresh for forecast widgets."""
-    try:
-        if hasattr(self, "forecast_frame"):
-            self.forecast_frame.update_idletasks()
+    def restyle(self):
+        """Force a style refresh for forecast widgets."""
+        try:
+            if hasattr(self, "forecast_frame"):
+                self.forecast_frame.update_idletasks()
 
-            for widget in self.forecast_frame.winfo_children():
-                try:
-                    widget.configure()
-                except Exception:
-                    pass  # Some widgets may not support configure()
+                for widget in self.forecast_frame.winfo_children():
+                    try:
+                        widget.configure()
+                    except Exception:
+                        pass  # Some widgets may not support configure()
 
-        if hasattr(self, "forecast_cards_frame"):
-            for widget in self.forecast_cards_frame.winfo_children():
-                try:
-                    widget.configure()
-                except Exception:
-                    pass
+            if hasattr(self, "forecast_cards_frame"):
+                for widget in self.forecast_cards_frame.winfo_children():
+                    try:
+                        widget.configure()
+                    except Exception:
+                        pass
 
-        # Re-apply bootstyle to title if needed
-        if hasattr(self, "forecast_title"):
-            self.forecast_title.configure(bootstyle="primary")
+            # Re-apply bootstyle to title if needed
+            if hasattr(self, "forecast_title"):
+                self.forecast_title.configure(bootstyle="primary")
 
-        print("[restyle] ForecastDisplayComponent restyled.")
+            print("[restyle] ForecastDisplayComponent restyled.")
 
-    except Exception as e:
-        print(f"[restyle] Error restyling ForecastDisplayComponent: {e}")
+        except Exception as e:
+            print(f"[restyle] Error restyling ForecastDisplayComponent: {e}")

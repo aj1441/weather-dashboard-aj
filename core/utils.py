@@ -202,11 +202,10 @@ def get_auto_theme() -> str:
     from .location_service import LocationService
     from core.custom_themes import register_custom_themes
     
-    # Initialize theme manager and register custom themes
+    # Initialize theme manager and ensure custom themes are registered
     theme_manager = ThemeManager()
-    theme_manager.register_all_custom_themes()
 
-    #Register themes safely
+    # Register themes safely
     register_custom_themes()
     
     auto_mode, light_theme, dark_theme = load_auto_theme_settings()

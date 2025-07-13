@@ -630,7 +630,7 @@ class TabbedWeatherDashboard:
         # Update displays with converted data
         self.weather_display.update_display(converted_data)
         if hasattr(self, 'forecast_display'):
-            self.forecast_display.update_forecast(converted_data.get('forecast', []))
+            self.forecast_display.update_forecast_display(converted_data.get('forecast', []))
 
     def _convert_temperature_data(self, data: dict, from_unit: str, to_unit: str) -> dict:
         """Convert temperature values in weather data between units
@@ -651,18 +651,38 @@ class TabbedWeatherDashboard:
         converted = data.copy()
         
         # Convert main temperature values
-        if 'temp' in converted.get('current', {}):
+        # Legacy structure with top-level temperature values
+        if 'temperature' in converted:
             if to_unit == 'metric':
-                converted['current']['temp'] = convert_to_celsius(data['current']['temp'])
-                if 'feels_like' in converted['current']:
-                    converted['current']['feels_like'] = convert_to_celsius(data['current']['feels_like'])
+                converted['temperature'] = convert_to_celsius(converted['temperature'])
+                if 'feels_like' in converted:
+                    converted['feels_like'] = convert_to_celsius(converted['feels_like'])
             else:
-                converted['current']['temp'] = convert_to_fahrenheit(data['current']['temp'])
+                converted['temperature'] = convert_to_fahrenheit(converted['temperature'])
+                if 'feels_like' in converted:
+                    converted['feels_like'] = convert_to_fahrenheit(converted['feels_like'])
+
+        # Newer structure with nested 'current' key
+        if 'current' in converted and 'temp' in converted['current']:
+            if to_unit == 'metric':
+                converted['current']['temp'] = convert_to_celsius(converted['current']['temp'])
                 if 'feels_like' in converted['current']:
-                    converted['current']['feels_like'] = convert_to_fahrenheit(data['current']['feels_like'])
+                    converted['current']['feels_like'] = convert_to_celsius(converted['current']['feels_like'])
+            else:
+                converted['current']['temp'] = convert_to_fahrenheit(converted['current']['temp'])
+                if 'feels_like' in converted['current']:
+                    converted['current']['feels_like'] = convert_to_fahrenheit(converted['current']['feels_like'])
         
-        # Convert forecast temperatures
-        for forecast in converted.get('forecast', []):
+        # Convert forecast temperatures if available
+        forecasts = []
+        if 'forecast' in converted:
+            forecasts = converted['forecast']
+        elif hasattr(self, 'forecast_display') and getattr(self.forecast_display, 'forecast_data', None):
+            # Use currently displayed forecast data
+            forecasts = [f.copy() for f in self.forecast_display.forecast_data]
+            converted['forecast'] = forecasts
+
+        for forecast in forecasts:
             if to_unit == 'metric':
                 forecast['temp_min'] = convert_to_celsius(forecast['temp_min'])
                 forecast['temp_max'] = convert_to_celsius(forecast['temp_max'])
