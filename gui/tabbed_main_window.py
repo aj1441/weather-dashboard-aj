@@ -148,14 +148,14 @@ class TabbedWeatherDashboard:
         input_frame.pack(pady=10, padx=20, fill=X)
 
         # Weather display component
-        self.display_component = WeatherDisplayComponent(weather_tab)
-        self.display_component.set_save_city_callback(self.handle_save_city)
-        display_frame = self.display_component.setup_component()
+        self.weather_display = WeatherDisplayComponent(weather_tab)
+        self.weather_display.set_save_city_callback(self.handle_save_city)
+        display_frame = self.weather_display.setup_component()
         display_frame.pack(pady=20, fill=X)
 
         # Forecast display component
-        self.forecast_component = ForecastDisplayComponent(weather_tab)
-        forecast_frame = self.forecast_component.setup_component()
+        self.forecast_display = ForecastDisplayComponent(weather_tab)
+        forecast_frame = self.forecast_display.setup_component()
         forecast_frame.pack(pady=20, fill=BOTH, expand=True)  # Added expand=True
 
     def setup_saved_cities_tab(self):
@@ -467,7 +467,7 @@ class TabbedWeatherDashboard:
                 }
                 
                 # Update display with current weather data
-                self.display_component.update_display(weather_data)
+                self.weather_display.update_display(weather_data)
                 
                 # Save weather data
                 self.data_handler.save_weather_data_validated(weather_data)
@@ -475,7 +475,7 @@ class TabbedWeatherDashboard:
                 # Update forecast if available
                 forecast_data = comprehensive_data.get('forecast', [])
                 if forecast_data:
-                    self.forecast_component.update_forecast_display(forecast_data)
+                    self.forecast_display.update_forecast_display(forecast_data)
                     
                     # Save forecast data to database
                     location_data = comprehensive_data.get('location', {})
@@ -576,10 +576,10 @@ class TabbedWeatherDashboard:
         """Refresh the styles of all major components after a theme change."""
         if hasattr(self.input_component, "restyle"):
             self.input_component.restyle()
-        if hasattr(self.display_component, "restyle"):
-            self.display_component.restyle()
-        if hasattr(self.forecast_component, "restyle"):
-            self.forecast_component.restyle()
+        if hasattr(self.weather_display, "restyle"):
+            self.weather_display.restyle()
+        if hasattr(self.forecast_display, "restyle"):
+            self.forecast_display.restyle()
         if hasattr(self.saved_cities_component, "restyle"):
             self.saved_cities_component.restyle()
 

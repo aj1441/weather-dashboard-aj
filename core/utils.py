@@ -193,45 +193,11 @@ def load_auto_theme_settings():
     )
 
 def get_auto_theme() -> str:
-    """
-    Get the appropriate theme based on auto mode and current time
-    
-    Returns:
-        Theme name to use
-    """
-    from .location_service import LocationService
-    from core.custom_themes import register_custom_themes
-    
-    # Initialize theme manager and register custom themes
-    theme_manager = ThemeManager()
-    theme_manager.register_all_custom_themes()
+    """Return the theme recommended by :class:`AutoThemeManager`."""
+    from .auto_theme import AutoThemeManager
 
-    #Register themes safely
-    register_custom_themes()
-    
-    auto_mode, light_theme, dark_theme = load_auto_theme_settings()
-    
-    if not auto_mode:
-        # Auto mode disabled, use saved theme
-        manager = UserSettingsManager()
-        saved_theme = manager.load_user_theme()
-        theme_manager = ThemeManager()
-        return theme_manager.get_fallback_theme(saved_theme)
-    
-    # Auto mode enabled, determine theme based on time
-    location_service = LocationService()
-    is_daytime = location_service.is_daytime_now()
-    
-    if is_daytime is None:
-        # Unable to determine time, use saved theme as fallback
-        manager = UserSettingsManager()
-        saved_theme = manager.load_user_theme()
-        return theme_manager.get_fallback_theme(saved_theme)
-    
-    # Get appropriate theme and ensure it exists
-    theme_to_use = light_theme if is_daytime else dark_theme
-    theme_manager = ThemeManager()
-    return theme_manager.get_fallback_theme(theme_to_use)
+    manager = AutoThemeManager()
+    return manager.get_recommended_theme()
 
 def format_timestamp(timestamp):
     """Legacy function - wraps the new class-based approach"""

@@ -36,9 +36,8 @@ The Weather Dashboard now features a fully integrated automatic day/night theme 
 
 #### 1. `core/auto_theme.py`
 ```python
-# Main auto theme management classes
-- AutoThemeManager: Core logic for theme determination
-- LocationService: IP geolocation and sunrise/sunset APIs
+# Centralized theme logic
+- AutoThemeManager: Coordinates theme selection using LocationService
 - Utility functions: get_auto_theme(), is_daytime()
 ```
 

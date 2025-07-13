@@ -9,11 +9,10 @@ from core.utils import (
     save_user_theme,
     save_auto_theme_settings,
     load_auto_theme_settings,
-    get_auto_theme,
     UserSettingsManager,
 )
 from core.custom_themes import register_custom_themes
-from core.location_service import LocationService
+from core.auto_theme import get_auto_theme
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +23,6 @@ class ThemeComponent:
     def __init__(self, parent, current_theme: str = "aj_darkly"):
         self.parent = parent
         self.current_theme = current_theme
-        self.location_service = LocationService()
 
         # Register custom themes first
         register_custom_themes()
@@ -44,8 +42,7 @@ class ThemeComponent:
             self.current_theme = fallback
 
 
-        # ✅ Confirm themes are loaded AFTER registration and before widget creation
-        print("Available themes:", style.theme_names())
+
 
 
         # Load auto theme settings
@@ -127,9 +124,7 @@ class ThemeComponent:
         """Apply theme automatically based on location and time."""
         try:
             if latitude is not None and longitude is not None:
-                from core.auto_theme import get_auto_theme as get_auto_theme_coords
-
-                auto_theme = get_auto_theme_coords(latitude, longitude)
+                auto_theme = get_auto_theme(latitude, longitude)
                 logger.info(
                     f"Using specific location for auto theme: {latitude}, {longitude}"
                 )
