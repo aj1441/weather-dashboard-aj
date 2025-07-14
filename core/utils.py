@@ -205,8 +205,8 @@ def get_auto_theme() -> str:
     # Initialize theme manager and ensure custom themes are registered
     theme_manager = ThemeManager()
 
-    # Register themes safely
-    register_custom_themes()
+    # Register themes safely using the theme manager's style
+    register_custom_themes(theme_manager.style)
     
     auto_mode, light_theme, dark_theme = load_auto_theme_settings()
     

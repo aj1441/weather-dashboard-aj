@@ -9,10 +9,15 @@ from user import USER_THEMES
 from ttkbootstrap.style import ThemeDefinition
 
 
-def register_custom_themes() -> bool:
-    """Register custom themes using ttkbootstrap style system"""
+def register_custom_themes(style: tb.Style | None = None) -> bool:
+    """Register custom themes using ttkbootstrap style system
+
+    Args:
+        style: Optional ttkbootstrap Style instance. If not provided, a new one
+            will be created for the current root window.
+    """
     try:
-        style = tb.Style()
+        style = style or tb.Style()
 
         for name, definition in USER_THEMES.items():
             if name not in style.theme_names():

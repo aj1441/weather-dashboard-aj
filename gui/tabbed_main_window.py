@@ -40,7 +40,7 @@ class TabbedWeatherDashboard:
         self.app = tb.Window()
 
         #2. Register themes now that we have a root window
-        register_custom_themes()
+        register_custom_themes(self.app.style)
         
         #3. Apply the user's theme
         try:
@@ -733,6 +733,8 @@ class TabbedWeatherDashboard:
             self.logger.info("Cleaning up resources...")
             self.stop_auto_theme_refresh()  # Stop auto theme thread
             try:
-                self.data_handler.db.get_connection().close()  # Close database connection
+                # Ensure any open database connection is closed gracefully
+                with self.data_handler.db.get_connection():
+                    pass
             except Exception as e:
                 self.logger.error(f"Error closing database connection: {str(e)}")

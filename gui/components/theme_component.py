@@ -26,8 +26,8 @@ class ThemeComponent:
         self.current_theme = current_theme
         self.location_service = LocationService()
 
-        # Register custom themes first
-        register_custom_themes()
+        # Register custom themes first using the window's style
+        register_custom_themes(self.parent.style)
 
         from core.custom_themes import get_fallback_theme
 
