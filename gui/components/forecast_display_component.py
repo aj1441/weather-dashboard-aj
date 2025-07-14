@@ -1,9 +1,7 @@
 """7-day forecast display component for weather dashboard"""
 
-import tkinter as tk
 import ttkbootstrap as tb
-from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, TOP, BOTTOM
-from datetime import datetime
+from ttkbootstrap.constants import BOTH
 from core.icon_manager import get_icon_manager
 
 class ForecastDisplayComponent:
@@ -13,6 +11,7 @@ class ForecastDisplayComponent:
         self.parent = parent
         self.forecast_data = None
         self.forecast_cards = []
+        self.temp_unit = "imperial"
         
     def setup_component(self):
         """Create the forecast display section"""
@@ -48,9 +47,10 @@ class ForecastDisplayComponent:
         )
         placeholder.pack(pady=40, expand=True)
     
-    def update_forecast_display(self, forecast_data):
+    def update_forecast_display(self, forecast_data, temp_unit="imperial"):
         """Update the forecast display with new data"""
         self.forecast_data = forecast_data
+        self.temp_unit = temp_unit
         
         # Clear existing forecast cards
         for widget in self.forecast_cards_frame.winfo_children():
@@ -64,6 +64,7 @@ class ForecastDisplayComponent:
         # Create forecast cards with uniform grid layout
         from core.forecast_card import create_forecast_card_tk
         icon_manager = get_icon_manager()
+        unit_label = "°F" if self.temp_unit == "imperial" else "°C"
         
         # Create a container frame that uses grid for equal sizing
         cards_container = tb.Frame(self.forecast_cards_frame)
@@ -71,7 +72,14 @@ class ForecastDisplayComponent:
         
         # Create forecast cards using grid for equal distribution
         for i, day_data in enumerate(forecast_data[:7]):  # Show 7 days starting from tomorrow
-            card = create_forecast_card_tk(cards_container, day_data, i, icon_manager, style='main')
+            card = create_forecast_card_tk(
+                cards_container,
+                day_data,
+                i,
+                icon_manager,
+                style='main',
+                unit_label=unit_label
+            )
             # Use grid with equal weight for all columns
             card.grid(row=0, column=i, padx=2, pady=5, sticky="nsew")
             self.forecast_cards.append(card)

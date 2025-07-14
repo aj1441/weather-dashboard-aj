@@ -4,14 +4,13 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import tkinter as tk
 import ttkbootstrap as tb
 import logging
 import threading
 from core.state_utils import normalize_state_abbreviation
 import time
 from datetime import datetime
-from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
+from ttkbootstrap.constants import BOTH, X
 from ttkbootstrap.dialogs import Messagebox
 from core.utils import load_user_theme, load_auto_theme_settings
 from core.api import WeatherAPI
@@ -488,8 +487,15 @@ class TabbedWeatherDashboard:
                     "timestamp": datetime.now().isoformat()
                 }
                 
+                units = self.input_component.get_units()
+
+                # Prepare display data, converting if needed
+                display_data = {**weather_data, 'forecast': comprehensive_data.get('forecast', [])}
+                if units == 'metric':
+                    display_data = self._convert_temperature_data(display_data, 'imperial', 'metric')
+
                 # Update display with current weather data
-                self.weather_display.update_display(weather_data)
+                self.weather_display.update_display(display_data, temp_unit=units)
                 
                 # Save weather data
                 self.data_handler.save_weather_data_validated(weather_data)
@@ -497,7 +503,7 @@ class TabbedWeatherDashboard:
                 # Update forecast if available
                 forecast_data = comprehensive_data.get('forecast', [])
                 if forecast_data:
-                    self.forecast_display.update_forecast_display(forecast_data)
+                    self.forecast_display.update_forecast_display(display_data.get('forecast', []), temp_unit=units)
                     
                     # Save forecast data to database
                     location_data = comprehensive_data.get('location', {})
@@ -519,15 +525,13 @@ class TabbedWeatherDashboard:
                 
                 # Show a more user-friendly error message based on the error type
                 if "city not found" in error_msg.lower() or "not found" in error_msg.lower():
-                    error_display = f"City '{city}' was not found. Please check your spelling or try another city."
+                    pass
                 elif "api key" in error_msg.lower() or "unauthorized" in error_msg.lower():
-                    error_display = "Weather service access error. Please try again later."
+                    pass
                 elif "limit" in error_msg.lower() and "rate" in error_msg.lower():
-                    error_display = "Too many requests to the weather service. Please try again in a few minutes."
+                    pass
                 elif "timeout" in error_msg.lower() or "connection" in error_msg.lower():
-                    error_display = "Connection timeout. Please check your internet connection and try again."
-                else:
-                    error_display = f"Failed to get weather data for '{city}'. Please try again later."
+                    pass
                 
                 # Display the popup error message
                 Messagebox.show_error(
@@ -611,7 +615,6 @@ class TabbedWeatherDashboard:
         
         # Get the currently displayed city and state
         city = self.input_component.get_city()
-        state = self.input_component.get_state()
         
         if not city:
             return
@@ -628,9 +631,9 @@ class TabbedWeatherDashboard:
         converted_data = self._convert_temperature_data(current_data, old_unit, new_unit)
         
         # Update displays with converted data
-        self.weather_display.update_display(converted_data)
+        self.weather_display.update_display(converted_data, temp_unit=new_unit)
         if hasattr(self, 'forecast_display'):
-            self.forecast_display.update_forecast_display(converted_data.get('forecast', []))
+            self.forecast_display.update_forecast_display(converted_data.get('forecast', []), temp_unit=new_unit)
 
     def _convert_temperature_data(self, data: dict, from_unit: str, to_unit: str) -> dict:
         """Convert temperature values in weather data between units
@@ -643,7 +646,12 @@ class TabbedWeatherDashboard:
         Returns:
             Dictionary with converted temperature values
         """
-        from core.conversion_utils import convert_to_celsius, convert_to_fahrenheit
+        from core.conversion_utils import (
+            convert_to_celsius,
+            convert_to_fahrenheit,
+            mph_to_kmh,
+            kmh_to_mph,
+        )
         
         if from_unit == to_unit:
             return data
@@ -661,6 +669,19 @@ class TabbedWeatherDashboard:
                 converted['temperature'] = convert_to_fahrenheit(converted['temperature'])
                 if 'feels_like' in converted:
                     converted['feels_like'] = convert_to_fahrenheit(converted['feels_like'])
+
+        # Convert wind speed if present
+        if 'wind_speed' in converted:
+            if to_unit == 'metric':
+                converted['wind_speed'] = mph_to_kmh(converted['wind_speed'])
+            else:
+                converted['wind_speed'] = kmh_to_mph(converted['wind_speed'])
+
+        if 'current' in converted and 'wind_speed' in converted['current']:
+            if to_unit == 'metric':
+                converted['current']['wind_speed'] = mph_to_kmh(converted['current']['wind_speed'])
+            else:
+                converted['current']['wind_speed'] = kmh_to_mph(converted['current']['wind_speed'])
 
         # Newer structure with nested 'current' key
         if 'current' in converted and 'temp' in converted['current']:
@@ -688,11 +709,15 @@ class TabbedWeatherDashboard:
                 forecast['temp_max'] = convert_to_celsius(forecast['temp_max'])
                 forecast['temp_day'] = convert_to_celsius(forecast['temp_day'])
                 forecast['temp_night'] = convert_to_celsius(forecast['temp_night'])
+                if 'wind_speed' in forecast:
+                    forecast['wind_speed'] = mph_to_kmh(forecast['wind_speed'])
             else:
                 forecast['temp_min'] = convert_to_fahrenheit(forecast['temp_min'])
                 forecast['temp_max'] = convert_to_fahrenheit(forecast['temp_max'])
                 forecast['temp_day'] = convert_to_fahrenheit(forecast['temp_day'])
                 forecast['temp_night'] = convert_to_fahrenheit(forecast['temp_night'])
+                if 'wind_speed' in forecast:
+                    forecast['wind_speed'] = kmh_to_mph(forecast['wind_speed'])
         
         return converted
 

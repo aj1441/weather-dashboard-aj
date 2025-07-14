@@ -36,3 +36,11 @@ def convert_to_celsius(fahrenheit: float) -> float:
         Temperature in Celsius
     """
     return (fahrenheit - 32) * 5 / 9
+
+def mph_to_kmh(mph: float) -> float:
+    """Convert miles per hour to kilometers per hour."""
+    return mph * 1.60934
+
+def kmh_to_mph(kmh: float) -> float:
+    """Convert kilometers per hour to miles per hour."""
+    return kmh / 1.60934

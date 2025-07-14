@@ -2,7 +2,7 @@
 
 import logging
 import ttkbootstrap as tb
-from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
+from ttkbootstrap.constants import LEFT, RIGHT, X
 from core.icon_manager import get_weather_icon
 from core.weather_utils import parse_weather_data
 
@@ -114,8 +114,13 @@ class WeatherDisplayComponent:
         self.pressure_label.pack(side=LEFT, padx=10)
         self.wind_label.pack(side=LEFT, padx=10)
     
-    def update_display(self, weather_data):
-        """Update the weather display with new data"""
+    def update_display(self, weather_data, temp_unit="imperial"):
+        """Update the weather display with new data.
+
+        Args:
+            weather_data: Parsed weather data dictionary
+            temp_unit: 'imperial' or 'metric' indicating display units
+        """
         if isinstance(weather_data, dict) and weather_data.get("error"):
             self.show_error(weather_data["error"])
             return
@@ -125,15 +130,17 @@ class WeatherDisplayComponent:
             self.current_weather_data = weather_data
 
             # Set weather icon/emoji
-            icon = weather_data.get('weather_icon', '')
             description = weather_data.get('weather_description', '').title()
             emoji = get_weather_icon(description)
             self.weather_icon_label.configure(text=emoji)
 
             # Format temperature
+            unit_label = "°F" if temp_unit == "imperial" else "°C"
+            wind_label = "mph" if temp_unit == "imperial" else "km/h"
+
             temp = weather_data.get('temperature')
             if temp is not None:
-                temp_str = f"{temp:.1f}°F"
+                temp_str = f"{temp:.1f}{unit_label}"
             else:
                 temp_str = "N/A"
 
@@ -155,7 +162,7 @@ class WeatherDisplayComponent:
             self.pressure_label.configure(text=f"⭕ Pressure: {pressure} hPa")
             self.pressure_label.pack(side=LEFT, padx=10)
 
-            self.wind_label.configure(text=f"💨 Wind: {wind_speed} mph")
+            self.wind_label.configure(text=f"💨 Wind: {wind_speed} {wind_label}")
             self.wind_label.pack(side=LEFT, padx=10)
 
             # Update save_city_btn city_data
