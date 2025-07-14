@@ -208,6 +208,9 @@ The application uses Python decorators extensively for:
 
 Each API client is wrapped with appropriate decorators to ensure robust operation and optimal performance. The decorator pattern allows for easy addition of cross-cutting concerns like logging, monitoring, and error handling.
 
+## Simplification Notes
+See [docs/code_simplification_ideas.md](docs/code_simplification_ideas.md) for observations on simplifying the codebase.
+
 ## Contributing
 
 1. Fork the repository
