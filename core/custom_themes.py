@@ -29,9 +29,9 @@ def register_custom_themes() -> bool:
         logger.error(f"Custom theme registration failed: {e}")
         return False
 
-def is_custom_theme(theme_name):
-    """Check if a theme name is one of our custom themes"""
-    return theme_name in ["aj_darkly", "aj_lightly"]
+# def is_custom_theme(theme_name):
+#     """Check if a theme name is one of our custom themes"""
+#     return theme_name in ["aj_darkly", "aj_lightly"]
 
 def get_fallback_theme(theme_name):
     """Get fallback theme for custom themes that might not be registered"""

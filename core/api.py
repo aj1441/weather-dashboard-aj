@@ -150,75 +150,7 @@ class WeatherAPI:
     @rate_limit()
     @retry_on_failure(max_retries=3, delay=1.0, backoff=2.0)
     @log_execution_time()
-    def fetch_weather_data(self, city: str, state: str, units: str = None) -> Optional[Dict]:
-        """
-        Fetch current weather data with validation and cleaning using coordinates
-        
-        Args:
-            city: Name of the city
-            state: State abbreviation
-            units: Temperature units (uses class default if not provided)
-            
-        Returns:
-            Dictionary with cleaned weather data or error dictionary
-        """
-        if units is None:
-            units = self.units
-        
-        # First get coordinates for the location
-        coords = self.get_coordinates(city, state)
-        if "error" in coords:
-            return coords
-        
-        # Use the coordinates-based weather endpoint (more accurate per docs)
-        weather_url = "https://api.openweathermap.org/data/2.5/weather"
-        params = {
-            'lat': coords['lat'],
-            'lon': coords['lon'],
-            'appid': self.api_key,
-            'units': units
-        }
-        
-        raw_data = self._make_api_request(weather_url, params)
-        
-        if raw_data and "error" not in raw_data:
-            # Basic validation of API response structure
-            if not self._validate_basic_structure(raw_data):
-                return {"error": "Invalid API response structure"}
-            
-            # Validate and clean the data
-            cleaned_data = self.validator.validate_and_clean_current_weather(raw_data)
-            if cleaned_data:
-                return cleaned_data
-            else:
-                return {"error": "Data validation failed"}
-        
-        # If primary API failed, try the fallback
-        self.logger.warning("Primary API failed, attempting fallback to OpenMeteo")
-        fallback_data = self.fallback_client.fetch_weather(
-            lat=coords['lat'],
-            lon=coords['lon'],
-            units=units
-        )
-        
-        if fallback_data and "error" not in fallback_data:
-            # Add location information to the fallback data
-            fallback_data.update({
-                'city': coords['name'],
-                'state': coords['state'],
-                'country': coords['country'],
-                'latitude': coords['lat'],
-                'longitude': coords['lon']
-            })
-            
-            # Validate and clean the fallback data
-            cleaned_fallback = self.validator.validate_and_clean_current_weather(fallback_data)
-            if cleaned_fallback:
-                self.logger.info("Successfully fetched weather data from fallback API")
-                return cleaned_fallback
-        
-        # If both primary and fallback failed, return the original error
-        return raw_data
+    
 
     def fetch_weather(self, city: str) -> Optional[Dict]:
         """
@@ -667,79 +599,7 @@ class WeatherAPI:
     @rate_limit()
     @retry_on_failure()
     @log_execution_time()
-    def get_weather(self, city: str, state: str = None, country: str = "US") -> Dict:
-        """
-        Get current weather for a location
-        
-        Args:
-            city: City name
-            state: State code (US only)
-            country: Country code (default: US)
-            
-        Returns:
-            Dictionary containing weather data
-        """
-        location = f"{city}"
-        if state:
-            location = f"{city},{state}"
-        if country:
-            location = f"{location},{country}"
-
-        params = {
-            "q": location,
-            "appid": self.api_key,
-            "units": self.units,
-        }
-
-        try:
-            response_data = self._make_api_request(self.base_url, params)
-            
-            if response_data and not response_data.get("error"):
-                # Extract coordinates
-                coords = response_data.get("coord", {})
-                
-                # Extract main weather data
-                main_data = response_data.get("main", {})
-                
-                # Extract weather description
-                weather = response_data.get("weather", [{}])[0]
-                
-                # Extract wind data
-                wind = response_data.get("wind", {})
-                
-                # Build cleaned data dictionary
-                weather_data = {
-                    "city": response_data.get("name"),
-                    "state": state,
-                    "country": response_data.get("sys", {}).get("country"),
-                    "latitude": coords.get("lat"),
-                    "longitude": coords.get("lon"),
-                    "temperature": main_data.get("temp"),
-                    "feels_like": main_data.get("feels_like"),
-                    "humidity": main_data.get("humidity"),
-                    "pressure": main_data.get("pressure"),
-                    "weather_main": weather.get("main"),
-                    "weather_description": weather.get("description"),
-                    "weather_icon": weather.get("icon"),
-                    "wind_speed": wind.get("speed"),
-                    "wind_direction": wind.get("deg"),
-                    "visibility": response_data.get("visibility"),
-                    "timestamp": datetime.now().isoformat(),
-                    "raw_data": response_data  # Store full API response
-                }
-                
-                # Validate data before returning
-                if self.validator.validate_weather_data(weather_data):
-                    return weather_data
-                else:
-                    self.logger.error("Weather data validation failed")
-                    return {"error": "Invalid weather data received"}
-            
-            return response_data  # Return error response if any
-            
-        except Exception as e:
-            self.logger.error(f"Error getting weather data: {str(e)}")
-            return {"error": f"Failed to get weather data: {str(e)}"}
+   
 
     @staticmethod
     def _convert_temperature(temp: float, from_unit: str, to_unit: str) -> float:
@@ -762,33 +622,4 @@ class WeatherAPI:
             return round((temp * 9/5) + 32, 1)  # C to F
         return temp
 
-    def _convert_weather_data(self, data: Dict, to_unit: str) -> Dict:
-        """Convert all temperature values in weather data to specified unit
-        
-        Args:
-            data: Weather data dictionary
-            to_unit: Target temperature unit
-            
-        Returns:
-            Weather data with converted temperatures
-        """
-        if not data or 'error' in data:
-            return data
-            
-        from_unit = self.units  # Current unit
-        
-        # Convert current weather temperatures
-        if 'temperature' in data:
-            data['temperature'] = self._convert_temperature(data['temperature'], from_unit, to_unit)
-        if 'feels_like' in data:
-            data['feels_like'] = self._convert_temperature(data['feels_like'], from_unit, to_unit)
-            
-        # Convert forecast temperatures if present
-        if 'forecast' in data:
-            for day in data['forecast']:
-                day['temp_min'] = self._convert_temperature(day.get('temp_min'), from_unit, to_unit)
-                day['temp_max'] = self._convert_temperature(day.get('temp_max'), from_unit, to_unit)
-                day['temp_day'] = self._convert_temperature(day.get('temp_day'), from_unit, to_unit)
-                day['temp_night'] = self._convert_temperature(day.get('temp_night'), from_unit, to_unit)
-                
-        return data
+

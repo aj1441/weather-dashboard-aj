@@ -54,7 +54,7 @@ class OpenMeteoClient:
         """
         self.logger.info("Fetching weather data from OpenMeteo API")
         
-        # OpenMeteo uses metric by default, fahrenheit needs to be specified
+        # OpenMeteo uses metric by default, Fahrenheit needs to be specified
         temperature_unit = "fahrenheit" if units == "imperial" else "celsius"
         
         try:

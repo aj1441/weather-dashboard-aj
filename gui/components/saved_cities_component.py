@@ -42,7 +42,7 @@ class SavedCitiesComponent:
         )
         self.no_cities_label.pack(pady=40)
 
-        # Separator- do i want the background to be light gray? or I could use a ttk.Frame as a vertical separator
+        # Separator-do I want the background to be light gray? or I could use a ttk.Frame as a vertical separator
         # This will visually separate the title from the cities list
         # Using a Label with padding to create a visual separator
         separator = tb.Label(self.cities_frame, text="", padding=(0, 10), background="lightgray")

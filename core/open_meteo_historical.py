@@ -14,7 +14,7 @@ class OpenMeteoHistorical:
     """Client for fetching historical weather data from Open-Meteo Archive API"""
     
     def __init__(self):
-        # Setup the Open-Meteo API client with cache and retry on error
+        # Set up the Open-Meteo API client with cache and retry on error
         cache_session = requests_cache.CachedSession('.cache', expire_after=3600)  # Cache for 1 hour
         retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
         self.client = openmeteo_requests.Client(session=retry_session)
