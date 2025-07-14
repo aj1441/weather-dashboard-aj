@@ -234,9 +234,3 @@ class ThemeComponent:
 
     def is_auto_mode_enabled(self) -> bool:
         return self.auto_mode
-
-    def _switch_theme(self, theme_name: str):
-        self.logger.info(f"Switching to theme: {theme_name}")
-        self.app.style.theme_use(theme_name)
-        self.current_theme = theme_name
-        UserSettingsManager.save_user_theme(theme_name)

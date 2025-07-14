@@ -70,10 +70,13 @@ class TabbedWeatherDashboard:
 
     def start_auto_theme_refresh(self):
         """Start the auto theme refresh thread if auto theme is enabled"""
-        self.auto_theme = True
-        if not self.auto_theme_thread or not self.auto_theme_thread.is_alive():
+        if self.theme_component and self.theme_component.is_auto_mode_enabled():
+            self.auto_theme = True
+            if not self.auto_theme_thread or not self.auto_theme_thread.is_alive():
                 self.auto_theme_running = True
-                self.auto_theme_thread = threading.Thread(target=self._auto_theme_loop, daemon=True)
+                self.auto_theme_thread = threading.Thread(
+                    target=self._auto_theme_loop, daemon=True
+                )
                 self.auto_theme_thread.start()
                 self.logger.info("Auto theme refresh started")
 
@@ -87,30 +90,26 @@ class TabbedWeatherDashboard:
 
     def _auto_theme_loop(self):
         """Background thread for auto theme switching"""
+        from core.auto_theme import AutoThemeManager
+
+        manager = AutoThemeManager()
+        check_interval = 1800  # 30 minutes
+
         while self.auto_theme_running:
             try:
-                self.logger.info(f"[auto_theme_loop] Checking time-based theme at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-                current_hour = datetime.now().hour
-                new_theme = "aj_darkly" if current_hour >= 18 or current_hour < 6 else "aj_lightly"
-                
+                new_theme = manager.get_recommended_theme()
+
                 if new_theme != self.current_theme:
                     self.logger.info(f"Auto switching theme to {new_theme}")
-                    self.app.style.theme_use(new_theme)
+                    self.theme_component.apply_theme(new_theme)
                     self.current_theme = new_theme
-                    self.app.update_idletasks()
 
-                    #Notify all components to refresh
-                    if hasattr(self, "restyle_all_components"):
-                        self.restyle_all_components()
-                        self.logger.info("[auto_theme_loop] Called restyle_all_components() after theme switch")
-
-                
-                # Sleep for 5 minutes before next check
-                for _ in range(300):  # 5 minutes * 60 seconds = 300
+                # Sleep in one-second increments so we can exit promptly
+                for _ in range(check_interval):
                     if not self.auto_theme_running:
                         break
                     time.sleep(1)
-                    
+
             except Exception as e:
                 self.logger.error(f"Error in auto theme refresh: {str(e)}")
                 time.sleep(60)  # Wait a minute before trying again

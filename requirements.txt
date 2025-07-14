@@ -9,3 +9,5 @@ statsmodels
 plotly
 scikit-image
 pillow
+requests
+python-dotenv
