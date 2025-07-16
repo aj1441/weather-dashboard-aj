@@ -130,10 +130,11 @@ class WeatherDisplayComponent:
             emoji = get_weather_icon(description)
             self.weather_icon_label.configure(text=emoji)
 
-            # Format temperature
+            # Format temperature and unit
             temp = weather_data.get('temperature')
+            unit = weather_data.get('unit', '°F')  # Default to °F if not present
             if temp is not None:
-                temp_str = f"{temp:.1f}°F"
+                temp_str = f"{temp:.1f}{unit}"
             else:
                 temp_str = "N/A"
 

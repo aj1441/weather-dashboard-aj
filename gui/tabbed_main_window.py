@@ -67,8 +67,10 @@ class TabbedWeatherDashboard:
         # Clean up old forecast data on startup
         self.data_handler.cleanup_old_forecast_data()
 
+        # Forecast cache for robust display updates
+        self.last_forecast_data = None
+
         self.setup_gui()
-        
         # Load initial saved cities
         self.load_saved_cities()
 
@@ -456,18 +458,16 @@ class TabbedWeatherDashboard:
             )
 
     def handle_weather_request(self, city, state=None, country=None):
-        """Handle weather data request and display"""
+        """Handle weather data request and display, with forecast cache update"""
         try:
             # Normalize state abbreviation to uppercase
             state = normalize_state_abbreviation(state)
-            
             # Get comprehensive weather data from API (current + forecast)
             comprehensive_data = self.weather_api.fetch_comprehensive_weather(city, state)
             if comprehensive_data and 'error' not in comprehensive_data:
                 # Extract current weather data for display and saving
                 current_weather = comprehensive_data.get('current', {})
                 location_data = comprehensive_data.get('location', {})
-                
                 # Build current weather data in expected format
                 weather_data = {
                     "city": location_data.get('name', city),
@@ -487,36 +487,32 @@ class TabbedWeatherDashboard:
                     "visibility": current_weather.get('visibility'),
                     "timestamp": datetime.now().isoformat()
                 }
-                
                 # Update display with current weather data
                 self.weather_display.update_display(weather_data)
-                
                 # Save weather data
                 self.data_handler.save_weather_data_validated(weather_data)
-                
                 # Update forecast if available
                 forecast_data = comprehensive_data.get('forecast', [])
                 if forecast_data:
                     self.forecast_display.update_forecast_display(forecast_data)
-                    
+                    # Update forecast cache
+                    import copy
+                    self.last_forecast_data = copy.deepcopy(forecast_data)
                     # Save forecast data to database
                     location_data = comprehensive_data.get('location', {})
                     forecast_city = location_data.get('name', city)
                     forecast_state = location_data.get('state', state)
                     forecast_country = location_data.get('country', country or 'US')
-                    
                     if self.data_handler.save_forecast_data(forecast_city, forecast_state, forecast_country, forecast_data):
                         self.logger.info(f"Successfully saved {len(forecast_data)} forecast days to database")
                     else:
                         self.logger.warning("Failed to save forecast data to database")
-                    
                     self.logger.info(f"Updated forecast with {len(forecast_data)} days")
                 else:
                     self.logger.warning("No forecast data available")
             else:
                 error_msg = comprehensive_data.get('error', 'Unknown error') if comprehensive_data else 'No data received'
                 self.logger.error(f"Failed to get weather data for {city}: {error_msg}")
-                
                 # Show a more user-friendly error message based on the error type
                 if "city not found" in error_msg.lower() or "not found" in error_msg.lower():
                     error_display = f"City '{city}' was not found. Please check your spelling or try another city."
@@ -528,7 +524,6 @@ class TabbedWeatherDashboard:
                     error_display = "Connection timeout. Please check your internet connection and try again."
                 else:
                     error_display = f"Failed to get weather data for '{city}'. Please try again later."
-                
                 # Display the popup error message
                 Messagebox.show_error(
                     message="Error: PLEASE ENTER A VALID CITY AND STATE",
@@ -606,74 +601,109 @@ class TabbedWeatherDashboard:
             self.saved_cities_component.restyle()
 
     def handle_unit_change(self, new_unit):
-        """Handle temperature unit change and update displays"""
+        """Handle temperature unit change and update displays, using forecast cache for robustness"""
         self.logger.debug(f"Temperature unit changed to {new_unit}")
-        
         # Get the currently displayed city and state
         city = self.input_component.get_city()
         state = self.input_component.get_state()
-        
         if not city:
             return
-            
         # Get current weather data from display
         current_data = self.weather_display.get_current_data()
         if not current_data:
             return
-            
         # Get current unit before switching
         old_unit = 'metric' if new_unit == 'imperial' else 'imperial'
-        
         # Convert temperatures without making API calls
         converted_data = self._convert_temperature_data(current_data, old_unit, new_unit)
-        
+        # Set unit label for display (F/C)
+        unit_label = '°C' if new_unit == 'metric' else '°F'
+        # For flat structure
+        if 'temperature' in converted_data:
+            converted_data['unit'] = unit_label
+        # For nested structure
+        if 'current' in converted_data:
+            converted_data['current']['unit'] = unit_label
+        # Try to get forecast from converted_data, else use cache
+        forecast_list = converted_data.get('forecast', [])
+        if (not forecast_list or not isinstance(forecast_list, list)) and self.last_forecast_data:
+            # Convert cached forecast to new unit
+            import copy
+            cached_forecast = copy.deepcopy(self.last_forecast_data)
+            for forecast in cached_forecast:
+                for key in ['temp_min', 'temp_max', 'temp_day', 'temp_night']:
+                    if key in forecast:
+                        if new_unit == 'metric':
+                            from core.conversion_utils import convert_to_celsius
+                            forecast[key] = convert_to_celsius(forecast[key])
+                        else:
+                            from core.conversion_utils import convert_to_fahrenheit
+                            forecast[key] = convert_to_fahrenheit(forecast[key])
+                forecast['unit'] = unit_label
+            forecast_list = cached_forecast
+        else:
+            # Update forecast items with unit label if present
+            for forecast in forecast_list:
+                forecast['unit'] = unit_label
         # Update displays with converted data
         self.weather_display.update_display(converted_data)
         if hasattr(self, 'forecast_display'):
-            self.forecast_display.update_forecast(converted_data.get('forecast', []))
+            if not isinstance(forecast_list, list):
+                forecast_list = []
+            self.forecast_display.update_forecast_display(forecast_list)
 
     def _convert_temperature_data(self, data: dict, from_unit: str, to_unit: str) -> dict:
         """Convert temperature values in weather data between units
-        
         Args:
-            data: Weather data dictionary
+            data: Weather data dictionary (may be flat or nested)
             from_unit: Current unit ('imperial' or 'metric')
             to_unit: Target unit ('imperial' or 'metric')
-            
         Returns:
             Dictionary with converted temperature values
         """
         from core.conversion_utils import convert_to_celsius, convert_to_fahrenheit
-        
+        import copy
         if from_unit == to_unit:
             return data
-            
-        converted = data.copy()
-        
-        # Convert main temperature values
-        if 'temp' in converted.get('current', {}):
-            if to_unit == 'metric':
-                converted['current']['temp'] = convert_to_celsius(data['current']['temp'])
-                if 'feels_like' in converted['current']:
-                    converted['current']['feels_like'] = convert_to_celsius(data['current']['feels_like'])
-            else:
-                converted['current']['temp'] = convert_to_fahrenheit(data['current']['temp'])
-                if 'feels_like' in converted['current']:
-                    converted['current']['feels_like'] = convert_to_fahrenheit(data['current']['feels_like'])
-        
-        # Convert forecast temperatures
-        for forecast in converted.get('forecast', []):
-            if to_unit == 'metric':
-                forecast['temp_min'] = convert_to_celsius(forecast['temp_min'])
-                forecast['temp_max'] = convert_to_celsius(forecast['temp_max'])
-                forecast['temp_day'] = convert_to_celsius(forecast['temp_day'])
-                forecast['temp_night'] = convert_to_celsius(forecast['temp_night'])
-            else:
-                forecast['temp_min'] = convert_to_fahrenheit(forecast['temp_min'])
-                forecast['temp_max'] = convert_to_fahrenheit(forecast['temp_max'])
-                forecast['temp_day'] = convert_to_fahrenheit(forecast['temp_day'])
-                forecast['temp_night'] = convert_to_fahrenheit(forecast['temp_night'])
-        
+        # Use deep copy to avoid mutating original data
+        converted = copy.deepcopy(data)
+        # Handle both flat and nested (with 'current') data
+        # Flat: {'temperature': ..., 'feels_like': ...}
+        # Nested: {'current': {...}, 'forecast': [...]}
+        if 'current' in converted:
+            current = converted['current']
+            if 'temp' in current:
+                if to_unit == 'metric':
+                    current['temp'] = convert_to_celsius(current['temp'])
+                    if 'feels_like' in current:
+                        current['feels_like'] = convert_to_celsius(current['feels_like'])
+                else:
+                    current['temp'] = convert_to_fahrenheit(current['temp'])
+                    if 'feels_like' in current:
+                        current['feels_like'] = convert_to_fahrenheit(current['feels_like'])
+        else:
+            # Flat structure
+            if 'temperature' in converted:
+                if to_unit == 'metric':
+                    converted['temperature'] = convert_to_celsius(converted['temperature'])
+                    if 'feels_like' in converted:
+                        converted['feels_like'] = convert_to_celsius(converted['feels_like'])
+                else:
+                    converted['temperature'] = convert_to_fahrenheit(converted['temperature'])
+                    if 'feels_like' in converted:
+                        converted['feels_like'] = convert_to_fahrenheit(converted['feels_like'])
+        # Convert forecast if present
+        forecast_list = converted.get('forecast', [])
+        for forecast in forecast_list:
+            for key in ['temp_min', 'temp_max', 'temp_day', 'temp_night']:
+                if key in forecast:
+                    if to_unit == 'metric':
+                        forecast[key] = convert_to_celsius(forecast[key])
+                    else:
+                        forecast[key] = convert_to_fahrenheit(forecast[key])
+        # Always ensure 'forecast' key exists for display update
+        if 'forecast' not in converted:
+            converted['forecast'] = []
         return converted
 
     def run(self):
