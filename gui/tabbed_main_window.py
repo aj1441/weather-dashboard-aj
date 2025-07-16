@@ -166,7 +166,8 @@ class TabbedWeatherDashboard:
 
         # Weather input component
         self.input_component = WeatherInputComponent(weather_tab)
-        self.input_component.set_weather_callback(self.handle_weather_request)
+        # Ensure callback signature matches: city, state, units
+        self.input_component.set_weather_callback(lambda city, state, units: self.handle_weather_request(city, state, units))
         self.input_component.set_unit_change_callback(self.handle_unit_change)  # Add this line
         input_frame = self.input_component.setup_component()
         input_frame.pack(pady=10, padx=20, fill=X)
@@ -457,13 +458,13 @@ class TabbedWeatherDashboard:
                 "An unexpected error occurred while saving the city."
             )
 
-    def handle_weather_request(self, city, state=None, country=None):
-        """Handle weather data request and display, with forecast cache update"""
+    def handle_weather_request(self, city, state=None, units=None, country=None):
+        """Handle weather data request and display, with forecast cache update. Units-aware."""
         try:
             # Normalize state abbreviation to uppercase
             state = normalize_state_abbreviation(state)
-            # Get comprehensive weather data from API (current + forecast)
-            comprehensive_data = self.weather_api.fetch_comprehensive_weather(city, state)
+            # Get comprehensive weather data from API (current + forecast), passing units
+            comprehensive_data = self.weather_api.fetch_comprehensive_weather(city, state, units)
             if comprehensive_data and 'error' not in comprehensive_data:
                 # Extract current weather data for display and saving
                 current_weather = comprehensive_data.get('current', {})
@@ -487,6 +488,11 @@ class TabbedWeatherDashboard:
                     "visibility": current_weather.get('visibility'),
                     "timestamp": datetime.now().isoformat()
                 }
+                # Set the correct unit label for display
+                if units == 'metric':
+                    weather_data['unit'] = '°C'
+                else:
+                    weather_data['unit'] = '°F'
                 # Update display with current weather data
                 self.weather_display.update_display(weather_data)
                 # Save weather data
@@ -494,6 +500,10 @@ class TabbedWeatherDashboard:
                 # Update forecast if available
                 forecast_data = comprehensive_data.get('forecast', [])
                 if forecast_data:
+                    # Set the correct unit label for each forecast day
+                    unit_label = '°C' if units == 'metric' else '°F'
+                    for day in forecast_data:
+                        day['unit'] = unit_label
                     self.forecast_display.update_forecast_display(forecast_data)
                     # Update forecast cache
                     import copy

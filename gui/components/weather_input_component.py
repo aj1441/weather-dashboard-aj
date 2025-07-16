@@ -59,12 +59,13 @@ class WeatherInputComponent:
             self.on_unit_change(self.unit_var.get())
 
     def on_get_weather(self):
-        """Handle get weather button click"""
+        """Handle get weather button click and pass current unit to callback"""
         city = self.city_var.get().strip()
         state = normalize_state_abbreviation(self.state_var.get())
-        units = self.unit_var.get()
+        units = self.unit_var.get()  # Always get the latest value
 
         if hasattr(self, 'weather_callback'):
+            # Always pass the current unit to the callback
             self.weather_callback(city, state, units)
 
     def get_city(self):
