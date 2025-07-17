@@ -42,11 +42,6 @@ class SavedCitiesComponent:
         )
         self.no_cities_label.pack(pady=40)
 
-        # Separator-do I want the background to be light gray? or I could use a ttk.Frame as a vertical separator
-        # This will visually separate the title from the cities list
-        # Using a Label with padding to create a visual separator
-        separator = tb.Label(self.cities_frame, text="", padding=(0, 10), background="lightgray")
-        separator.pack(fill="x", padx=20, pady=10)
 
         return self.cities_frame
 
@@ -80,9 +75,13 @@ class SavedCitiesComponent:
 
     def _create_city_card(self, city_data):
         """Create a card for a saved city"""
-        # Create card frame
-        card = tb.Frame(self.cities_list_frame)
-        card.pack(fill="x", padx=10, pady=5)
+        # Create main container for city and predictions
+        container = tb.Frame(self.cities_list_frame)
+        container.pack(fill="x", padx=10, pady=5)
+        
+        # Create card frame for city info and buttons
+        card = tb.Frame(container)
+        card.pack(fill="x")
 
         # City info
         city_name = f"{city_data.get('city')}"
@@ -98,21 +97,56 @@ class SavedCitiesComponent:
         )
         city_label.pack(side="left", padx=10, pady=5)
 
-        # Get Weather button
-        def get_weather():
-            if self.weather_callback:
-                state = normalize_state_abbreviation(city_data.get('state', ''))
-                self.weather_callback(
-                    city_data.get('city'),
-                    state,
-                    city_data.get('country')
+        # Predicted Weather button
+        def show_predictions():
+            # Toggle prediction display
+            if prediction_frame.winfo_viewable():
+                # Hide predictions
+                prediction_frame.pack_forget()
+                weather_btn.configure(text="🔮 Predicted Weather")
+            else:
+                # Show predictions
+                prediction_frame.pack(fill="x", padx=20, pady=(10, 0))
+                weather_btn.configure(text="🔮 Hide Predictions")
+                
+                # Clear existing predictions
+                for widget in prediction_frame.winfo_children():
+                    widget.destroy()
+                
+                # Add placeholder content for future prediction model
+                placeholder_label = tb.Label(
+                    prediction_frame,
+                    text="🔮 Prediction model will be integrated here in a future session",
+                    font=("Helvetica Neue", 12, "italic"),
+                    bootstyle="info"
                 )
+                placeholder_label.pack(pady=10)
+                
+                # Create sample prediction cards layout for demonstration
+                cards_frame = tb.Frame(prediction_frame)
+                cards_frame.pack(fill="x", pady=5)
+                
+                for i in range(3):
+                    sample_card = tb.Frame(cards_frame, relief="solid", borderwidth=1)
+                    sample_card.pack(side="left", fill="both", expand=True, padx=5, pady=5)
+                    
+                    tb.Label(
+                        sample_card,
+                        text=f"Day {i+1}",
+                        font=("Helvetica Neue", 10, "bold")
+                    ).pack(pady=2)
+                    
+                    tb.Label(
+                        sample_card,
+                        text="Prediction data",
+                        font=("Helvetica Neue", 9)
+                    ).pack(pady=2)
 
         weather_btn = tb.Button(
             card,
-            text="🌤️ Get Weather",
-            command=get_weather,
-            width=12,
+            text="🔮 Predicted Weather",
+            command=show_predictions,
+            width=15,
             bootstyle="secondary-outline"
         )
         weather_btn.pack(side="right", padx=10, pady=5)
@@ -203,6 +237,14 @@ class SavedCitiesComponent:
             bootstyle="danger-outline"
         )
         delete_btn.pack(side="right", padx=5, pady=5)
+
+        # Create prediction display frame (initially hidden)
+        prediction_frame = tb.Frame(container)
+        prediction_frame.pack(fill="x", padx=20, pady=(10, 0))
+        prediction_frame.pack_forget()  # Hide initially
+        
+        # Store reference to prediction frame for toggling
+        setattr(container, 'prediction_frame', prediction_frame)
 
     def restyle(self):
         """Force a style refresh for saved cities widgets."""
