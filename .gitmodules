@@ -1,0 +1,3 @@
+[submodule "shared_data"]
+	path = shared_data
+	url = https://github.com/Just-A-Fancy-Calculator/team6.git
