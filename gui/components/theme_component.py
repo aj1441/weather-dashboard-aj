@@ -5,12 +5,11 @@ import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 import tkinter as tk
 
-from core.utils import (
+from utils.utils import (
     save_user_theme,
     save_auto_theme_settings,
     load_auto_theme_settings,
     get_auto_theme,
-    UserSettingsManager,
 )
 from core.custom_themes import register_custom_themes
 from core.location_service import LocationService
@@ -244,4 +243,5 @@ class ThemeComponent:
         self.logger.info(f"Switching to theme: {theme_name}")
         self.app.style.theme_use(theme_name)
         self.current_theme = theme_name
-        UserSettingsManager.save_user_theme(theme_name)
+        from utils.utils import UserSettingsManager
+        UserSettingsManager().save_user_theme(theme_name)

@@ -2,7 +2,7 @@
 
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
-from core.state_utils import normalize_state_abbreviation
+from utils.state_utils import normalize_state_abbreviation
 
 class WeatherInputComponent:
     """Handles weather input fields and unit selection"""

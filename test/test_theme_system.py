@@ -16,7 +16,7 @@ logging.basicConfig(
 # Import our modules
 from core.theme_manager import ThemeManager
 from core.custom_themes import register_custom_themes
-from core.utils import load_user_theme, save_user_theme
+from utils.utils import load_user_theme, save_user_theme
 
 def test_theme_system():
     """Test various theme system components"""

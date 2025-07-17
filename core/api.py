@@ -8,7 +8,7 @@ from functools import wraps
 from typing import Dict, Optional
 from config import Config
 from core.data_validator import WeatherDataValidator
-from core.decorators import rate_limit, retry_on_failure, log_execution_time
+from utils.decorators import rate_limit, retry_on_failure, log_execution_time
 from core.open_meteo_client import OpenMeteoClient
 
 class WeatherAPI:

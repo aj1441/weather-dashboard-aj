@@ -8,12 +8,12 @@ import tkinter as tk
 import ttkbootstrap as tb
 import logging
 import threading
-from core.state_utils import normalize_state_abbreviation
+from utils.state_utils import normalize_state_abbreviation
 import time
 from datetime import datetime
 from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
 from ttkbootstrap.dialogs import Messagebox
-from core.utils import load_user_theme, load_auto_theme_settings
+from utils.utils import load_user_theme, load_auto_theme_settings
 from core.api import WeatherAPI
 from core.data_handler import WeatherDataHandler
 from core.custom_themes import register_custom_themes, get_fallback_theme
@@ -644,10 +644,10 @@ class TabbedWeatherDashboard:
                 for key in ['temp_min', 'temp_max', 'temp_day', 'temp_night']:
                     if key in forecast:
                         if new_unit == 'metric':
-                            from core.conversion_utils import convert_to_celsius
+                            from utils.conversion_utils import convert_to_celsius
                             forecast[key] = convert_to_celsius(forecast[key])
                         else:
-                            from core.conversion_utils import convert_to_fahrenheit
+                            from utils.conversion_utils import convert_to_fahrenheit
                             forecast[key] = convert_to_fahrenheit(forecast[key])
                 forecast['unit'] = unit_label
             forecast_list = cached_forecast
@@ -671,7 +671,7 @@ class TabbedWeatherDashboard:
         Returns:
             Dictionary with converted temperature values
         """
-        from core.conversion_utils import convert_to_celsius, convert_to_fahrenheit
+        from utils.conversion_utils import convert_to_celsius, convert_to_fahrenheit
         import copy
         if from_unit == to_unit:
             return data

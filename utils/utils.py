@@ -5,7 +5,7 @@ import json
 import os
 import logging
 from typing import Dict, Optional
-from .theme_manager import ThemeManager
+from core.theme_manager import ThemeManager
 
 logger = logging.getLogger(__name__)
 

@@ -14,3 +14,8 @@ debug_*.py
 demo_*.py
 quick_*.py
 archived_files/
+
+.idea/
+
+# Shared data from separate repository
+share_data/team6/

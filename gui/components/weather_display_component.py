@@ -4,7 +4,7 @@ import logging
 import ttkbootstrap as tb
 from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
 from core.icon_manager import get_weather_icon
-from core.weather_utils import parse_weather_data
+from utils.weather_utils import parse_weather_data
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class WeatherDisplayComponent:
         self.weather_desc_label.pack(side=LEFT)
         
         # Save city button (initially hidden)
-        from core.save_city_utils import create_save_city_button
+        from utils.save_city_utils import create_save_city_button
         self.save_city_btn = create_save_city_button(
             desc_frame,
             city_data=None,  # Will be set when weather is loaded
@@ -76,7 +76,7 @@ class WeatherDisplayComponent:
             temp_unit: 'imperial', 'metric', or 'kelvin'
         """
         logger.debug("update_weather_display called with weather_data: %s", weather_data)
-        from core.unit_label_utils import get_unit_label, get_wind_unit_label
+        from utils.unit_label_utils import get_unit_label, get_wind_unit_label
         unit_label = get_unit_label(temp_unit)
         wind_unit_label = get_wind_unit_label(temp_unit)
         if "error" in weather_data:
@@ -108,7 +108,7 @@ class WeatherDisplayComponent:
         self.save_city_btn.pack(side=LEFT, padx=10)
         
         # Update details
-        from core.details_row_utils import update_weather_details_row
+        from utils.details_row_utils import update_weather_details_row
         update_weather_details_row(self.humidity_label, self.pressure_label, self.wind_label, {**parsed, 'wind_unit_label': wind_unit_label})
         self.humidity_label.pack(side=LEFT, padx=10)
         self.pressure_label.pack(side=LEFT, padx=10)

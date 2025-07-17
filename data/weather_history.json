@@ -2125,5 +2125,43 @@
     "visibility": 10000,
     "timestamp": "2025-07-15T21:08:51.276787",
     "unit": "°C"
+  },
+  {
+    "city": "Phoenix",
+    "state": "AZ",
+    "country": "US",
+    "latitude": 33.4484367,
+    "longitude": -112.074141,
+    "temperature": 91.96,
+    "feels_like": 92.53,
+    "humidity": 37,
+    "pressure": 1008.0,
+    "weather_main": "Clouds",
+    "weather_description": "broken clouds",
+    "weather_icon": "04d",
+    "wind_speed": 11.5,
+    "wind_direction": 170,
+    "visibility": 10000,
+    "timestamp": "2025-07-16T19:36:16.564193",
+    "unit": "°F"
+  },
+  {
+    "city": "Phoenix",
+    "state": "AZ",
+    "country": "US",
+    "latitude": 33.4484367,
+    "longitude": -112.074141,
+    "temperature": 33.12,
+    "feels_like": 33.35,
+    "humidity": 37,
+    "pressure": 1008.0,
+    "weather_main": "Clouds",
+    "weather_description": "broken clouds",
+    "weather_icon": "04d",
+    "wind_speed": 5.14,
+    "wind_direction": 170,
+    "visibility": 10000,
+    "timestamp": "2025-07-16T19:36:28.670097",
+    "unit": "°C"
   }
 ]

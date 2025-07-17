@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Dict, List, Optional
 from config import Config
 from core.data_validator import WeatherDataValidator
-from core.state_utils import normalize_state_abbreviation
+from utils.state_utils import normalize_state_abbreviation
 from core.database import WeatherDatabase
 
 class WeatherDataHandler:

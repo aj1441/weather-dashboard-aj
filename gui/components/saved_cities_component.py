@@ -3,7 +3,7 @@
 import logging
 import ttkbootstrap as tb
 from core.data_handler import WeatherDataHandler
-from core.state_utils import normalize_state_abbreviation
+from utils.state_utils import normalize_state_abbreviation
 
 class SavedCitiesComponent:
     """Handles displaying and managing saved cities using ttkbootstrap widgets."""
