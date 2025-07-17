@@ -279,7 +279,7 @@ class WeatherDatabase:
     
     def save_historical_weather(self, city: str, state: str, data: Dict) -> bool:
         """
-        Save historical weather data to database
+        Save historical weather data to database only if it doesn't already exist
         
         Args:
             city: City name
@@ -292,8 +292,21 @@ class WeatherDatabase:
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
+                
+                # Check if data already exists for this city, state, and date
                 cursor.execute('''
-                    INSERT OR REPLACE INTO historical_weather
+                    SELECT id FROM historical_weather 
+                    WHERE city = ? AND state = ? AND date = ?
+                ''', (city, state, data['date']))
+                
+                existing = cursor.fetchone()
+                if existing:
+                    logger.debug(f"Historical data already exists for {city}, {state} on {data['date']}")
+                    return True  # Return True since data exists (not an error)
+                
+                # Insert only if data doesn't exist
+                cursor.execute('''
+                    INSERT INTO historical_weather
                     (city, state, date, temperature_max, temperature_min, temperature_mean,
                      precipitation, rain, wind_speed_max, wind_gusts_max, cloud_cover,
                      humidity, latitude, longitude, sunrise, sunset)
@@ -317,6 +330,7 @@ class WeatherDatabase:
                     data['sunset']
                 ))
                 conn.commit()
+                logger.debug(f"Saved new historical data for {city}, {state} on {data['date']}")
                 return True
         except Exception as e:
             logger.error(f"Error saving historical weather data: {str(e)}")

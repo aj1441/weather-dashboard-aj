@@ -19,7 +19,7 @@ from core.data_handler import WeatherDataHandler
 from core.custom_themes import register_custom_themes, get_fallback_theme
 from core.auto_theme import AutoThemeManager
 from core.location_service import LocationService
-from gui.components import ThemeComponent, WeatherInputComponent, WeatherDisplayComponent, SavedCitiesComponent, ForecastDisplayComponent
+from gui.components import ThemeComponent, WeatherInputComponent, WeatherDisplayComponent, SavedCitiesComponent, ForecastDisplayComponent, HistoryComponent
 
 class TabbedWeatherDashboard:
     """Advanced tabbed GUI with components and additional features"""
@@ -199,53 +199,10 @@ class TabbedWeatherDashboard:
         history_tab = tb.Frame(self.notebook)
         self.notebook.add(history_tab, text="📊 History")
 
-        # Create title
-        title_label = tb.Label(
-            history_tab,
-            text="Weather History",
-            font=("Helvetica Neue", 20, "bold")
-        )
-        title_label.pack(pady=10)
-
-        # Create scrollable frame for history entries
-        self.history_frame = tb.Frame(history_tab)
-        self.history_frame.pack(fill="both", expand=True, padx=20, pady=10)
-
-        # Create treeview for history
-        columns = ("timestamp", "city", "temperature", "description")
-        self.history_tree = tb.Treeview(
-            self.history_frame,
-            columns=columns,
-            show="headings",
-            height=10
-        )
-
-        # Configure columns
-        self.history_tree.heading("timestamp", text="Date/Time")
-        self.history_tree.heading("city", text="City")
-        self.history_tree.heading("temperature", text="Temperature")
-        self.history_tree.heading("description", text="Description")
-
-        # Set column widths
-        self.history_tree.column("timestamp", width=150)
-        self.history_tree.column("city", width=150)
-        self.history_tree.column("temperature", width=100)
-        self.history_tree.column("description", width=200)
-
-        # Add scrollbar
-        scrollbar = tb.Scrollbar(
-            self.history_frame,
-            orient="vertical",
-            command=self.history_tree.yview
-        )
-        self.history_tree.configure(yscrollcommand=scrollbar.set)
-
-        # Pack the treeview and scrollbar
-        self.history_tree.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        # Load initial history data
-        self.load_history_data()
+        # Create history component
+        self.history_component = HistoryComponent(history_tab)
+        history_frame = self.history_component.setup_component()
+        history_frame.pack(fill=BOTH, expand=True)
 
     def setup_about_tab(self):
         """Setup the about tab with application information"""
@@ -427,6 +384,8 @@ class TabbedWeatherDashboard:
             self.logger.info(f"Loaded {len(saved_cities)} saved cities")
             if hasattr(self, 'saved_cities_component'):
                 self.saved_cities_component.update_cities_list(saved_cities)
+            if hasattr(self, 'history_component'):
+                self.history_component.refresh_cities()
         except Exception as e:
             self.logger.error(f"Error loading saved cities: {str(e)}")
             Messagebox.show_error(
@@ -546,58 +505,6 @@ class TabbedWeatherDashboard:
                 title="Invalid City"
             )
 
-    def load_history_data(self):
-        """Load weather history data into the treeview"""
-        # Clear existing items
-        for item in self.history_tree.get_children():
-            self.history_tree.delete(item)
-
-        try:
-            # Get weather history from database
-            with self.data_handler.db.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT timestamp, city, temperature, weather_description
-                    FROM current_weather
-                    ORDER BY timestamp DESC
-                    LIMIT 100
-                ''')
-                history_data = cursor.fetchall()
-
-                # Add items to treeview
-                for item in history_data:
-                    # Convert timestamp to local time
-                    try:
-                        timestamp = datetime.fromisoformat(item['timestamp'])
-                        formatted_time = timestamp.strftime('%Y-%m-%d %H:%M:%S')
-                    except (ValueError, TypeError):
-                        formatted_time = item['timestamp']
-
-                    # Format temperature
-                    try:
-                        temp = f"{float(item['temperature']):.1f}°F"
-                    except (ValueError, TypeError):
-                        temp = "N/A"
-
-                    self.history_tree.insert(
-                        "",
-                        "end",
-                        values=(
-                            formatted_time,
-                            item['city'],
-                            temp,
-                            item['weather_description']
-                        )
-                    )
-
-        except Exception as e:
-            self.logger.error(f"Error loading history data: {str(e)}")
-            # Show error in tree view
-            self.history_tree.insert(
-                "",
-                "end",
-                values=("Error", "Failed to load weather history", "", "")
-            )
 
     def restyle_all_components(self):
         """Refresh the styles of all major components after a theme change."""
@@ -609,6 +516,8 @@ class TabbedWeatherDashboard:
             self.forecast_display.restyle()
         if hasattr(self.saved_cities_component, "restyle"):
             self.saved_cities_component.restyle()
+        if hasattr(self.history_component, "restyle"):
+            self.history_component.restyle()
 
     def handle_unit_change(self, new_unit):
         """Handle temperature unit change and update displays, using forecast cache for robustness"""

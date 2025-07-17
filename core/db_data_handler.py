@@ -146,7 +146,7 @@ class DatabaseDataHandler:
     
     def save_historical_data(self, city: str, state: str, historical_df: pd.DataFrame) -> bool:
         """
-        Save historical weather data from DataFrame
+        Save historical weather data from DataFrame, skipping duplicates
         
         Args:
             city: City name
@@ -158,9 +158,33 @@ class DatabaseDataHandler:
         """
         try:
             success = True
+            total_rows = len(historical_df)
+            saved_count = 0
+            skipped_count = 0
+            
             for _, row in historical_df.iterrows():
-                if not self.db.save_historical_weather(city, state, row):
+                # Check if data already exists
+                existing_data = self.db.get_historical_weather(
+                    city=city,
+                    state=state, 
+                    start_date=row['date'],
+                    end_date=row['date']
+                )
+                
+                if existing_data:
+                    skipped_count += 1
+                    logger.debug(f"Skipping existing data for {city}, {state} on {row['date']}")
+                    continue
+                
+                if self.db.save_historical_weather(city, state, row):
+                    saved_count += 1
+                else:
                     success = False
+            
+            logger.info(f"Historical data processing complete for {city}, {state}: "
+                       f"{saved_count} new records saved, {skipped_count} duplicates skipped "
+                       f"out of {total_rows} total records")
+            
             return success
         except Exception as e:
             logger.error(f"Error saving historical data: {str(e)}")

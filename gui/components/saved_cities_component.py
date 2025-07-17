@@ -193,8 +193,8 @@ class SavedCitiesComponent:
                 
                 if success:
                     tb.dialogs.Messagebox.show_info(
-                        title="Success",
-                        message=f"Historical data for {city_data.get('city')} has been fetched and stored"
+                        title="Success", 
+                        message=f"Historical data for {city_data.get('city')} has been processed.\n\nNew data has been saved (duplicates were skipped automatically)."
                     )
                 else:
                     tb.dialogs.Messagebox.show_error(
