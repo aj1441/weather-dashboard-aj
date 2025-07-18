@@ -2163,5 +2163,24 @@
     "visibility": 10000,
     "timestamp": "2025-07-16T19:36:28.670097",
     "unit": "°C"
+  },
+  {
+    "city": "South Tucson",
+    "state": "AZ",
+    "country": "US",
+    "latitude": 32.2228765,
+    "longitude": -110.9748477,
+    "temperature": 99.77,
+    "feels_like": 99.77,
+    "humidity": 26,
+    "pressure": 1009.0,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01d",
+    "wind_speed": 5.99,
+    "wind_direction": 258,
+    "visibility": 10000,
+    "timestamp": "2025-07-18T14:26:53.276600",
+    "unit": "°F"
   }
 ]

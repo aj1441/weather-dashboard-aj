@@ -60,10 +60,10 @@ class WeatherDatabase:
                 cursor.execute("""
                     SELECT name FROM sqlite_master 
                     WHERE type='table' AND name IN 
-                    ('current_weather', 'forecast_weather', 'saved_locations', 'user_preferences', 'historical_weather')
+                    ('current_weather', 'forecast_weather', 'saved_locations', 'user_preferences', 'historical_weather', 'weather_predictions')
                 """)
                 existing_tables = {row[0] for row in cursor.fetchall()}
-                required_tables = {'current_weather', 'forecast_weather', 'saved_locations', 'user_preferences', 'historical_weather'}
+                required_tables = {'current_weather', 'forecast_weather', 'saved_locations', 'user_preferences', 'historical_weather', 'weather_predictions'}
                 missing_tables = required_tables - existing_tables
                 
                 if missing_tables:
@@ -182,6 +182,35 @@ class WeatherDatabase:
                     sunrise INTEGER,
                     sunset INTEGER,
                     UNIQUE(city, state, date)
+                )
+            ''')
+            
+            # Weather predictions table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS weather_predictions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    city TEXT NOT NULL,
+                    state TEXT,
+                    prediction_date DATE NOT NULL,
+                    prediction_day INTEGER NOT NULL,  -- 1, 2, or 3 for day 1-3 forecast
+                    predicted_temp_max REAL,
+                    predicted_temp_min REAL,
+                    predicted_precipitation REAL,
+                    predicted_humidity REAL,
+                    predicted_wind_speed REAL,
+                    predicted_conditions TEXT,
+                    model_confidence REAL,
+                    data_points_used INTEGER,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    model_performance TEXT,  -- JSON string of model performance metrics
+                    trend_analysis TEXT,     -- JSON string of trend analysis
+                    actual_temp_max REAL,    -- Filled in later when actual data is available
+                    actual_temp_min REAL,
+                    actual_precipitation REAL,
+                    actual_humidity REAL,
+                    actual_conditions TEXT,
+                    accuracy_score REAL,     -- Calculated when actual data is compared
+                    UNIQUE(city, state, prediction_date, prediction_day)
                 )
             ''')
             
@@ -382,15 +411,15 @@ class WeatherDatabase:
             logger.error("Error retrieving forecast data: %s", e)
             return []
     
-    def get_historical_weather(self, city: str, state: str, start_date: str, end_date: str) -> List[Dict]:
+    def get_historical_weather(self, city: str, state: str, start_date: str = None, end_date: str = None) -> List[Dict]:
         """
         Get historical weather data for a city between dates
         
         Args:
             city: City name
             state: State code
-            start_date: Start date string (YYYY-MM-DD)
-            end_date: End date string (YYYY-MM-DD)
+            start_date: Start date string (YYYY-MM-DD), optional
+            end_date: End date string (YYYY-MM-DD), optional
             
         Returns:
             List of weather data dictionaries
@@ -398,13 +427,24 @@ class WeatherDatabase:
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT *
-                    FROM historical_weather
-                    WHERE city = ? AND state = ?
-                    AND date BETWEEN ? AND ?
-                    ORDER BY date ASC
-                ''', (city, state, start_date, end_date))
+                
+                if start_date and end_date:
+                    # Get data between specific dates
+                    cursor.execute('''
+                        SELECT *
+                        FROM historical_weather
+                        WHERE city = ? AND state = ?
+                        AND date BETWEEN ? AND ?
+                        ORDER BY date ASC
+                    ''', (city, state, start_date, end_date))
+                else:
+                    # Get all historical data for this city/state
+                    cursor.execute('''
+                        SELECT *
+                        FROM historical_weather
+                        WHERE city = ? AND state = ?
+                        ORDER BY date ASC
+                    ''', (city, state))
                 
                 return [dict(row) for row in cursor.fetchall()]
                 
@@ -523,6 +563,252 @@ class WeatherDatabase:
             logger.error("Error retrieving user preference: %s", e)
             return default
     
+    def save_weather_prediction(self, city: str, state: str, prediction_data: Dict) -> bool:
+        """
+        Save weather prediction data to database
+        
+        Args:
+            city: City name
+            state: State code
+            prediction_data: Dictionary containing prediction data from WeatherPredictor
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Extract prediction metadata
+                forecast = prediction_data.get('forecast', [])
+                confidence = prediction_data.get('confidence', 0.0)
+                data_points_used = prediction_data.get('data_points_used', 0)
+                model_performance = json.dumps(prediction_data.get('model_performance', {}))
+                trend_analysis = json.dumps(prediction_data.get('trend', {}))
+                
+                # Save each day's prediction
+                for day_pred in forecast:
+                    cursor.execute('''
+                        INSERT OR REPLACE INTO weather_predictions (
+                            city, state, prediction_date, prediction_day,
+                            predicted_temp_max, predicted_temp_min, predicted_precipitation,
+                            predicted_humidity, predicted_wind_speed, predicted_conditions,
+                            model_confidence, data_points_used, model_performance, trend_analysis
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (
+                        city,
+                        state,
+                        day_pred.get('date'),
+                        day_pred.get('day_number'),
+                        day_pred.get('temperature_max'),
+                        day_pred.get('temperature_min'),
+                        day_pred.get('precipitation'),
+                        day_pred.get('humidity'),
+                        day_pred.get('wind_speed'),
+                        day_pred.get('conditions'),
+                        confidence,
+                        data_points_used,
+                        model_performance,
+                        trend_analysis
+                    ))
+                
+                conn.commit()
+                logger.info(f"Saved {len(forecast)} weather predictions for {city}, {state}")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Error saving weather prediction: {str(e)}")
+            return False
+    
+    def get_weather_predictions(self, city: str, state: str, start_date: str = None, end_date: str = None) -> List[Dict]:
+        """
+        Get weather predictions for a city between dates
+        
+        Args:
+            city: City name
+            state: State code
+            start_date: Start date string (YYYY-MM-DD), optional
+            end_date: End date string (YYYY-MM-DD), optional
+            
+        Returns:
+            List of prediction dictionaries
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                if start_date and end_date:
+                    cursor.execute('''
+                        SELECT * FROM weather_predictions
+                        WHERE city = ? AND state = ?
+                        AND prediction_date BETWEEN ? AND ?
+                        ORDER BY prediction_date ASC, prediction_day ASC
+                    ''', (city, state, start_date, end_date))
+                else:
+                    cursor.execute('''
+                        SELECT * FROM weather_predictions
+                        WHERE city = ? AND state = ?
+                        ORDER BY prediction_date ASC, prediction_day ASC
+                    ''', (city, state))
+                
+                return [dict(row) for row in cursor.fetchall()]
+                
+        except Exception as e:
+            logger.error(f"Error retrieving weather predictions: {str(e)}")
+            return []
+    
+    def update_prediction_with_actual(self, city: str, state: str, prediction_date: str, 
+                                    actual_temp_max: float, actual_temp_min: float,
+                                    actual_precipitation: float, actual_humidity: float,
+                                    actual_conditions: str) -> bool:
+        """
+        Update a prediction record with actual weather data and calculate accuracy
+        
+        Args:
+            city: City name
+            state: State code
+            prediction_date: Date of the prediction (YYYY-MM-DD)
+            actual_temp_max: Actual maximum temperature
+            actual_temp_min: Actual minimum temperature
+            actual_precipitation: Actual precipitation
+            actual_humidity: Actual humidity
+            actual_conditions: Actual weather conditions
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Get all prediction days for this date
+                cursor.execute('''
+                    SELECT * FROM weather_predictions
+                    WHERE city = ? AND state = ? AND prediction_date = ?
+                ''', (city, state, prediction_date))
+                
+                predictions = cursor.fetchall()
+                
+                for pred in predictions:
+                    # Calculate accuracy score
+                    accuracy_score = self._calculate_prediction_accuracy(
+                        pred, actual_temp_max, actual_temp_min, 
+                        actual_precipitation, actual_humidity, actual_conditions
+                    )
+                    
+                    # Update the record with actual data
+                    cursor.execute('''
+                        UPDATE weather_predictions
+                        SET actual_temp_max = ?, actual_temp_min = ?, 
+                            actual_precipitation = ?, actual_humidity = ?,
+                            actual_conditions = ?, accuracy_score = ?
+                        WHERE id = ?
+                    ''', (
+                        actual_temp_max, actual_temp_min, actual_precipitation,
+                        actual_humidity, actual_conditions, accuracy_score,
+                        pred['id']
+                    ))
+                
+                conn.commit()
+                logger.info(f"Updated {len(predictions)} predictions with actual data for {city}, {state} on {prediction_date}")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Error updating prediction with actual data: {str(e)}")
+            return False
+    
+    def _calculate_prediction_accuracy(self, prediction: Dict, actual_temp_max: float,
+                                     actual_temp_min: float, actual_precipitation: float,
+                                     actual_humidity: float, actual_conditions: str) -> float:
+        """
+        Calculate accuracy score for a prediction vs actual data
+        
+        Returns:
+            Accuracy score between 0 and 1
+        """
+        try:
+            scores = []
+            
+            # Temperature accuracy (weighted heavily)
+            if prediction['predicted_temp_max'] is not None and actual_temp_max is not None:
+                temp_max_error = abs(prediction['predicted_temp_max'] - actual_temp_max)
+                temp_max_score = max(0, 1 - (temp_max_error / 20))  # 20°F tolerance
+                scores.append(temp_max_score * 0.3)
+            
+            if prediction['predicted_temp_min'] is not None and actual_temp_min is not None:
+                temp_min_error = abs(prediction['predicted_temp_min'] - actual_temp_min)
+                temp_min_score = max(0, 1 - (temp_min_error / 20))  # 20°F tolerance
+                scores.append(temp_min_score * 0.3)
+            
+            # Precipitation accuracy
+            if prediction['predicted_precipitation'] is not None and actual_precipitation is not None:
+                precip_error = abs(prediction['predicted_precipitation'] - actual_precipitation)
+                precip_score = max(0, 1 - (precip_error / 1.0))  # 1 inch tolerance
+                scores.append(precip_score * 0.2)
+            
+            # Humidity accuracy
+            if prediction['predicted_humidity'] is not None and actual_humidity is not None:
+                humidity_error = abs(prediction['predicted_humidity'] - actual_humidity)
+                humidity_score = max(0, 1 - (humidity_error / 30))  # 30% tolerance
+                scores.append(humidity_score * 0.1)
+            
+            # Conditions accuracy (exact match)
+            if prediction['predicted_conditions'] and actual_conditions:
+                conditions_score = 1.0 if prediction['predicted_conditions'] == actual_conditions else 0.0
+                scores.append(conditions_score * 0.1)
+            
+            # Return average of all scores
+            return sum(scores) / len(scores) if scores else 0.0
+            
+        except Exception as e:
+            logger.error(f"Error calculating prediction accuracy: {str(e)}")
+            return 0.0
+    
+    def get_prediction_accuracy_stats(self, city: str = None, state: str = None) -> Dict:
+        """
+        Get prediction accuracy statistics
+        
+        Args:
+            city: Optional city filter
+            state: Optional state filter
+            
+        Returns:
+            Dictionary with accuracy statistics
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Build query with optional filters
+                base_query = '''
+                    SELECT 
+                        AVG(accuracy_score) as avg_accuracy,
+                        COUNT(*) as total_predictions,
+                        COUNT(CASE WHEN accuracy_score IS NOT NULL THEN 1 END) as verified_predictions,
+                        AVG(model_confidence) as avg_confidence,
+                        MIN(accuracy_score) as min_accuracy,
+                        MAX(accuracy_score) as max_accuracy
+                    FROM weather_predictions
+                    WHERE accuracy_score IS NOT NULL
+                '''
+                
+                params = []
+                if city and state:
+                    base_query += " AND city = ? AND state = ?"
+                    params.extend([city, state])
+                elif city:
+                    base_query += " AND city = ?"
+                    params.append(city)
+                
+                cursor.execute(base_query, params)
+                stats = dict(cursor.fetchone())
+                
+                return stats
+                
+        except Exception as e:
+            logger.error(f"Error getting prediction accuracy stats: {str(e)}")
+            return {}
+    
     def cleanup_old_data(self, days_to_keep: int = 30) -> bool:
         """Clean up old weather data to prevent database bloat"""
         try:
@@ -546,6 +832,12 @@ class WeatherDatabase:
                     DELETE FROM historical_weather 
                     WHERE date < date('now', '-{} days')
                 '''.format(days_to_keep))
+                
+                # Clean up old prediction data (keep longer for accuracy analysis)
+                cursor.execute('''
+                    DELETE FROM weather_predictions 
+                    WHERE datetime(created_at) < datetime('now', '-{} days')
+                '''.format(days_to_keep * 3))  # Keep predictions 3x longer
                 
                 conn.commit()
                 return True
