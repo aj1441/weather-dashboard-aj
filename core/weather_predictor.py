@@ -14,17 +14,19 @@ import warnings
 warnings.filterwarnings('ignore')
 
 from core.database import WeatherDatabase
+from prediction_services.feature_engineer import WeatherFeatureEngineer
 
 
 class WeatherPredictor:
     """Predicts 3-day weather forecast using Random Forest and trend analysis with Linear Regression"""
     
-    def __init__(self):
+    def __init__(self, feature_engineer: WeatherFeatureEngineer = None):
         self.logger = logging.getLogger(__name__)
         self.db = WeatherDatabase()
         self.models = {}
         self.scalers = {}
-        self.feature_names = []
+        # Dependency injection: use provided feature engineer or create default
+        self.feature_engineer = feature_engineer or WeatherFeatureEngineer()
         
     def predict_weather(self, city: str, state: str) -> Tuple[bool, Dict]:
         """
@@ -44,8 +46,8 @@ class WeatherPredictor:
             if historical_data is None or len(historical_data) < 60:
                 return False, {"error": "Please get history first - need at least 60 days of data for predictions"}
             
-            # Prepare features and train models
-            X, y_dict = self._prepare_features_and_targets(historical_data)
+            # Prepare features and train models using feature engineering service
+            X, y_dict = self.feature_engineer.prepare_features_and_targets(historical_data)
             
             if len(X) < 30:
                 return False, {"error": "Insufficient data for reliable predictions"}
@@ -115,70 +117,6 @@ class WeatherPredictor:
             self.logger.error(f"Error getting historical data: {e}")
             return None
     
-    def _prepare_features_and_targets(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict]:
-        """Prepare features for ML models and target variables"""
-        
-        # Create lag features (previous days' weather)
-        lag_days = [1, 2, 3, 7]
-        for lag in lag_days:
-            df[f'temp_max_lag_{lag}'] = df['temperature_max'].shift(lag)
-            df[f'temp_min_lag_{lag}'] = df['temperature_min'].shift(lag)
-            df[f'precip_lag_{lag}'] = df['precipitation'].shift(lag)
-            df[f'humidity_lag_{lag}'] = df['humidity'].shift(lag)
-        
-        # Create moving averages
-        windows = [3, 7, 14, 30]
-        for window in windows:
-            df[f'temp_max_ma_{window}'] = df['temperature_max'].rolling(window=window, min_periods=1).mean()
-            df[f'temp_min_ma_{window}'] = df['temperature_min'].rolling(window=window, min_periods=1).mean()
-            df[f'precip_ma_{window}'] = df['precipitation'].rolling(window=window, min_periods=1).mean()
-        
-        # Seasonal features
-        df['day_of_year'] = df['date'].dt.dayofyear
-        df['month'] = df['date'].dt.month
-        df['day_of_week'] = df['date'].dt.dayofweek
-        df['week_of_year'] = df['date'].dt.isocalendar().week
-        
-        # Cyclical encoding for seasonal features
-        df['day_of_year_sin'] = np.sin(2 * np.pi * df['day_of_year'] / 365.25)
-        df['day_of_year_cos'] = np.cos(2 * np.pi * df['day_of_year'] / 365.25)
-        df['month_sin'] = np.sin(2 * np.pi * df['month'] / 12)
-        df['month_cos'] = np.cos(2 * np.pi * df['month'] / 12)
-        
-        # Temperature and precipitation trends
-        df['temp_trend_7d'] = df['temperature_max'].rolling(window=7, min_periods=1).apply(
-            lambda x: np.polyfit(range(len(x)), x, 1)[0] if len(x) > 1 else 0, raw=False)
-        df['precip_trend_7d'] = df['precipitation'].rolling(window=7, min_periods=1).apply(
-            lambda x: np.polyfit(range(len(x)), x, 1)[0] if len(x) > 1 else 0, raw=False)
-        
-        # Weather variability features
-        df['temp_range'] = df['temperature_max'] - df['temperature_min']
-        df['temp_range_ma_7'] = df['temp_range'].rolling(window=7, min_periods=1).mean()
-        
-        # Select feature columns (exclude target variables and non-predictive columns)
-        feature_columns = [col for col in df.columns if col not in [
-            'date', 'city', 'state', 'latitude', 'longitude', 'sunrise', 'sunset',
-            'temperature_max', 'temperature_min', 'precipitation', 'humidity', 'wind_speed_max'
-        ]]
-        
-        # Remove rows with NaN values (from lag features)
-        df_clean = df.dropna()
-        
-        if len(df_clean) < 30:
-            raise ValueError("Insufficient clean data after feature engineering")
-        
-        X = df_clean[feature_columns]
-        self.feature_names = feature_columns
-        
-        # Target variables for prediction
-        y_dict = {
-            'temperature_max': df_clean['temperature_max'],
-            'temperature_min': df_clean['temperature_min'],
-            'precipitation': df_clean['precipitation'],
-            'humidity': df_clean['humidity']
-        }
-        
-        return X, y_dict
     
     def _train_models(self, X: pd.DataFrame, y_dict: Dict) -> Dict:
         """Train Random Forest models for each weather variable"""
@@ -224,7 +162,7 @@ class WeatherPredictor:
                     'mae': round(mae, 3),
                     'r2_score': round(r2, 3),
                     'feature_importance': dict(zip(
-                        self.feature_names, 
+                        self.feature_engineer.get_feature_names(), 
                         rf_model.feature_importances_
                     ))
                 }

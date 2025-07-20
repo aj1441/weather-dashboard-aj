@@ -215,6 +215,77 @@ class WeatherDatabase:
             ''')
             
             conn.commit()
+            
+            # Apply database migrations
+            self._apply_migrations()
+    
+    def _apply_migrations(self):
+        """Apply database schema migrations for backward compatibility."""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Migration 1: Remove UNIQUE constraint and add is_latest column
+                cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='weather_predictions'")
+                current_schema = cursor.fetchone()
+                
+                if current_schema and 'UNIQUE(city, state, prediction_date, prediction_day)' in current_schema[0]:
+                    logger.info("Applying migration: Removing UNIQUE constraint and adding is_latest column")
+                    
+                    # Step 1: Create new table without UNIQUE constraint
+                    cursor.execute('''
+                        CREATE TABLE weather_predictions_new (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            city TEXT NOT NULL,
+                            state TEXT,
+                            prediction_date DATE NOT NULL,
+                            prediction_day INTEGER NOT NULL,
+                            predicted_temp_max REAL,
+                            predicted_temp_min REAL,
+                            predicted_precipitation REAL,
+                            predicted_humidity REAL,
+                            predicted_wind_speed REAL,
+                            predicted_conditions TEXT,
+                            model_confidence REAL,
+                            data_points_used INTEGER,
+                            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            model_performance TEXT,
+                            trend_analysis TEXT,
+                            actual_temp_max REAL,
+                            actual_temp_min REAL,
+                            actual_precipitation REAL,
+                            actual_humidity REAL,
+                            actual_conditions TEXT,
+                            accuracy_score REAL,
+                            is_latest BOOLEAN DEFAULT 1
+                        )
+                    ''')
+                    
+                    # Step 2: Copy data from old table, marking all as latest
+                    cursor.execute('''
+                        INSERT INTO weather_predictions_new 
+                        SELECT id, city, state, prediction_date, prediction_day,
+                               predicted_temp_max, predicted_temp_min, predicted_precipitation,
+                               predicted_humidity, predicted_wind_speed, predicted_conditions,
+                               model_confidence, data_points_used, created_at,
+                               model_performance, trend_analysis,
+                               actual_temp_max, actual_temp_min, actual_precipitation,
+                               actual_humidity, actual_conditions, accuracy_score,
+                               1 as is_latest
+                        FROM weather_predictions
+                    ''')
+                    
+                    # Step 3: Drop old table and rename new table
+                    cursor.execute('DROP TABLE weather_predictions')
+                    cursor.execute('ALTER TABLE weather_predictions_new RENAME TO weather_predictions')
+                    
+                    conn.commit()
+                    logger.info("Migration completed: UNIQUE constraint removed, is_latest column added")
+                else:
+                    logger.debug("Migration skipped: Table already has correct schema")
+                
+        except Exception as e:
+            logger.error(f"Error applying database migrations: {e}")
     
     def save_current_weather(self, weather_data: Dict, city: str, state: str = None) -> bool:
         """Save current weather data to database"""

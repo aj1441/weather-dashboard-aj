@@ -12,6 +12,7 @@ class WeatherDisplayComponent:
     """Handles displaying current weather data with emoji and save functionality"""
     
     def __init__(self, parent):
+        self.logger = logging.getLogger(__name__)
         self.parent = parent
         self.current_weather_data = None
         self.setup_component()
