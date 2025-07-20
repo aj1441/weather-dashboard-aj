@@ -13,12 +13,9 @@ import time
 from datetime import datetime
 from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
 from ttkbootstrap.dialogs import Messagebox
-from utils.utils import load_user_theme, load_auto_theme_settings
 from core.api import WeatherAPI
 from core.data_handler import WeatherDataHandler
-from core.custom_themes import register_custom_themes, get_fallback_theme
-from core.auto_theme import AutoThemeManager
-from core.location_service import LocationService
+from core.theme_factory import create_theme_manager
 from gui.components import ThemeComponent, WeatherInputComponent, WeatherDisplayComponent, SavedCitiesComponent, ForecastDisplayComponent, HistoryComponent
 
 class TabbedWeatherDashboard:
@@ -29,31 +26,18 @@ class TabbedWeatherDashboard:
         self.config = config
         self.logger = logging.getLogger(__name__)
         
-        # Load last used theme and auto mode preference
-        self.current_theme = load_user_theme()
-        self.auto_mode, _, _ = load_auto_theme_settings()
-        self.auto_theme_thread = None
-        self.auto_theme_running = False
-        self.auto_theme_manager = AutoThemeManager()
-        self.location_service = LocationService()
-
-        #1. Create the actual window BEFORE theme registration
+        #1. Create the actual window FIRST
         self.app = tb.Window()
 
-        #2. Register themes now that we have a root window
-        register_custom_themes()
+        #2. Initialize new theme system (auto-enabled by default)
+        self.theme_manager = create_theme_manager(self.app)
         
-        #3. Apply the user's theme
-        try:
-            style = tb.Style()
-            style.theme_use(self.current_theme)
-        except Exception as e:
-            fallback = get_fallback_theme(self.current_theme)
-            self.logger.warning(
-                f"Failed to load theme {self.current_theme}, falling back to {fallback}: {e}"
-            )
-            style.theme_use(fallback)
-            self.current_theme = fallback
+        #3. Apply initial theme (auto or manual based on settings)
+        self.theme_manager.apply_current_theme()
+        
+        # Auto theme refresh setup
+        self.auto_theme_thread = None
+        self.auto_theme_running = False
 
         
         self.app.title("Advanced Weather Dashboard")
@@ -68,7 +52,8 @@ class TabbedWeatherDashboard:
         self.data_handler.cleanup_old_forecast_data()
 
         # Forecast cache for robust display updates
-        self.last_forecast_data = None
+        from utils.weather_conversion_service import ForecastCache
+        self.forecast_cache = ForecastCache()
 
         self.setup_gui()
         # Load initial saved cities
@@ -76,7 +61,7 @@ class TabbedWeatherDashboard:
 
     def start_auto_theme_refresh(self):
         """Start the auto theme refresh thread if auto mode is enabled"""
-        if not self.auto_mode:
+        if not self.theme_manager.is_auto_enabled():
             self.logger.info("Auto mode disabled - not starting refresh thread")
             return
 
@@ -88,7 +73,6 @@ class TabbedWeatherDashboard:
 
     def stop_auto_theme_refresh(self):
         """Stop the auto theme refresh thread"""
-        self.auto_mode = False
         self.auto_theme_running = False
         if self.auto_theme_thread and self.auto_theme_thread.is_alive():
             self.auto_theme_thread.join(timeout=1.0)
@@ -100,29 +84,24 @@ class TabbedWeatherDashboard:
         while self.auto_theme_running:
             try:
                 self.logger.info(
-                    f"[auto_theme_loop] Checking location-based theme at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                    f"[auto_theme_loop] Checking auto theme at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
                 )
 
-                location = self.location_service.get_user_location()
-                if location:
-                    new_theme = self.auto_theme_manager.get_recommended_theme(
-                        location.latitude, location.longitude
-                    )
-                else:
-                    self.logger.warning("Location unavailable, falling back to default auto theme logic")
-                    new_theme = self.auto_theme_manager.get_recommended_theme()
-
-                if new_theme != self.current_theme:
-                    self.logger.info(f"Auto switching theme to {new_theme}")
-                    self.app.style.theme_use(new_theme)
-                    self.current_theme = new_theme
-                    self.app.update_idletasks()
-
-                    if hasattr(self, "restyle_all_components"):
-                        self.restyle_all_components()
-                        self.logger.info(
-                            "[auto_theme_loop] Called restyle_all_components() after theme switch"
-                        )
+                # Get current theme from theme manager
+                current_theme = self.theme_manager.current_theme
+                
+                # Apply current theme (will be auto-determined if auto mode is on)
+                if self.theme_manager.apply_current_theme():
+                    # Check if theme actually changed
+                    new_theme = self.theme_manager.current_theme
+                    if new_theme != getattr(self, '_last_auto_theme', None):
+                        self.logger.info(f"Auto theme changed to: {new_theme}")
+                        self._last_auto_theme = new_theme
+                        
+                        # Trigger component restyling
+                        if hasattr(self, "restyle_all_components"):
+                            self.restyle_all_components()
+                            self.logger.info("[auto_theme_loop] Components restyled after theme change")
 
                 # Sleep for 30 minutes before next check
                 for _ in range(1800):
@@ -136,14 +115,10 @@ class TabbedWeatherDashboard:
 
     def setup_gui(self):
         """Create the tabbed interface"""
-        # Theme controls at top
-        self.theme_component = ThemeComponent(self.app, self.current_theme)
+        # Theme controls at top (pass theme_manager instead of current_theme)
+        self.theme_component = ThemeComponent(self.app, self.theme_manager)
         theme_controls = self.theme_component.theme_frame
         theme_controls.pack(pady=10)
-
-        # Apply the appropriate theme on startup using IP location
-        self.theme_component.apply_auto_theme()
-        self.auto_mode = self.theme_component.auto_mode
 
         # Create notebook for tabs
         self.notebook = tb.Notebook(self.app, bootstyle="primary")
@@ -155,7 +130,7 @@ class TabbedWeatherDashboard:
         self.setup_about_tab()
         
         # Start periodic auto theme refresh only when auto mode is enabled
-        if self.auto_mode:
+        if self.theme_manager.is_auto_enabled():
             self.start_auto_theme_refresh()
 
     def setup_weather_tab(self):
@@ -464,9 +439,8 @@ class TabbedWeatherDashboard:
                     for day in forecast_data:
                         day['unit'] = unit_label
                     self.forecast_display.update_forecast_display(forecast_data)
-                    # Update forecast cache
-                    import copy
-                    self.last_forecast_data = copy.deepcopy(forecast_data)
+                    # Store forecast data in cache with its unit
+                    self.forecast_cache.store(forecast_data, units)
                     # Save forecast data to database
                     location_data = comprehensive_data.get('location', {})
                     forecast_city = location_data.get('name', city)
@@ -533,8 +507,9 @@ class TabbedWeatherDashboard:
             return
         # Get current unit before switching
         old_unit = 'metric' if new_unit == 'imperial' else 'imperial'
-        # Convert temperatures without making API calls
-        converted_data = self._convert_temperature_data(current_data, old_unit, new_unit)
+        # Convert temperatures without making API calls using clean service
+        from utils.weather_conversion_service import WeatherConversionService
+        converted_data = WeatherConversionService.convert_current_weather_data(current_data, old_unit, new_unit)
         # Set unit label for display (F/C)
         unit_label = '°C' if new_unit == 'metric' else '°F'
         # For flat structure
@@ -545,21 +520,9 @@ class TabbedWeatherDashboard:
             converted_data['current']['unit'] = unit_label
         # Try to get forecast from converted_data, else use cache
         forecast_list = converted_data.get('forecast', [])
-        if (not forecast_list or not isinstance(forecast_list, list)) and self.last_forecast_data:
-            # Convert cached forecast to new unit
-            import copy
-            cached_forecast = copy.deepcopy(self.last_forecast_data)
-            for forecast in cached_forecast:
-                for key in ['temp_min', 'temp_max', 'temp_day', 'temp_night']:
-                    if key in forecast:
-                        if new_unit == 'metric':
-                            from utils.conversion_utils import convert_to_celsius
-                            forecast[key] = convert_to_celsius(forecast[key])
-                        else:
-                            from utils.conversion_utils import convert_to_fahrenheit
-                            forecast[key] = convert_to_fahrenheit(forecast[key])
-                forecast['unit'] = unit_label
-            forecast_list = cached_forecast
+        if (not forecast_list or not isinstance(forecast_list, list)) and self.forecast_cache.has_data():
+            # Get converted forecast data from cache (pure function, no mutation)
+            forecast_list = self.forecast_cache.get_converted(new_unit)
         else:
             # Update forecast items with unit label if present
             for forecast in forecast_list:
@@ -571,59 +534,6 @@ class TabbedWeatherDashboard:
                 forecast_list = []
             self.forecast_display.update_forecast_display(forecast_list)
 
-    def _convert_temperature_data(self, data: dict, from_unit: str, to_unit: str) -> dict:
-        """Convert temperature values in weather data between units
-        Args:
-            data: Weather data dictionary (may be flat or nested)
-            from_unit: Current unit ('imperial' or 'metric')
-            to_unit: Target unit ('imperial' or 'metric')
-        Returns:
-            Dictionary with converted temperature values
-        """
-        from utils.conversion_utils import convert_to_celsius, convert_to_fahrenheit
-        import copy
-        if from_unit == to_unit:
-            return data
-        # Use deep copy to avoid mutating original data
-        converted = copy.deepcopy(data)
-        # Handle both flat and nested (with 'current') data
-        # Flat: {'temperature': ..., 'feels_like': ...}
-        # Nested: {'current': {...}, 'forecast': [...]}
-        if 'current' in converted:
-            current = converted['current']
-            if 'temp' in current:
-                if to_unit == 'metric':
-                    current['temp'] = convert_to_celsius(current['temp'])
-                    if 'feels_like' in current:
-                        current['feels_like'] = convert_to_celsius(current['feels_like'])
-                else:
-                    current['temp'] = convert_to_fahrenheit(current['temp'])
-                    if 'feels_like' in current:
-                        current['feels_like'] = convert_to_fahrenheit(current['feels_like'])
-        else:
-            # Flat structure
-            if 'temperature' in converted:
-                if to_unit == 'metric':
-                    converted['temperature'] = convert_to_celsius(converted['temperature'])
-                    if 'feels_like' in converted:
-                        converted['feels_like'] = convert_to_celsius(converted['feels_like'])
-                else:
-                    converted['temperature'] = convert_to_fahrenheit(converted['temperature'])
-                    if 'feels_like' in converted:
-                        converted['feels_like'] = convert_to_fahrenheit(converted['feels_like'])
-        # Convert forecast if present
-        forecast_list = converted.get('forecast', [])
-        for forecast in forecast_list:
-            for key in ['temp_min', 'temp_max', 'temp_day', 'temp_night']:
-                if key in forecast:
-                    if to_unit == 'metric':
-                        forecast[key] = convert_to_celsius(forecast[key])
-                    else:
-                        forecast[key] = convert_to_fahrenheit(forecast[key])
-        # Always ensure 'forecast' key exists for display update
-        if 'forecast' not in converted:
-            converted['forecast'] = []
-        return converted
 
     def run(self):
         """Start the application main loop with proper cleanup"""

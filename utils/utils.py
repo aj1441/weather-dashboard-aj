@@ -5,7 +5,9 @@ import json
 import os
 import logging
 from typing import Dict, Optional
-from core.theme_manager import ThemeManager
+# Legacy imports - keeping for backward compatibility but using new system internally
+# from core.icon_manager import IconManager
+# from core.location_service import LocationService
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +127,7 @@ class WeatherFormatter:
         """
         # Import here to avoid circular imports
         try:
-            from .icon_manager import get_weather_icon
+            from core.icon_manager import get_weather_icon
             return get_weather_icon(description)
         except ImportError:
             # Fallback to original logic if icon_manager not available
@@ -194,44 +196,24 @@ def load_auto_theme_settings():
 
 def get_auto_theme() -> str:
     """
-    Get the appropriate theme based on auto mode and current time
+    Legacy function - now uses the new theme system internally
     
     Returns:
         Theme name to use
     """
-    from .location_service import LocationService
-    from core.custom_themes import register_custom_themes
-    
-    # Initialize theme manager and register custom themes
-    theme_manager = ThemeManager()
-    theme_manager.register_all_custom_themes()
-
-    #Register themes safely
-    register_custom_themes()
-    
-    auto_mode, light_theme, dark_theme = load_auto_theme_settings()
-    
-    if not auto_mode:
-        # Auto mode disabled, use saved theme
+    try:
+        from core.theme_factory import create_theme_manager
+        
+        # Create theme manager with new system
+        theme_manager = create_theme_manager()
+        
+        # Return current theme (auto-determined if auto mode is on)
+        return theme_manager.current_theme
+        
+    except ImportError:
+        # Fallback if new system isn't available
         manager = UserSettingsManager()
-        saved_theme = manager.load_user_theme()
-        theme_manager = ThemeManager()
-        return theme_manager.get_fallback_theme(saved_theme)
-    
-    # Auto mode enabled, determine theme based on time
-    location_service = LocationService()
-    is_daytime = location_service.is_daytime_now()
-    
-    if is_daytime is None:
-        # Unable to determine time, use saved theme as fallback
-        manager = UserSettingsManager()
-        saved_theme = manager.load_user_theme()
-        return theme_manager.get_fallback_theme(saved_theme)
-    
-    # Get appropriate theme and ensure it exists
-    theme_to_use = light_theme if is_daytime else dark_theme
-    theme_manager = ThemeManager()
-    return theme_manager.get_fallback_theme(theme_to_use)
+        return manager.load_user_theme()
 
 def format_timestamp(timestamp):
     """Legacy function - wraps the new class-based approach"""

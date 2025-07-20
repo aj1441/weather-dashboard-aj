@@ -1,71 +1,44 @@
-"""Theme toggle component for the weather dashboard"""
+"""
+Refactored theme component using the new theme management system.
+
+This component provides a clean UI for theme controls while delegating
+all theme logic to the unified ThemeManager.
+"""
 
 import logging
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
-import tkinter as tk
+from typing import TYPE_CHECKING
 
-from utils.utils import (
-    save_user_theme,
-    save_auto_theme_settings,
-    load_auto_theme_settings,
-    get_auto_theme,
-)
-from core.custom_themes import register_custom_themes
-from core.location_service import LocationService
+if TYPE_CHECKING:
+    from core.theme_system import ThemeManager
 
 logger = logging.getLogger(__name__)
 
 
 class ThemeComponent:
-    """Handles theme switching functionality with optional auto day/night mode."""
+    """Simplified theme component using unified ThemeManager."""
 
-    def __init__(self, parent, current_theme: str = "aj_darkly"):
+    def __init__(self, parent, theme_manager: 'ThemeManager'):
         self.parent = parent
-        self.current_theme = current_theme
-        self.location_service = LocationService()
-
-        # Register custom themes first
-        register_custom_themes()
-
-        from core.custom_themes import get_fallback_theme
-
-        try:
-            # Attempt to apply the theme before building any widgets
-            style = tb.Style()
-            style.theme_use(self.current_theme)
-
-        except Exception as e:
-            fallback = get_fallback_theme(self.current_theme)
-            logging.warning(f"Falling back to default theme: {fallback} due to error: {e}")
-            style = tb.Style()
-            style.theme_use(fallback)
-            self.current_theme = fallback
-
-
-        # ✅ Confirm themes are loaded AFTER registration and before widget creation
-        logger.debug("Available themes: %s", style.theme_names())
-
-
-        # Load auto theme settings
-        self.auto_mode, self.light_theme, self.dark_theme = load_auto_theme_settings()
-
-        # Set up variables for UI controls
-        self.auto_mode_var = tb.BooleanVar(value=self.auto_mode)
-
-        # Determine if the current theme is light
-        self.is_light_theme = current_theme in [
-            "aj_lightly",
-            "pulse",
-            "flatly",
-            "litera",
-            "minty",
-            "lumen",
-        ]
-        self.theme_var = tb.BooleanVar(value=self.is_light_theme)
-
+        self.theme_manager = theme_manager
+        self.logger = logging.getLogger(__name__)
+        
+        # UI variables
+        self.auto_mode_var = tb.BooleanVar(value=self.theme_manager.is_auto_enabled())
+        self.theme_var = tb.BooleanVar(value=self._is_light_theme())
+        
         self.setup_component()
-
+        self.update_ui_state()
+    
+    def _is_light_theme(self) -> bool:
+        """Check if current theme is a light theme."""
+        current = self.theme_manager.current_theme
+        # Use the theme registry to determine if theme is light
+        from core.theme_system import ThemeRegistry
+        light_themes = ThemeRegistry.LIGHT_THEMES
+        return current in light_themes
+    
     def setup_component(self):
         """Create the theme controls."""
         self.theme_frame = tb.Frame(self.parent)
@@ -85,163 +58,109 @@ class ThemeComponent:
             self.theme_frame,
             text="☀ Light / 🌙 Dark",
             variable=self.theme_var,
-            command=self.toggle_theme,
+            command=self.toggle_manual_theme,
             bootstyle="success-round-toggle",
         )
         self.manual_toggle.pack(side="left")
 
-        # Update UI state
-        self.update_ui_state()
-
-        # If auto mode is enabled, apply the appropriate theme immediately
-        if self.auto_mode:
-            self.apply_auto_theme()
-
-        return self.theme_frame
-
     def toggle_auto_mode(self):
-        """Toggle auto day/night mode on or off."""
-        self.auto_mode = self.auto_mode_var.get()
-        save_auto_theme_settings(self.auto_mode, self.light_theme, self.dark_theme)
+        """Toggle between auto and manual theme mode."""
+        auto_enabled = self.auto_mode_var.get()
+        
+        try:
+            if auto_enabled:
+                # Enable auto mode with current light/dark theme preferences
+                success = self.theme_manager.enable_auto_mode()
+                if success:
+                    self.logger.info("Auto day/night mode enabled")
+                else:
+                    self.logger.error("Failed to enable auto mode")
+                    self.auto_mode_var.set(False)
+            else:
+                # Disable auto mode
+                success = self.theme_manager.disable_auto_mode()
+                if success:
+                    self.logger.info("Auto day/night mode disabled - using manual theme")
+                else:
+                    self.logger.error("Failed to disable auto mode")
+                    self.auto_mode_var.set(True)
+                    
+        except Exception as e:
+            self.logger.error(f"Error toggling auto mode: {e}")
+            # Revert the UI state
+            self.auto_mode_var.set(not auto_enabled)
+        
+        # Update UI state and theme variable
         self.update_ui_state()
+        self.theme_var.set(self._is_light_theme())
 
-        if self.auto_mode:
-            self.apply_auto_theme()
-            if hasattr(self.parent, "start_auto_theme_refresh"):
-                self.parent.start_auto_theme_refresh()
-            logger.info("Auto day/night mode enabled")
-        else:
-            if hasattr(self.parent, "stop_auto_theme_refresh"):
-                self.parent.stop_auto_theme_refresh()
-            logger.info("Auto day/night mode disabled - using manual theme")
+    def toggle_manual_theme(self):
+        """Toggle between light and dark themes in manual mode."""
+        if self.theme_manager.is_auto_enabled():
+            self.logger.info("Auto mode is enabled - manual toggle ignored")
+            return
+        
+        is_light = self.theme_var.get()
+        
+        try:
+            # Determine target theme based on toggle
+            if is_light:
+                # User wants light theme - use the saved light theme preference
+                target_theme = self.theme_manager._settings.get_light_theme()
+            else:
+                # User wants dark theme - use the saved dark theme preference  
+                target_theme = self.theme_manager._settings.get_dark_theme()
+            
+            success = self.theme_manager.set_manual_theme(target_theme)
+            if success:
+                self.logger.info(f"Manual theme changed to: {target_theme}")
+            else:
+                self.logger.error(f"Failed to apply manual theme: {target_theme}")
+                # Revert the UI state
+                self.theme_var.set(not is_light)
+                
+        except Exception as e:
+            self.logger.error(f"Error changing manual theme: {e}")
+            # Revert the UI state
+            self.theme_var.set(not is_light)
 
     def update_ui_state(self):
-        """Enable or disable manual toggle based on auto mode."""
-        if self.auto_mode:
+        """Update the UI state based on current theme manager settings."""
+        auto_enabled = self.theme_manager.is_auto_enabled()
+        
+        # Update auto mode checkbox
+        self.auto_mode_var.set(auto_enabled)
+        
+        # Enable/disable manual toggle based on auto mode
+        if auto_enabled:
             self.manual_toggle.configure(state="disabled")
         else:
             self.manual_toggle.configure(state="normal")
-
-    def apply_auto_theme(self, latitude=None, longitude=None):
-        """Apply theme automatically based on location and time."""
+    
+    def refresh_theme(self):
+        """Refresh the current theme (useful for external updates)."""
         try:
-            if latitude is not None and longitude is not None:
-                from core.auto_theme import get_auto_theme as get_auto_theme_coords
-
-                auto_theme = get_auto_theme_coords(latitude, longitude)
-                logger.info(
-                    f"Using specific location for auto theme: {latitude}, {longitude}"
-                )
+            success = self.theme_manager.apply_current_theme()
+            if success:
+                # Update UI to reflect current theme
+                self.theme_var.set(self._is_light_theme())
+                self.update_ui_state()
+                self.logger.debug("Theme refreshed successfully")
             else:
-                auto_theme = get_auto_theme()
-                logger.info("Using IP location for auto theme")
-
-            if auto_theme != self.current_theme:
-                self.current_theme = auto_theme
-                self.apply_theme(auto_theme)
-
-                # Update manual toggle to reflect new theme
-                self.is_light_theme = auto_theme in [
-                    "aj_lightly",
-                    "pulse",
-                    "flatly",
-                    "litera",
-                    "minty",
-                    "lumen",
-                ]
-                self.theme_var.set(self.is_light_theme)
-
-                logger.info(f"Auto theme applied: {auto_theme}")
+                self.logger.warning("Failed to refresh theme")
         except Exception as e:
-            logger.error(f"Failed to apply auto theme: {e}")
-
-    def toggle_theme(self):
-        """Toggle between light and dark themes manually."""
-        if self.auto_mode:
-            return
-
-        new_theme = self.light_theme if self.theme_var.get() else self.dark_theme
-
-        self.current_theme = new_theme
-        self.apply_theme(new_theme)
-        save_user_theme(new_theme)
-        logger.info(f"Manual theme changed to: {new_theme}")
-
-    def apply_theme(self, theme_name: str):
-        """Apply the specified theme with fallbacks."""
-        try:
-            style = tb.Style()
-            style.theme_use(theme_name)
-            logger.debug(f"Applied theme: {theme_name}")
-            self.parent.update_idletasks()  # Force UI refresh
-
-
-        except Exception as e:
-            logger.error(f"Failed to apply theme {theme_name}: {e}")
-            fallback_theme = "pulse" if theme_name in [
-                "pulse",
-                "flatly",
-                "litera",
-                "minty",
-                "lumen",
-            ] else "darkly"
-            try:
-                style = tb.Style()
-                style.theme_use(fallback_theme)
-                self.current_theme = fallback_theme
-                logger.info(f"Fell back to theme: {fallback_theme}")
-                self.parent.update_idletasks()
-            except Exception as e2:
-                logger.error(f"Fallback theme failed: {e2}")
-
-        # Trigger internal callback (optional override)
-        if hasattr(self, "on_theme_change"):
-            self.on_theme_change(self.current_theme)
-
-        #Call app-wide theme restyling method if it exists
-        if hasattr(self.parent, "restyle_all_components"):
-            self.parent.restyle_all_components()
-
-    def refresh_auto_theme(self, latitude=None, longitude=None):
-        """Refresh auto theme if auto mode is active."""
-        if self.auto_mode:
-            self.apply_auto_theme(latitude, longitude)
-
+            self.logger.error(f"Error refreshing theme: {e}")
+    
     def get_current_theme(self) -> str:
-        return self.current_theme
+        """Get the current theme name."""
+        return self.theme_manager.current_theme
+    
+    def get_available_themes(self) -> list:
+        """Get list of available themes."""
+        return self.theme_manager.get_available_themes()
 
-    def set_manual_theme(self, theme_name: str):
-        """Set a theme manually and disable auto mode."""
-        self.auto_mode = False
-        self.auto_mode_var.set(False)
-        save_auto_theme_settings(self.auto_mode, self.light_theme, self.dark_theme)
-        self.current_theme = theme_name
-        self.apply_theme(theme_name)
-        save_user_theme(theme_name)
-        self.update_ui_state()
-        self.is_light_theme = theme_name in [
-            "aj_lightly",
-            "pulse",
-            "flatly",
-            "litera",
-            "minty",
-            "lumen",
-        ]
-        self.theme_var.set(self.is_light_theme)
-        logger.info(f"Manual theme set to: {theme_name} (auto mode disabled)")
 
-    def get_available_themes(self):
-        return {
-            "light": ["aj_lightly", "pulse", "flatly", "litera", "minty", "lumen"],
-            "dark": ["aj_darkly", "darkly", "cyborg", "vapor", "solar"],
-        }
-
-    def is_auto_mode_enabled(self) -> bool:
-        return self.auto_mode
-
-    def _switch_theme(self, theme_name: str):
-        self.logger.info(f"Switching to theme: {theme_name}")
-        self.app.style.theme_use(theme_name)
-        self.current_theme = theme_name
-        from utils.utils import UserSettingsManager
-        UserSettingsManager().save_user_theme(theme_name)
+# Backward compatibility - if old code tries to import the old way
+def apply_auto_theme():
+    """Deprecated - kept for backward compatibility."""
+    logger.warning("apply_auto_theme() is deprecated - use ThemeManager.apply_current_theme()")

@@ -210,7 +210,7 @@ class WeatherDatabase:
                     actual_humidity REAL,
                     actual_conditions TEXT,
                     accuracy_score REAL,     -- Calculated when actual data is compared
-                    UNIQUE(city, state, prediction_date, prediction_day)
+                    is_latest BOOLEAN DEFAULT 1  -- Track which prediction is the most recent for a given date
                 )
             ''')
             
@@ -586,15 +586,25 @@ class WeatherDatabase:
                 model_performance = json.dumps(prediction_data.get('model_performance', {}))
                 trend_analysis = json.dumps(prediction_data.get('trend', {}))
                 
-                # Save each day's prediction
+                # Mark previous predictions as not latest for this city/state/dates
+                prediction_dates = [day_pred.get('date') for day_pred in forecast]
+                for pred_date in prediction_dates:
+                    cursor.execute('''
+                        UPDATE weather_predictions 
+                        SET is_latest = 0 
+                        WHERE city = ? AND state = ? AND prediction_date = ?
+                    ''', (city, state, pred_date))
+                
+                # Save each day's prediction as new entries (preserving all historical predictions)
                 for day_pred in forecast:
                     cursor.execute('''
-                        INSERT OR REPLACE INTO weather_predictions (
+                        INSERT INTO weather_predictions (
                             city, state, prediction_date, prediction_day,
                             predicted_temp_max, predicted_temp_min, predicted_precipitation,
                             predicted_humidity, predicted_wind_speed, predicted_conditions,
-                            model_confidence, data_points_used, model_performance, trend_analysis
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            model_confidence, data_points_used, model_performance, trend_analysis,
+                            is_latest
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
                     ''', (
                         city,
                         state,
@@ -620,7 +630,7 @@ class WeatherDatabase:
             logger.error(f"Error saving weather prediction: {str(e)}")
             return False
     
-    def get_weather_predictions(self, city: str, state: str, start_date: str = None, end_date: str = None) -> List[Dict]:
+    def get_weather_predictions(self, city: str, state: str, start_date: str = None, end_date: str = None, latest_only: bool = True) -> List[Dict]:
         """
         Get weather predictions for a city between dates
         
@@ -629,6 +639,7 @@ class WeatherDatabase:
             state: State code
             start_date: Start date string (YYYY-MM-DD), optional
             end_date: End date string (YYYY-MM-DD), optional
+            latest_only: If True, only get the most recent prediction for each date (default: True)
             
         Returns:
             List of prediction dictionaries
@@ -637,24 +648,58 @@ class WeatherDatabase:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 
-                if start_date and end_date:
-                    cursor.execute('''
-                        SELECT * FROM weather_predictions
-                        WHERE city = ? AND state = ?
-                        AND prediction_date BETWEEN ? AND ?
-                        ORDER BY prediction_date ASC, prediction_day ASC
-                    ''', (city, state, start_date, end_date))
-                else:
-                    cursor.execute('''
-                        SELECT * FROM weather_predictions
-                        WHERE city = ? AND state = ?
-                        ORDER BY prediction_date ASC, prediction_day ASC
-                    ''', (city, state))
+                # Build WHERE clause
+                where_clause = "WHERE city = ? AND state = ?"
+                params = [city, state]
                 
+                if latest_only:
+                    where_clause += " AND is_latest = 1"
+                
+                if start_date and end_date:
+                    where_clause += " AND prediction_date BETWEEN ? AND ?"
+                    params.extend([start_date, end_date])
+                
+                query = f'''
+                    SELECT * FROM weather_predictions
+                    {where_clause}
+                    ORDER BY prediction_date ASC, prediction_day ASC
+                '''
+                
+                cursor.execute(query, params)
                 return [dict(row) for row in cursor.fetchall()]
                 
         except Exception as e:
             logger.error(f"Error retrieving weather predictions: {str(e)}")
+            return []
+    
+    def get_all_prediction_history(self, city: str, state: str, days_back: int = 365) -> List[Dict]:
+        """
+        Get ALL historical predictions for ML analysis (not just latest)
+        
+        Args:
+            city: City name
+            state: State code  
+            days_back: Number of days back to retrieve (default: 365)
+            
+        Returns:
+            List of ALL prediction records for analysis
+        """
+        try:
+            from datetime import datetime, timedelta
+            
+            end_date = datetime.now().date()
+            start_date = end_date - timedelta(days=days_back)
+            
+            # Get ALL predictions (not just latest) for ML analysis
+            return self.get_weather_predictions(
+                city, state,
+                start_date.strftime('%Y-%m-%d'),
+                end_date.strftime('%Y-%m-%d'),
+                latest_only=False  # Get ALL historical predictions
+            )
+            
+        except Exception as e:
+            logger.error(f"Error getting prediction history for ML analysis: {e}")
             return []
     
     def update_prediction_with_actual(self, city: str, state: str, prediction_date: str, 
