@@ -1,5 +1,6 @@
 .env
 /planning_docs
+/docs/implementation_doc/*
 __pycache__/
 *.pyc
 old_py_files/
@@ -14,6 +15,8 @@ debug_*.py
 demo_*.py
 quick_*.py
 archived_files/
+
+
 
 .idea/
 
