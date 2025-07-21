@@ -1,0 +1,2 @@
+id,city,state,prediction_date,prediction_day,predicted_temp_max,predicted_temp_min,predicted_precipitation,predicted_humidity,predicted_wind_speed,predicted_conditions,model_confidence,data_points_used,created_at,generated_at,model_performance,trend_analysis,actual_temp_max,actual_temp_min,actual_precipitation,actual_humidity,actual_conditions,accuracy_score,is_latest
+999,Test City,TC,2025-01-02,1,82.0,62.0,0.0,55,8.0,Clear,0.85,365,2025-07-21T13:06:31.145073,2025-07-21T13:06:31.145250,"{""accuracy"": 0.82}","{""direction"": ""stable""}",,,,,,,

@@ -1,19 +1,62 @@
 [
   {
-    "city": "Seattle",
-    "state": "wa",
+    "city": "Test App City",
+    "state": "ta",
     "country": "US",
-    "lat": 47.6062,
-    "lon": -122.3321,
-    "last_updated": "2025-06-28T19:19:49.810165"
+    "lat": 40.0,
+    "lon": -100.0,
+    "last_updated": "2025-07-21 21:35:21"
+  },
+  {
+    "city": "Test Sync City",
+    "state": "tx",
+    "country": "US",
+    "lat": 32.0,
+    "lon": -97.0,
+    "last_updated": "2025-07-21 20:52:49",
+    "nickname": "JSON Sync Test"
   },
   {
     "city": "Phoenix",
     "state": "az",
     "country": "US",
-    "lat": 33.4484,
-    "lon": -112.074,
-    "last_updated": "2025-06-29T19:59:25.520925"
+    "lat": 33.44,
+    "lon": -112.07,
+    "last_updated": "2025-07-21 20:07:05",
+    "nickname": "Test Location"
+  },
+  {
+    "city": "Test City",
+    "state": "tc",
+    "country": "US",
+    "lat": 40.0,
+    "lon": -110.0,
+    "last_updated": "2025-07-21 19:30:40",
+    "nickname": "Auto Backup Test"
+  },
+  {
+    "city": "Atlanta",
+    "state": "ga",
+    "country": "US",
+    "lat": 33.7489924,
+    "lon": -84.3902644,
+    "last_updated": "2025-07-21 02:38:21"
+  },
+  {
+    "city": "South Tucson",
+    "state": "az",
+    "country": "US",
+    "lat": 32.2228765,
+    "lon": -110.9748477,
+    "last_updated": "2025-07-14 22:22:26"
+  },
+  {
+    "city": "New York",
+    "state": "ny",
+    "country": "US",
+    "lat": 40.7127281,
+    "lon": -74.0060152,
+    "last_updated": "2025-07-14 15:32:16"
   },
   {
     "city": "Denver",
@@ -21,14 +64,22 @@
     "country": "US",
     "lat": 39.7392364,
     "lon": -104.984862,
-    "last_updated": "2025-07-03T16:27:22.555503"
+    "last_updated": "2025-07-10 23:52:41"
   },
   {
-    "city": "Las Vegas",
-    "state": "nv",
+    "city": "Seattle",
+    "state": "wa",
     "country": "US",
-    "lat": 36.1672559,
-    "lon": -115.148516,
-    "last_updated": "2025-07-03T14:50:59.322628"
+    "lat": 47.6038321,
+    "lon": -122.330062,
+    "last_updated": "2025-07-10 23:50:58"
+  },
+  {
+    "city": "Scottsdale",
+    "state": "az",
+    "country": "US",
+    "lat": 33.4942189,
+    "lon": -111.9260184,
+    "last_updated": "2025-07-10 01:19:23"
   }
 ]

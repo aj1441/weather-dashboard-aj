@@ -5,5 +5,10 @@
   "default_location": "",
   "temperature_unit": "celsius",
   "wind_speed_unit": "kmh",
-  "pressure_unit": "hPa"
+  "pressure_unit": "hPa",
+  "auto_backup_test": "enabled",
+  "test_setting": "continuous_backup_test",
+  "json_sync_test": "enabled_successfully",
+  "json_only_test": "direct_json_write",
+  "app_test_setting": "working"
 }

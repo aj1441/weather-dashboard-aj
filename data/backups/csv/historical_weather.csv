@@ -1,0 +1,2 @@
+id,city,state,date,temperature_max,temperature_min,temperature_mean,precipitation,rain,wind_speed_max,wind_gusts_max,cloud_cover,humidity,latitude,longitude,sunrise,sunset
+999,Test City,TC,2025-01-01,80.0,60.0,70.0,0.1,0.0,10.0,15.0,25,65,40.0,-110.0,1640001600,1640038800

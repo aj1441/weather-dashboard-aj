@@ -13,9 +13,13 @@ logger = logging.getLogger(__name__)
 class WeatherDatabase:
     """Handles all database operations for weather data storage"""
     
-    def __init__(self, db_path: str = "data/weather.db"):
+    def __init__(self, db_path: str = "data/weather.db", enable_auto_backup: bool = True):
         """Initialize the database connection"""
         self.db_path = db_path
+        self.enable_auto_backup = enable_auto_backup
+        self._backup_manager = None
+        self._json_sync_manager = None
+        self._initialization_complete = False
         self._ensure_database_directory()
         self._initialize_database()
         if not self._verify_tables():
@@ -23,6 +27,7 @@ class WeatherDatabase:
             self._initialize_database()  # Try to create tables again
             if not self._verify_tables():
                 raise RuntimeError("Failed to initialize database tables")
+        self._initialization_complete = True
         logger.info("Database initialized successfully at %s", self.db_path)
     
     def _ensure_database_directory(self):
@@ -325,6 +330,15 @@ class WeatherDatabase:
                 ))
                 
                 conn.commit()
+                
+                # Trigger continuous CSV backup for current weather data
+                backup_manager = self._get_backup_manager()
+                if backup_manager:
+                    # Get the saved record data for CSV backup
+                    current_record = self.get_current_weather(city, state, max_age_hours=24)
+                    if current_record:
+                        backup_manager.append_current_weather_to_csv(current_record, city, state)
+                
                 return True
                 
         except Exception as e:
@@ -371,6 +385,15 @@ class WeatherDatabase:
                     ))
                 
                 conn.commit()
+                
+                # Trigger continuous CSV backup for forecast data
+                backup_manager = self._get_backup_manager()
+                if backup_manager:
+                    # Get the saved forecast records for CSV backup
+                    forecast_records = self.get_forecast_data(city, state, max_age_hours=24)
+                    if forecast_records:
+                        backup_manager.append_forecast_weather_to_csv(forecast_records, city, state)
+                
                 return True
                 
         except Exception as e:
@@ -431,6 +454,12 @@ class WeatherDatabase:
                 ))
                 conn.commit()
                 logger.debug(f"Saved new historical data for {city}, {state} on {data['date']}")
+                
+                # Trigger continuous CSV backup for historical data
+                backup_manager = self._get_backup_manager()
+                if backup_manager:
+                    backup_manager.append_historical_weather_to_csv(data, city, state)
+                
                 return True
         except Exception as e:
             logger.error(f"Error saving historical weather data: {str(e)}")
@@ -569,6 +598,10 @@ class WeatherDatabase:
 
                 conn.commit()
                 logger.info("Successfully saved location: %s, %s", city, state)
+                
+                # Trigger real-time JSON sync for saved locations
+                self._sync_locations_to_json()
+                
                 return True
 
         except Exception as e:
@@ -577,7 +610,7 @@ class WeatherDatabase:
             return False
     
     def get_saved_locations(self) -> List[Dict]:
-        """Get all saved locations"""
+        """Get all saved locations with JSON fallback"""
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
@@ -589,7 +622,13 @@ class WeatherDatabase:
                 return [dict(row) for row in rows]
                 
         except Exception as e:
-            logger.error("Error retrieving saved locations: %s", e)
+            logger.error("Database error retrieving saved locations: %s", e)
+            logger.info("Attempting to read saved locations from JSON fallback")
+            
+            # Fallback to JSON file
+            json_sync_manager = self._get_json_sync_manager()
+            if json_sync_manager:
+                return json_sync_manager.get_saved_locations_from_json()
             return []
     
     def remove_saved_location(self, location_id: int) -> bool:
@@ -615,6 +654,10 @@ class WeatherDatabase:
                     VALUES (?, ?)
                 ''', (key, value))
                 conn.commit()
+                
+                # Trigger real-time JSON sync for user preferences
+                self._sync_preferences_to_json()
+                
                 return True
                 
         except Exception as e:
@@ -622,7 +665,7 @@ class WeatherDatabase:
             return False
     
     def get_user_preference(self, key: str, default: str = None) -> Optional[str]:
-        """Get a user preference value"""
+        """Get a user preference value with JSON fallback"""
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
@@ -631,7 +674,13 @@ class WeatherDatabase:
                 return row[0] if row else default
                 
         except Exception as e:
-            logger.error("Error retrieving user preference: %s", e)
+            logger.error("Database error retrieving user preference: %s", e)
+            logger.info("Attempting to read user preference from JSON fallback")
+            
+            # Fallback to JSON file
+            json_sync_manager = self._get_json_sync_manager()
+            if json_sync_manager:
+                return json_sync_manager.get_user_preference_from_json(key, default)
             return default
     
     def save_weather_prediction(self, city: str, state: str, prediction_data: Dict) -> bool:
@@ -695,6 +744,12 @@ class WeatherDatabase:
                 
                 conn.commit()
                 logger.info(f"Saved {len(forecast)} weather predictions for {city}, {state}")
+                
+                # Trigger continuous CSV backup for weather predictions
+                backup_manager = self._get_backup_manager()
+                if backup_manager:
+                    backup_manager.append_weather_predictions_to_csv(prediction_data, city, state)
+                
                 return True
                 
         except Exception as e:
@@ -961,6 +1016,96 @@ class WeatherDatabase:
         except Exception as e:
             logger.error("Error cleaning up old data: %s", e)
             return False
+    
+    def _get_backup_manager(self):
+        """Lazy load backup manager to avoid circular imports"""
+        if not self._initialization_complete:
+            return None
+            
+        if self._backup_manager is None and self.enable_auto_backup:
+            try:
+                from .backup_manager import BackupManager
+                self._backup_manager = BackupManager()
+            except ImportError as e:
+                logger.warning(f"Could not import backup manager: {e}")
+                self._backup_manager = None
+            except Exception as e:
+                logger.warning(f"Could not initialize backup manager: {e}")
+                self._backup_manager = None
+        return self._backup_manager
+    
+    def _get_json_sync_manager(self):
+        """Lazy load JSON sync manager to avoid circular imports"""
+        if not self._initialization_complete:
+            return None
+            
+        if self._json_sync_manager is None:
+            try:
+                from .json_sync_manager import JSONSyncManager
+                self._json_sync_manager = JSONSyncManager()
+            except ImportError as e:
+                logger.warning(f"Could not import JSON sync manager: {e}")
+                self._json_sync_manager = None
+            except Exception as e:
+                logger.warning(f"Could not initialize JSON sync manager: {e}")
+                self._json_sync_manager = None
+        return self._json_sync_manager
+    
+    def trigger_backup(self, backup_type: str = "all", city: str = None, state: str = None):
+        """Trigger backup operations"""
+        if not self.enable_auto_backup:
+            return
+            
+        backup_manager = self._get_backup_manager()
+        if not backup_manager:
+            return
+            
+        try:
+            if backup_type == "csv":
+                backup_manager.backup_all_csv_data(city, state)
+            elif backup_type == "json":
+                backup_manager.backup_all_json_data()
+            elif backup_type == "all":
+                backup_manager.backup_everything(city, state)
+            else:
+                logger.warning(f"Unknown backup type: {backup_type}")
+        except Exception as e:
+            logger.error(f"Error during backup: {e}")
+    
+    
+    def _sync_locations_to_json(self):
+        """Sync saved locations to JSON file"""
+        if not self._initialization_complete:
+            logger.debug("Skipping JSON sync during database initialization")
+            return
+            
+        json_sync_manager = self._get_json_sync_manager()
+        if json_sync_manager:
+            locations = self.get_saved_locations()
+            json_sync_manager.sync_saved_locations_to_json(locations)
+    
+    def _sync_preferences_to_json(self):
+        """Sync user preferences to JSON file"""
+        if not self._initialization_complete:
+            logger.debug("Skipping JSON sync during database initialization")
+            return
+            
+        json_sync_manager = self._get_json_sync_manager()
+        if json_sync_manager:
+            try:
+                with self.get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT preference_key, preference_value FROM user_preferences')
+                    rows = cursor.fetchall()
+                    
+                    preferences = {}
+                    for row in rows:
+                        key, value = row
+                        preferences[key] = value
+                    
+                    json_sync_manager.sync_user_preferences_to_json(preferences)
+            except Exception as e:
+                logger.error(f"Error syncing preferences to JSON: {e}")
 
 
 # Singleton pattern for database access

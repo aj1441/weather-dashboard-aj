@@ -220,66 +220,66 @@ class WeatherDataValidator:
     
    
     
-    def _extract_and_validate_current_from_one_call(self, current_data: Dict) -> Optional[Dict]:
-        """Extract and validate current weather from One Call API format"""
-        try:
-            # Temperature data
-            temp = current_data.get('temp')
-            feels_like = current_data.get('feels_like')
+    # def _extract_and_validate_current_from_one_call(self, current_data: Dict) -> Optional[Dict]:
+    #     """Extract and validate current weather from One Call API format"""
+    #     try:
+    #         # Temperature data
+    #         temp = current_data.get('temp')
+    #         feels_like = current_data.get('feels_like')
             
-            if not self._is_valid_temperature(temp):
-                self.logger.warning(f"Invalid current temperature: {temp}")
-                return None
+    #         if not self._is_valid_temperature(temp):
+    #             self.logger.warning(f"Invalid current temperature: {temp}")
+    #             return None
             
-            # Weather description
-            weather_list = current_data.get('weather', [])
-            if not weather_list:
-                self.logger.warning("Missing weather description in current data")
-                return None
+    #         # Weather description
+    #         weather_list = current_data.get('weather', [])
+    #         if not weather_list:
+    #             self.logger.warning("Missing weather description in current data")
+    #             return None
             
-            weather_info = weather_list[0]
-            description = weather_info.get('description', '').title()
-            main_weather = weather_info.get('main', '')
-            icon = weather_info.get('icon', '')
+    #         weather_info = weather_list[0]
+    #         description = weather_info.get('description', '').title()
+    #         main_weather = weather_info.get('main', '')
+    #         icon = weather_info.get('icon', '')
             
-            # Additional current weather data
-            humidity = current_data.get('humidity')
-            pressure = current_data.get('pressure')
-            wind_speed = current_data.get('wind_speed')
-            wind_deg = current_data.get('wind_deg')
-            visibility = current_data.get('visibility')
-            uv_index = current_data.get('uvi')
-            clouds = current_data.get('clouds')
+    #         # Additional current weather data
+    #         humidity = current_data.get('humidity')
+    #         pressure = current_data.get('pressure')
+    #         wind_speed = current_data.get('wind_speed')
+    #         wind_deg = current_data.get('wind_deg')
+    #         visibility = current_data.get('visibility')
+    #         uv_index = current_data.get('uvi')
+    #         clouds = current_data.get('clouds')
             
-            # Validate key metrics
-            if not self._is_valid_humidity(humidity):
-                humidity = None
-            if not self._is_valid_pressure(pressure):
-                pressure = None
-            if not self._is_valid_wind_speed(wind_speed):
-                wind_speed = None
+    #         # Validate key metrics
+    #         if not self._is_valid_humidity(humidity):
+    #             humidity = None
+    #         if not self._is_valid_pressure(pressure):
+    #             pressure = None
+    #         if not self._is_valid_wind_speed(wind_speed):
+    #             wind_speed = None
             
-            return {
-                'temp': round(temp, 1),
-                'feels_like': round(feels_like, 1) if feels_like is not None else None,
-                'description': description,
-                'main': main_weather,
-                'icon': icon,
-                'humidity': humidity,
-                'pressure': pressure,
-                'wind_speed': wind_speed,
-                'wind_deg': wind_deg,
-                'visibility': visibility,
-                'uv_index': uv_index,
-                'clouds': clouds,
-                'dt': current_data.get('dt'),
-                'sunrise': current_data.get('sunrise'),
-                'sunset': current_data.get('sunset')
-            }
+    #         return {
+    #             'temp': round(temp, 1),
+    #             'feels_like': round(feels_like, 1) if feels_like is not None else None,
+    #             'description': description,
+    #             'main': main_weather,
+    #             'icon': icon,
+    #             'humidity': humidity,
+    #             'pressure': pressure,
+    #             'wind_speed': wind_speed,
+    #             'wind_deg': wind_deg,
+    #             'visibility': visibility,
+    #             'uv_index': uv_index,
+    #             'clouds': clouds,
+    #             'dt': current_data.get('dt'),
+    #             'sunrise': current_data.get('sunrise'),
+    #             'sunset': current_data.get('sunset')
+    #         }
             
-        except Exception as e:
-            self.logger.error(f"Error extracting current weather from One Call data: {e}")
-            return None
+    #     except Exception as e:
+    #         self.logger.error(f"Error extracting current weather from One Call data: {e}")
+    #         return None
     
     def _extract_and_validate_daily_forecast(self, daily_data: list) -> list:
         """Extract and validate daily forecast from One Call API format"""
