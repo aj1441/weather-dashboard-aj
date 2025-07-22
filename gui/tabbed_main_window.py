@@ -13,6 +13,7 @@ import time
 from datetime import datetime
 from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
 from ttkbootstrap.dialogs import Messagebox
+from ttkbootstrap.widgets import Sizegrip
 from core.api import WeatherAPI
 from core.data_handler import WeatherDataHandler
 from core.theme_factory import create_theme_manager
@@ -38,6 +39,10 @@ class TabbedWeatherDashboard:
         # Auto theme refresh setup
         self.auto_theme_thread = None
         self.auto_theme_running = False
+
+        # Sizegrip Setup
+        sizegrip = Sizegrip(self.app, bootstyle="info")
+        sizegrip.place(relx=1.0, rely=1.0, anchor="se")
 
         
         self.app.title("Advanced Weather Dashboard")
