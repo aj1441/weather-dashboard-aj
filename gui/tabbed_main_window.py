@@ -3,6 +3,7 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from features.trivia.trivia_tab import TriviaTab
 
 import tkinter as tk
 import ttkbootstrap as tb
@@ -186,31 +187,13 @@ class TabbedWeatherDashboard:
         history_frame.pack(fill=BOTH, expand=True)
 
     def setup_trivia_tab(self):
-        """Setup the weather trivia tab"""
+        """Setup the trivia tab using modular TriviaTab"""
         try:
-            self.logger.info("Starting trivia tab setup...")
-            trivia_tab = tb.Frame(self.notebook)
-            self.logger.info("Created trivia tab frame")
-            
+            trivia_tab = TriviaTab(self.notebook, csv_path="shared_data/aj/combined_data.csv")
             self.notebook.add(trivia_tab, text="🧠 Weather Trivia")
-            self.logger.info("Added trivia tab to notebook")
-
-            # Create trivia component
-            self.logger.info("Creating WeatherTriviaComponent...")
-            self.trivia_component = WeatherTriviaComponent(trivia_tab)
-            self.logger.info("WeatherTriviaComponent created successfully")
-            
-            self.logger.info("Setting up trivia component...")
-            trivia_frame = self.trivia_component.setup_component()
-            self.logger.info("Trivia component setup completed")
-            
-            self.logger.info("Packing trivia frame...")
-            trivia_frame.pack(fill=BOTH, expand=True)
-            self.logger.info("Trivia tab setup completed successfully")
-            
+            self.logger.info("TriviaTab successfully added to notebook")
         except Exception as e:
-            self.logger.error(f"Error setting up trivia tab: {e}", exc_info=True)
-            # Don't raise - let app continue without trivia tab
+            self.logger.error(f"Error setting up TriviaTab: {e}", exc_info=True)
 
     def setup_about_tab(self):
         """Setup the about tab with application information"""
