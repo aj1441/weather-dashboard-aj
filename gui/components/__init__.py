@@ -6,6 +6,7 @@ from .weather_display_component import WeatherDisplayComponent
 from .saved_cities_component import SavedCitiesComponent
 from .forecast_display_component import ForecastDisplayComponent
 from .history_component import HistoryComponent
+from .weather_trivia_component import WeatherTriviaComponent
 
 __all__ = [
     'ThemeComponent',
@@ -13,5 +14,6 @@ __all__ = [
     'WeatherDisplayComponent',
     'SavedCitiesComponent',
     'ForecastDisplayComponent',
-    'HistoryComponent'
+    'HistoryComponent',
+    'WeatherTriviaComponent'
 ]

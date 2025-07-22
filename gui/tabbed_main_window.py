@@ -17,7 +17,7 @@ from ttkbootstrap.widgets import Sizegrip
 from core.api import WeatherAPI
 from core.data_handler import WeatherDataHandler
 from core.theme_factory import create_theme_manager
-from gui.components import ThemeComponent, WeatherInputComponent, WeatherDisplayComponent, SavedCitiesComponent, ForecastDisplayComponent, HistoryComponent
+from gui.components import ThemeComponent, WeatherInputComponent, WeatherDisplayComponent, SavedCitiesComponent, ForecastDisplayComponent, HistoryComponent, WeatherTriviaComponent
 
 class TabbedWeatherDashboard:
     """Advanced tabbed GUI with components and additional features"""
@@ -132,6 +132,7 @@ class TabbedWeatherDashboard:
         self.setup_weather_tab()
         self.setup_saved_cities_tab()
         self.setup_history_tab()
+        self.setup_trivia_tab()
         self.setup_about_tab()
         
         # Start periodic auto theme refresh only when auto mode is enabled
@@ -183,6 +184,33 @@ class TabbedWeatherDashboard:
         self.history_component = HistoryComponent(history_tab)
         history_frame = self.history_component.setup_component()
         history_frame.pack(fill=BOTH, expand=True)
+
+    def setup_trivia_tab(self):
+        """Setup the weather trivia tab"""
+        try:
+            self.logger.info("Starting trivia tab setup...")
+            trivia_tab = tb.Frame(self.notebook)
+            self.logger.info("Created trivia tab frame")
+            
+            self.notebook.add(trivia_tab, text="🧠 Weather Trivia")
+            self.logger.info("Added trivia tab to notebook")
+
+            # Create trivia component
+            self.logger.info("Creating WeatherTriviaComponent...")
+            self.trivia_component = WeatherTriviaComponent(trivia_tab)
+            self.logger.info("WeatherTriviaComponent created successfully")
+            
+            self.logger.info("Setting up trivia component...")
+            trivia_frame = self.trivia_component.setup_component()
+            self.logger.info("Trivia component setup completed")
+            
+            self.logger.info("Packing trivia frame...")
+            trivia_frame.pack(fill=BOTH, expand=True)
+            self.logger.info("Trivia tab setup completed successfully")
+            
+        except Exception as e:
+            self.logger.error(f"Error setting up trivia tab: {e}", exc_info=True)
+            # Don't raise - let app continue without trivia tab
 
     def setup_about_tab(self):
         """Setup the about tab with application information"""
@@ -497,6 +525,11 @@ class TabbedWeatherDashboard:
             self.saved_cities_component.restyle()
         if hasattr(self.history_component, "restyle"):
             self.history_component.restyle()
+        if hasattr(self, 'trivia_component') and hasattr(self.trivia_component, "restyle"):
+            try:
+                self.trivia_component.restyle()
+            except Exception as e:
+                self.logger.error(f"Error restyling trivia component: {e}")
 
     def handle_unit_change(self, new_unit):
         """Handle temperature unit change and update displays, using forecast cache for robustness"""
