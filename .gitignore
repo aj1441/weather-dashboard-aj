@@ -9,6 +9,9 @@ venv/
 .vscode/
 *.log
 
+# macOS system files
+.DS_Store
+
 # Development and test files
 dev_temp/
 debug_*.py
@@ -20,7 +23,3 @@ archived_files/
 
 .idea/
 
-# Shared data from separate repository
-share_data/team6/*
-# Ignore everything in shared_data/
-shared_data/
