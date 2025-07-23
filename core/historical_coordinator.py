@@ -18,6 +18,7 @@ class HistoricalDataCoordinator:
     def fetch_and_store_historical_data(
         self,
         city: str,
+        
         state: str,
         latitude: float,
         longitude: float,

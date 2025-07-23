@@ -3,8 +3,35 @@
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 import logging
-from typing import Dict, List, Optional, Callable
+from typing import Dict, Optional
+from datetime import datetime, timedelta
+# Defer matplotlib imports to prevent early bus errors
+MATPLOTLIB_AVAILABLE = False
+plt = None
+FigureCanvasTkAgg = None
+Figure = None
+np = None
+
+def _import_matplotlib():
+    """Lazy import matplotlib when actually needed"""
+    global MATPLOTLIB_AVAILABLE, plt, FigureCanvasTkAgg, Figure, np
+    if MATPLOTLIB_AVAILABLE:
+        return True
+    try:
+        import matplotlib
+        matplotlib.use('TkAgg')
+        import matplotlib.pyplot as plt
+        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+        from matplotlib.figure import Figure
+        import numpy as np
+        MATPLOTLIB_AVAILABLE = True
+        return True
+    except ImportError as e:
+        logger.error(f"Failed to import matplotlib: {e}")
+        return False
 from core.database import get_database
+from core.chart_data_service import ChartDataService
+from utils.decorators import log_execution_time
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +41,7 @@ class HistoryComponent:
     def __init__(self, parent):
         self.parent = parent
         self.db = get_database()
+        self.chart_service = ChartDataService()
         self.logger = logging.getLogger(__name__)
         
         # State variables
@@ -32,45 +60,91 @@ class HistoryComponent:
         self.analyze_button = None
         self.chart_area = None
         
+        # Chart quadrants
+        self.temp_chart_frame = None
+        self.precip_chart_frame = None
+        self.humidity_chart_frame = None
+        self.weather_chart_frame = None
+        
+        # Chart data storage
+        self.chart_data = {}
+        
     def setup_component(self):
         """Create and setup the history component"""
         # Main container frame
         self.main_frame = tb.Frame(self.parent)
         
-        # Title
-        title_label = tb.Label(
-            self.main_frame,
-            text="📊 Historical Weather Analysis",
-            font=("Helvetica Neue", 18, "bold")
-        )
-        title_label.pack(pady=(10, 20))
+        # Create main grid container
+        main_container = tb.Frame(self.main_frame)
+        main_container.pack(fill=BOTH, expand=True, padx=10, pady=5)
         
-        # Controls frame
-        controls_frame = tb.Frame(self.main_frame)
-        controls_frame.pack(fill=X, padx=20, pady=10)
+        # Configure grid weights
+        main_container.rowconfigure(0, weight=1)  # Top section (1/4)
+        main_container.rowconfigure(1, weight=0)  # Separator
+        main_container.rowconfigure(2, weight=3)  # Bottom section (3/4)
+        main_container.columnconfigure(0, weight=1)
+        
+        # Top section frame (1/4 of height)
+        top_frame = tb.Frame(main_container)
+        top_frame.grid(row=0, column=0, sticky="ew", pady=(5, 10))
+        top_frame.columnconfigure(0, weight=1)
+        
+        # Title in top section
+        title_label = tb.Label(
+            top_frame,
+            text="📊 Historical Weather Analysis",
+            font=("Helvetica Neue", 16, "bold")
+        )
+        title_label.grid(row=0, column=0, sticky="w", pady=(2, 8))
+        
+        # Controls frame (full width)
+        controls_frame = tb.Frame(top_frame)
+        controls_frame.grid(row=1, column=0, sticky="ew", padx=(10, 10))
+        
+        # City selection in horizontal layout
+        city_selection_frame = tb.Frame(controls_frame)
+        city_selection_frame.pack(fill=X, pady=(0, 10))
         
         # City 1 selection
-        city1_frame = tb.Frame(controls_frame)
-        city1_frame.pack(fill=X, pady=(0, 10))
+        city1_frame = tb.Frame(city_selection_frame)
+        city1_frame.pack(side=LEFT, padx=(0, 15))
         
         tb.Label(
             city1_frame,
             text="Select City:",
-            font=("Helvetica Neue", 12, "bold")
+            font=("Helvetica Neue", 11, "bold")
         ).pack(anchor=W)
         
         self.city1_dropdown = tb.Combobox(
             city1_frame,
             textvariable=self.city1_var,
             state="readonly",
-            width=40
+            width=30
         )
-        self.city1_dropdown.pack(pady=(5, 0), anchor=W)
+        self.city1_dropdown.pack(pady=(3, 0), anchor=W)
         self.city1_dropdown.bind('<<ComboboxSelected>>', self._on_city_selection_changed)
         
-        # Compare mode radio button
+        # City 2 selection (initially hidden, same row)
+        self.city2_frame = tb.Frame(city_selection_frame)
+        
+        tb.Label(
+            self.city2_frame,
+            text="Second City:",
+            font=("Helvetica Neue", 11, "bold")
+        ).pack(anchor=W)
+        
+        self.city2_dropdown = tb.Combobox(
+            self.city2_frame,
+            textvariable=self.city2_var,
+            state="readonly",
+            width=30
+        )
+        self.city2_dropdown.pack(pady=(3, 0), anchor=W)
+        self.city2_dropdown.bind('<<ComboboxSelected>>', self._on_city_selection_changed)
+        
+        # Compare mode checkbox below city selections
         compare_frame = tb.Frame(controls_frame)
-        compare_frame.pack(fill=X, pady=(10, 0))
+        compare_frame.pack(fill=X, pady=(8, 0))
         
         self.compare_checkbox = tb.Checkbutton(
             compare_frame,
@@ -81,44 +155,39 @@ class HistoryComponent:
         )
         self.compare_checkbox.pack(anchor=W)
         
-        # City 2 selection (initially hidden)
-        self.city2_frame = tb.Frame(controls_frame)
-        
-        tb.Label(
-            self.city2_frame,
-            text="Select Second City:",
-            font=("Helvetica Neue", 12, "bold")
-        ).pack(anchor=W)
-        
-        self.city2_dropdown = tb.Combobox(
-            self.city2_frame,
-            textvariable=self.city2_var,
-            state="readonly",
-            width=40
-        )
-        self.city2_dropdown.pack(pady=(5, 0), anchor=W)
-        self.city2_dropdown.bind('<<ComboboxSelected>>', self._on_city_selection_changed)
-        
-        # Analyze button
+        # Button frame with both buttons
         button_frame = tb.Frame(controls_frame)
-        button_frame.pack(fill=X, pady=(20, 0))
+        button_frame.pack(fill=X, pady=(15, 0))
         
         self.analyze_button = tb.Button(
             button_frame,
-            text="Analyze Historical Data",
+            text="📊 Analyze Historical Data",
             command=self._on_analyze_clicked,
             bootstyle="primary",
             state="disabled"
         )
-        self.analyze_button.pack(anchor=W)
+        self.analyze_button.pack(side=LEFT, anchor=W, padx=(0, 10))
+        
+        # New 7-day data button
+        self.fetch_7day_button = tb.Button(
+            button_frame,
+            text="📊 Get Latest History",
+            command=self._on_fetch_7day_clicked,
+            bootstyle="success-outline",
+            state="disabled"
+        )
+        self.fetch_7day_button.pack(side=LEFT, anchor=W)
         
         # Separator
-        separator = tb.Separator(self.main_frame, orient="horizontal")
-        separator.pack(fill=X, padx=20, pady=20)
+        separator = tb.Separator(main_container, orient="horizontal")
+        separator.grid(row=1, column=0, sticky="ew", padx=20, pady=10)
         
-        # Chart area
-        self.chart_area = tb.Frame(self.main_frame)
-        self.chart_area.pack(fill=BOTH, expand=True, padx=20, pady=(0, 20))
+        # Bottom section - Chart area (2/3 of height)
+        self.chart_area = tb.Frame(main_container)
+        self.chart_area.grid(row=2, column=0, sticky="nsew", padx=10, pady=(0, 10))
+        
+        # Setup 4-quadrant chart layout
+        self._setup_chart_quadrants()
         
         # Initial placeholder
         self._show_placeholder()
@@ -180,8 +249,8 @@ class HistoryComponent:
     def _on_compare_mode_changed(self):
         """Handle compare mode checkbox change"""
         if self.compare_mode.get():
-            # Show second city dropdown
-            self.city2_frame.pack(fill=X, pady=(10, 0))
+            # Show second city dropdown in same row
+            self.city2_frame.pack(side=LEFT, padx=(15, 0))
             self._update_city2_options()
         else:
             # Hide second city dropdown
@@ -226,6 +295,7 @@ class HistoryComponent:
             can_analyze = city1_selected
         
         self.analyze_button.configure(state="normal" if can_analyze else "disabled")
+        self.fetch_7day_button.configure(state="normal" if can_analyze else "disabled")
     
     def _on_analyze_clicked(self):
         """Handle analyze button click"""
@@ -353,6 +423,526 @@ class HistoryComponent:
         """Clear all widgets from chart area"""
         for widget in self.chart_area.winfo_children():
             widget.destroy()
+    
+    
+    def _setup_chart_quadrants(self):
+        """Setup the 4-quadrant chart layout"""
+        # Clear chart area first
+        for widget in self.chart_area.winfo_children():
+            widget.destroy()
+            
+        # Configure grid for quadrants
+        self.chart_area.rowconfigure(0, weight=1)
+        self.chart_area.rowconfigure(1, weight=1)
+        self.chart_area.columnconfigure(0, weight=1)
+        self.chart_area.columnconfigure(1, weight=1)
+        
+        # Top-left: Temperature Line Chart
+        self.temp_chart_frame = tb.LabelFrame(
+            self.chart_area,
+            text="🌡️ Daily High Temperatures",
+            bootstyle="primary"
+        )
+        self.temp_chart_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5), pady=(0, 5))
+        
+        # Top-right: Precipitation Bar Chart
+        self.precip_chart_frame = tb.LabelFrame(
+            self.chart_area,
+            text="🌧️ Daily Precipitation",
+            bootstyle="info"
+        )
+        self.precip_chart_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0), pady=(0, 5))
+        
+        # Bottom-left: Humidity Area Chart
+        self.humidity_chart_frame = tb.LabelFrame(
+            self.chart_area,
+            text="💧 Average Daily Humidity",
+            bootstyle="success"
+        )
+        self.humidity_chart_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 5), pady=(5, 0))
+        
+        # Bottom-right: Weather Type Radar Chart
+        self.weather_chart_frame = tb.LabelFrame(
+            self.chart_area,
+            text="☁️ Weather Type Frequency",
+            bootstyle="warning"
+        )
+        self.weather_chart_frame.grid(row=1, column=1, sticky="nsew", padx=(5, 0), pady=(5, 0))
+        
+        # Initialize placeholders if no chart data is available
+        if not hasattr(self, 'chart_data') or not self.chart_data:
+            self._show_chart_placeholders()
+    
+    def _show_chart_placeholders(self):
+        """Show placeholder messages in chart quadrants"""
+        charts = [
+            (self.temp_chart_frame, "Line chart will show\ntemperature trends"),
+            (self.precip_chart_frame, "Bar chart will show\nrainfall amounts"),
+            (self.humidity_chart_frame, "Area chart will show\nhumidity patterns"),
+            (self.weather_chart_frame, "Radar chart will show\nweather type distribution")
+        ]
+        
+        for frame, text in charts:
+            placeholder = tb.Label(
+                frame,
+                text=text,
+                font=("Helvetica Neue", 10),
+                justify=CENTER,
+                bootstyle="secondary"
+            )
+            placeholder.pack(expand=True)
+    
+    @log_execution_time()
+    def _on_fetch_7day_clicked(self):
+        """Handle 7-day data fetch button click"""
+        try:
+            selected_city1 = self.city1_var.get()
+            selected_city2 = self.city2_var.get() if self.compare_mode.get() else None
+            
+            if not selected_city1:
+                return
+            
+            # Get city data
+            city1_data = next((city for city in self.cities_with_data 
+                             if city['display_name'] == selected_city1), None)
+            
+            city2_data = None
+            if selected_city2:
+                city2_data = next((city for city in self.cities_with_data 
+                                 if city['display_name'] == selected_city2), None)
+            
+            if not city1_data:
+                self._show_error_message("Selected city data not found")
+                return
+            
+            # Fetch chart data using service
+            self._fetch_chart_data(city1_data, city2_data)
+            
+        except Exception as e:
+            self.logger.error(f"Error fetching 7-day data: {e}")
+            self._show_error_message("Failed to fetch 7-day data")
+    
+    def _fetch_chart_data(self, city1_data: Dict, city2_data: Optional[Dict] = None):
+        """Fetch chart data using the chart data service"""
+        try:
+            self.logger.debug(f"Fetching chart data for {city1_data.get('display_name')} and {city2_data.get('display_name') if city2_data else 'None'}")
+            
+            # Ensure chart quadrants are properly set up
+            if not hasattr(self, 'temp_chart_frame') or not self.temp_chart_frame:
+                self.logger.debug("Chart frames not initialized, setting up quadrants")
+                self._setup_chart_quadrants()
+            
+            # Use the chart service to get processed data
+            chart_data, error = self.chart_service.get_chart_data(
+                city1_data, 
+                city2_data, 
+                days_back=7
+            )
+            
+            if error:
+                self.logger.error(f"Chart service returned error: {error}")
+                self._show_chart_error(error)
+                return
+            
+            if not chart_data or not chart_data.get('chart_ready'):
+                self.logger.warning(f"Chart data not ready: {chart_data}")
+                self._show_chart_error("No chart data available")
+                return
+            
+            self.logger.debug(f"Chart data loaded successfully, chart_ready: {chart_data.get('chart_ready')}")
+            
+            # Store processed data
+            self.chart_data = chart_data
+            
+            # Update charts with processed data
+            self._update_chart_quadrants()
+            
+        except Exception as e:
+            self.logger.error(f"Error fetching chart data: {e}", exc_info=True)
+            self._show_chart_error("Failed to load chart data")
+    
+    
+    
+    def _update_chart_quadrants(self):
+        """Update all four chart quadrants with 7-day data"""
+        if not _import_matplotlib():
+            self._show_matplotlib_unavailable()
+            return
+            
+        if not self.chart_data or not self.chart_data.get('chart_ready'):
+            return
+        
+        try:
+            # Ensure chart frames exist and are properly initialized
+            if not all([
+                self.temp_chart_frame and self.temp_chart_frame.winfo_exists(),
+                self.precip_chart_frame and self.precip_chart_frame.winfo_exists(),
+                self.humidity_chart_frame and self.humidity_chart_frame.winfo_exists(),
+                self.weather_chart_frame and self.weather_chart_frame.winfo_exists()
+            ]):
+                self.logger.warning("Chart frames not properly initialized, recreating...")
+                self._setup_chart_quadrants()
+            
+            # Clear existing charts
+            for frame in [self.temp_chart_frame, self.precip_chart_frame, 
+                         self.humidity_chart_frame, self.weather_chart_frame]:
+                if frame and frame.winfo_exists():
+                    for widget in frame.winfo_children():
+                        widget.destroy()
+            
+            # Create the charts
+            self._create_temperature_chart()
+            self._create_precipitation_chart()
+            self._create_humidity_chart()
+            self._create_weather_type_chart()
+            
+        except Exception as e:
+            self.logger.error(f"Error updating chart quadrants: {e}", exc_info=True)
+            self._show_chart_error(f"Chart creation failed: {str(e)}")
+    
+    def _create_temperature_chart(self):
+        """Create line chart for daily temperatures"""
+        if not _import_matplotlib():
+            self._show_chart_error("Matplotlib not available")
+            return
+            
+        try:
+            fig = Figure(figsize=(6, 4), dpi=80)
+            ax = fig.add_subplot(111)
+        except Exception as e:
+            self.logger.error(f"Error creating temperature chart: {e}")
+            self._show_chart_error("Temperature chart creation failed")
+            return
+        
+        # Get processed data for city1
+        city1_temp = self.chart_data['city1']['processed'].get('temperature', {})
+        dates = city1_temp.get('dates', [])
+        temps1 = city1_temp.get('max_temps', [])
+        
+        if dates and temps1:
+            ax.plot(dates, temps1, marker='o', linewidth=2, 
+                   label=self.chart_data['city1']['info']['display_name'], color='#FF6B6B')
+        
+        # Add city2 if comparison mode
+        if self.chart_data.get('city2'):
+            city2_temp = self.chart_data['city2']['processed'].get('temperature', {})
+            temps2 = city2_temp.get('max_temps', [])
+            if temps2:
+                ax.plot(dates, temps2, marker='s', linewidth=2, 
+                       label=self.chart_data['city2']['info']['display_name'], color='#4ECDC4')
+                ax.legend(fontsize=8)
+        
+        ax.set_title('Daily High Temperatures', fontsize=10, pad=10)
+        ax.set_ylabel('Temperature (°F)', fontsize=8)
+        ax.tick_params(axis='x', rotation=45, labelsize=7)
+        ax.tick_params(axis='y', labelsize=7)
+        ax.grid(True, alpha=0.3)
+        
+        fig.tight_layout()
+        
+        try:
+            if self.temp_chart_frame and self.temp_chart_frame.winfo_exists():
+                canvas = FigureCanvasTkAgg(fig, self.temp_chart_frame)
+                canvas.draw()
+                canvas.get_tk_widget().pack(fill=BOTH, expand=True)
+            else:
+                self.logger.error("Temperature chart frame does not exist")
+                self._show_chart_error("Temperature chart frame not available")
+        except Exception as e:
+            self.logger.error(f"Error displaying temperature chart: {e}")
+            self._show_chart_error("Temperature chart display failed")
+    
+    def _create_precipitation_chart(self):
+        """Create bar chart for daily precipitation"""
+        if not _import_matplotlib():
+            self._show_chart_error("Matplotlib not available")
+            return
+            
+        try:
+            fig = Figure(figsize=(6, 4), dpi=80)
+            ax = fig.add_subplot(111)
+        except Exception as e:
+            self.logger.error(f"Error creating precipitation chart: {e}")
+            self._show_chart_error("Precipitation chart creation failed")
+            return
+        
+        # Get processed precipitation data
+        city1_precip = self.chart_data['city1']['processed'].get('precipitation', {})
+        dates = city1_precip.get('dates', [])
+        precip1 = city1_precip.get('precipitation', [])
+        
+        x = np.arange(len(dates))
+        width = 0.35
+        
+        if dates and precip1:
+            ax.bar(x - width/2, precip1, width, 
+                  label=self.chart_data['city1']['info']['display_name'], 
+                  color='#FF6B6B', alpha=0.8)
+        
+        if self.chart_data.get('city2'):
+            city2_precip = self.chart_data['city2']['processed'].get('precipitation', {})
+            precip2 = city2_precip.get('precipitation', [])
+            if precip2:
+                ax.bar(x + width/2, precip2, width, 
+                      label=self.chart_data['city2']['info']['display_name'], 
+                      color='#4ECDC4', alpha=0.8)
+                ax.legend(fontsize=8)
+        
+        ax.set_title('Daily Precipitation', fontsize=10, pad=10)
+        ax.set_ylabel('Precipitation (mm)', fontsize=8)
+        ax.set_xticks(x)
+        ax.set_xticklabels(dates, rotation=45, fontsize=7)
+        ax.tick_params(axis='y', labelsize=7)
+        ax.grid(True, alpha=0.3, axis='y')
+        
+        fig.tight_layout()
+        
+        try:
+            if self.precip_chart_frame and self.precip_chart_frame.winfo_exists():
+                canvas = FigureCanvasTkAgg(fig, self.precip_chart_frame)
+                canvas.draw()
+                canvas.get_tk_widget().pack(fill=BOTH, expand=True)
+            else:
+                self.logger.error("Precipitation chart frame does not exist")
+                self._show_chart_error("Precipitation chart frame not available")
+        except Exception as e:
+            self.logger.error(f"Error displaying precipitation chart: {e}")
+            self._show_chart_error("Precipitation chart display failed")
+    
+    def _create_humidity_chart(self):
+        """Create area chart for average daily humidity"""
+        if not _import_matplotlib():
+            self._show_chart_error("Matplotlib not available")
+            return
+            
+        try:
+            fig = Figure(figsize=(6, 4), dpi=80)
+            ax = fig.add_subplot(111)
+        except Exception as e:
+            self.logger.error(f"Error creating humidity chart: {e}")
+            self._show_chart_error("Humidity chart creation failed")
+            return
+        
+        # Get processed humidity data
+        city1_humid = self.chart_data['city1']['processed'].get('humidity', {})
+        dates = city1_humid.get('dates', [])
+        humidity1 = city1_humid.get('humidity', [])
+        
+        if dates and humidity1:
+            ax.fill_between(range(len(dates)), humidity1, alpha=0.6, color='#FF6B6B', 
+                           label=self.chart_data['city1']['info']['display_name'])
+        
+        if self.chart_data.get('city2'):
+            city2_humid = self.chart_data['city2']['processed'].get('humidity', {})
+            humidity2 = city2_humid.get('humidity', [])
+            if humidity2:
+                ax.fill_between(range(len(dates)), humidity2, alpha=0.4, color='#4ECDC4', 
+                               label=self.chart_data['city2']['info']['display_name'])
+                ax.legend(fontsize=8)
+        
+        ax.set_title('Average Daily Humidity', fontsize=10, pad=10)
+        ax.set_ylabel('Humidity (%)', fontsize=8)
+        ax.set_xticks(range(len(dates)))
+        ax.set_xticklabels(dates, rotation=45, fontsize=7)
+        ax.tick_params(axis='y', labelsize=7)
+        ax.grid(True, alpha=0.3)
+        
+        fig.tight_layout()
+        
+        try:
+            if self.humidity_chart_frame and self.humidity_chart_frame.winfo_exists():
+                canvas = FigureCanvasTkAgg(fig, self.humidity_chart_frame)
+                canvas.draw()
+                canvas.get_tk_widget().pack(fill=BOTH, expand=True)
+            else:
+                self.logger.error("Humidity chart frame does not exist")
+                self._show_chart_error("Humidity chart frame not available")
+        except Exception as e:
+            self.logger.error(f"Error displaying humidity chart: {e}")
+            self._show_chart_error("Humidity chart display failed")
+    
+    def _create_weather_type_chart(self):
+        """Create radar chart for weather type frequency"""
+        if not _import_matplotlib():
+            self._show_chart_error("Matplotlib not available")
+            return
+            
+        try:
+            fig = Figure(figsize=(6, 4), dpi=80)
+            ax = fig.add_subplot(111, projection='polar')
+        except Exception as e:
+            self.logger.error(f"Error creating polar plot: {e}")
+            # Fallback to regular bar chart
+            self._create_weather_type_bar_chart()
+            return
+        
+        # Define weather categories
+        categories = ['Clear', 'Cloudy', 'Rainy', 'Stormy', 'Snowy', 'Foggy']
+        
+        def categorize_weather(description):
+            desc = description.lower()
+            if any(word in desc for word in ['clear', 'sunny']):
+                return 'Clear'
+            elif any(word in desc for word in ['cloud', 'overcast']):
+                return 'Cloudy'
+            elif any(word in desc for word in ['rain', 'drizzle', 'shower']):
+                return 'Rainy'
+            elif any(word in desc for word in ['storm', 'thunder']):
+                return 'Stormy'
+            elif any(word in desc for word in ['snow', 'blizzard']):
+                return 'Snowy'
+            elif any(word in desc for word in ['fog', 'mist']):
+                return 'Foggy'
+            return 'Clear'
+        
+        # Get processed weather data for city1
+        city1_weather = self.chart_data['city1']['processed'].get('weather_types', {})
+        city1_values = [city1_weather.get('percentages', {}).get(cat, 0) for cat in categories]
+        
+        # Create angles for radar chart
+        angles = np.linspace(0, 2 * np.pi, len(categories), endpoint=False).tolist()
+        city1_values += city1_values[:1]  # Complete the circle
+        angles += angles[:1]
+        
+        if city1_values and any(v > 0 for v in city1_values):
+            ax.plot(angles, city1_values, 'o-', linewidth=2, 
+                   label=self.chart_data['city1']['info']['display_name'], color='#FF6B6B')
+            ax.fill(angles, city1_values, alpha=0.25, color='#FF6B6B')
+        
+        if self.chart_data.get('city2'):
+            city2_weather = self.chart_data['city2']['processed'].get('weather_types', {})
+            city2_values = [city2_weather.get('percentages', {}).get(cat, 0) for cat in categories]
+            
+            if city2_values and any(v > 0 for v in city2_values):
+                city2_values += city2_values[:1]
+                ax.plot(angles, city2_values, 's-', linewidth=2, 
+                       label=self.chart_data['city2']['info']['display_name'], color='#4ECDC4')
+                ax.fill(angles, city2_values, alpha=0.15, color='#4ECDC4')
+                ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0), fontsize=8)
+        
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(categories, fontsize=7)
+        ax.set_ylim(0, 100)
+        ax.set_title('Weather Type Frequency (%)', fontsize=10, pad=20)
+        ax.grid(True)
+        
+        fig.tight_layout()
+        
+        try:
+            if self.weather_chart_frame and self.weather_chart_frame.winfo_exists():
+                canvas = FigureCanvasTkAgg(fig, self.weather_chart_frame)
+                canvas.draw()
+                canvas.get_tk_widget().pack(fill=BOTH, expand=True)
+            else:
+                self.logger.error("Weather chart frame does not exist")
+                self._show_chart_error("Weather chart frame not available")
+        except Exception as e:
+            self.logger.error(f"Error displaying weather chart: {e}")
+            self._show_chart_error("Weather chart display failed")
+    
+    def _create_weather_type_bar_chart(self):
+        """Fallback bar chart for weather types when polar projection fails"""
+        try:
+            fig = Figure(figsize=(6, 4), dpi=80)
+            ax = fig.add_subplot(111)
+            
+            # Define weather categories
+            categories = ['Clear', 'Cloudy', 'Rainy', 'Stormy', 'Snowy', 'Foggy']
+            
+            def categorize_weather(cloud_cover, precipitation, rain):
+                """Categorize weather based on database values"""
+                cloud_cover = cloud_cover or 0
+                precipitation = precipitation or 0
+                rain = rain or 0
+                
+                if precipitation > 5 or rain > 5:
+                    return 'Rainy'
+                elif cloud_cover > 80:
+                    return 'Cloudy'
+                elif cloud_cover < 20:
+                    return 'Clear'
+                else:
+                    return 'Cloudy'
+            
+            # Get processed weather data for city1
+            city1_weather = self.chart_data['city1']['processed'].get('weather_types', {})
+            city1_values = [city1_weather.get('percentages', {}).get(cat, 0) for cat in categories]
+            
+            x = np.arange(len(categories))
+            width = 0.35
+            
+            if city1_values and any(v > 0 for v in city1_values):
+                ax.bar(x - width/2, city1_values, width, 
+                      label=self.chart_data['city1']['info']['display_name'], 
+                      color='#FF6B6B', alpha=0.8)
+            
+            if self.chart_data.get('city2'):
+                city2_weather = self.chart_data['city2']['processed'].get('weather_types', {})
+                city2_values = [city2_weather.get('percentages', {}).get(cat, 0) for cat in categories]
+                
+                if city2_values and any(v > 0 for v in city2_values):
+                    ax.bar(x + width/2, city2_values, width, 
+                          label=self.chart_data['city2']['info']['display_name'], 
+                          color='#4ECDC4', alpha=0.8)
+                    ax.legend(fontsize=8)
+            
+            ax.set_title('Weather Type Frequency (%)', fontsize=10, pad=10)
+            ax.set_ylabel('Frequency (%)', fontsize=8)
+            ax.set_xticks(x)
+            ax.set_xticklabels(categories, rotation=45, fontsize=7)
+            ax.tick_params(axis='y', labelsize=7)
+            ax.grid(True, alpha=0.3, axis='y')
+            
+            fig.tight_layout()
+            
+            if self.weather_chart_frame and self.weather_chart_frame.winfo_exists():
+                canvas = FigureCanvasTkAgg(fig, self.weather_chart_frame)
+                canvas.draw()
+                canvas.get_tk_widget().pack(fill=BOTH, expand=True)
+            else:
+                self.logger.error("Weather chart frame does not exist for fallback chart")
+                self._show_chart_error("Weather chart frame not available")
+            
+        except Exception as e:
+            self.logger.error(f"Error creating fallback weather chart: {e}")
+            self._show_chart_error("Weather chart creation failed")
+    
+    def _show_matplotlib_unavailable(self):
+        """Show message when matplotlib is not available"""
+        for frame in [self.temp_chart_frame, self.precip_chart_frame, 
+                     self.humidity_chart_frame, self.weather_chart_frame]:
+            for widget in frame.winfo_children():
+                widget.destroy()
+            
+            error_label = tb.Label(
+                frame,
+                text="📊 Charts require matplotlib\\nPlease install: pip install matplotlib",
+                font=("Helvetica Neue", 10),
+                justify=CENTER,
+                bootstyle="warning"
+            )
+            error_label.pack(expand=True)
+    
+    def _show_chart_error(self, message: str):
+        """Show error message in a chart frame"""
+        try:
+            # Clear chart area first
+            if hasattr(self, 'chart_area') and self.chart_area:
+                for widget in self.chart_area.winfo_children():
+                    widget.destroy()
+                
+                error_label = tb.Label(
+                    self.chart_area,
+                    text=f"⚠️ {message}",
+                    font=("Helvetica Neue", 10),
+                    justify=CENTER,
+                    bootstyle="danger"
+                )
+                error_label.pack(expand=True)
+            else:
+                self.logger.error(f"Chart area not available for error message: {message}")
+        except Exception as e:
+            self.logger.error(f"Error displaying chart error message: {e}")
     
     def refresh_cities(self):
         """Refresh the list of cities with historical data"""
