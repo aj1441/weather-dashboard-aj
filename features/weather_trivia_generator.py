@@ -17,7 +17,7 @@ from datetime import datetime
 class WeatherTriviaGenerator:
     """Generates weather trivia questions from CSV data and static knowledge base"""
     
-    def __init__(self, csv_file_path: str = "shared_data/aj/combined_data.csv"):
+    def __init__(self, csv_file_path: str = "data/combined_data.csv"):
         """
         Initialize the trivia generator
         
@@ -843,7 +843,7 @@ class WeatherTriviaGenerator:
 
 
 # Convenience function for easy import
-def create_trivia_generator(csv_file_path: str = "shared_data/aj/combined_data.csv") -> WeatherTriviaGenerator:
+def create_trivia_generator(csv_file_path: str = "data/combined_data.csv") -> WeatherTriviaGenerator:
     """
     Factory function to create a trivia generator instance
     

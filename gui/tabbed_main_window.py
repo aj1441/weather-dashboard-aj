@@ -189,7 +189,7 @@ class TabbedWeatherDashboard:
     def setup_trivia_tab(self):
         """Setup the trivia tab using modular TriviaTab"""
         try:
-            trivia_tab = TriviaTab(self.notebook, csv_path="shared_data/aj/combined_data.csv")
+            trivia_tab = TriviaTab(self.notebook, csv_path="data/combined_data.csv")
             self.notebook.add(trivia_tab, text="🧠 Weather Trivia")
             self.logger.info("TriviaTab successfully added to notebook")
         except Exception as e:
