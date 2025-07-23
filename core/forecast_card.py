@@ -15,18 +15,35 @@ def create_forecast_card_tk(parent, day_data, index, icon_manager, style='main',
     Returns:
         card_frame: the created Frame
     """
+    # import tkinter as tk
+    # try:
+    #     import ttkbootstrap as tb
+    #     Frame = tb.Frame
+    #     Label = tb.Label
+    # except ImportError:
+    #     Frame = tk.Frame
+    #     Label = tk.Label
+    # from datetime import datetime
     import tkinter as tk
+    # from utils.custom_styles import apply_custom_styles
     try:
         import ttkbootstrap as tb
         Frame = tb.Frame
         Label = tb.Label
+        # Apply custom styles once when creating forecast cards
+        try:
+            from utils.custom_styles import apply_custom_styles
+            style = tb.Style()
+            apply_custom_styles(style)
+        except Exception:
+            pass  # Ignore if custom styles fail
     except ImportError:
         Frame = tk.Frame
         Label = tk.Label
     from datetime import datetime
 
-    frame_style = f"{theme_style}.TFrame"
-    label_style = f"{theme_style}.Inverse.TLabel"
+    frame_style = apply_custom_styles.Custom.TFrame
+    label_style = apply_custom_styles.Custom.TLabel
 
     # Card frame with uniform sizing
     if style == 'main':

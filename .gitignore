@@ -4,7 +4,7 @@
 __pycache__/
 *.pyc
 old_py_files/
-*.DS_Store
+
 venv/
 .vscode/
 *.log
@@ -21,4 +21,6 @@ archived_files/
 .idea/
 
 # Shared data from separate repository
-share_data/team6/
+share_data/team6/*
+# Ignore everything in shared_data/
+shared_data/

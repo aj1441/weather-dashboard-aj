@@ -30,8 +30,8 @@ def apply_custom_styles(style: tb.Style, theme_name="aj_lightly"):
     # Custom Label
     style.configure('Custom.TLabel',
                     font=('Arial', 14),
-                    foreground='orange',
-                    background='#222222')
+                    foreground='#343a40',
+                    background='#caa8e9')
 
     # Custom Entry
     style.configure('Custom.TEntry',
@@ -44,7 +44,7 @@ def apply_custom_styles(style: tb.Style, theme_name="aj_lightly"):
 
     # Custom Frame
     style.configure('Custom.TFrame',
-                    background='#1a1a1a',
+                    background='#caa8e9',
                     borderwidth=5,
                     relief='groove')
 
@@ -56,6 +56,43 @@ def apply_custom_styles(style: tb.Style, theme_name="aj_lightly"):
                     bordercolor='#444',
                     lightcolor='#28a745',
                     darkcolor='#1e7e34')
+
+                # Frecast Card Styles
+    style.configure('ForecastCard.TFrame',
+                    background=theme_colors.get("bg", "#222222"),
+                    borderwidth=2,
+                    relief='raised')
+
+    style.configure('ForecastDay.TLabel',
+                    font=('Helvetica Neue', 10, 'bold'),
+                    foreground=theme_colors.get("fg", "white"),
+                    background=theme_colors.get("bg", "#222222"))
+
+    style.configure('ForecastIcon.TLabel',
+                    font=('Helvetica Neue', 24),
+                    foreground=theme_colors.get("primary", "#00f"),
+                    background=theme_colors.get("bg", "#222222"))
+
+    style.configure('ForecastTempHigh.TLabel',
+                    font=('Helvetica Neue', 12, 'bold'),
+                    foreground=theme_colors.get("accent", theme_colors.get("primary", "#ff0")),
+                    background=theme_colors.get("bg", "#222222"))
+
+    style.configure('ForecastTempLow.TLabel',
+                    font=('Helvetica Neue', 11),
+                    foreground=theme_colors.get("fg", "lightblue"),
+                    background=theme_colors.get("bg", "#222222"))
+
+    style.configure('ForecastDesc.TLabel',
+                    font=('Helvetica Neue', 9, 'italic'),
+                    foreground=theme_colors.get("fg", "white"),
+                    background=theme_colors.get("bg", "#222222"))
+
+    style.configure('ForecastPrecip.TLabel',
+                    font=('Helvetica Neue', 9),
+                    foreground="#00bfff",
+                    background=theme_colors.get("bg", "#222222"))
+
 
     # Add more styles below as needed
 

@@ -7,10 +7,12 @@ from .state_utils import *
 from .unit_label_utils import *
 from .unit_system import *
 from .weather_utils import *
+from .custom_styles import apply_custom_styles
 
 __all__ = [
     'UserSettingsManager',
     'WeatherFormatter',
     'add_numbers',
-    'convert_to_fahrenheit'
+    'convert_to_fahrenheit',
+    'apply_custom_styles'
 ]
