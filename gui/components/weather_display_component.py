@@ -45,8 +45,7 @@ class WeatherDisplayComponent:
         self.save_city_btn = create_save_city_button(
             desc_frame,
             city_data=None,  # Will be set when weather is loaded
-            on_save_callback=self.on_save_city,
-            style='success-outline'
+            on_save_callback=self.on_save_city
         )
         # Don't pack initially - will be shown when weather data is displayed
         

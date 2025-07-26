@@ -397,29 +397,14 @@ class SavedCitiesComponent:
         if precip > 0:
             tb.Label(
                 card,
-                text=f"🌧️ {precip:.1f}\"",
+                text=f"🌧️ Precipitation:{precip:.1f}\"",
                 font=("Helvetica Neue", 8)
             ).pack()
         
         if humidity:
             tb.Label(
                 card,
-                text=f"💧 {humidity:.0f}%",
+                text=f"💧 Humidity: {humidity:.0f}%",
                 font=("Helvetica Neue", 8)
             ).pack()
     
-    def restyle(self):
-        """Force a style refresh for saved cities widgets."""
-        try:
-            if hasattr(self, "cities_frame"):
-                self.cities_frame.update_idletasks()
-
-                for widget in self.cities_frame.winfo_children():
-                    try:
-                        widget.configure()  # Re-apply styles
-                    except Exception:
-                        pass  # Ignore widgets that don't support configure()
-
-            self.logger.info("SavedCitiesComponent restyled.")
-        except Exception as e:
-            self.logger.error(f"Error during restyle in SavedCitiesComponent: {e}")

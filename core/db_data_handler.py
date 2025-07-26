@@ -1,7 +1,5 @@
 """Enhanced data handler with database integration"""
 
-import json
-import os
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -15,35 +13,7 @@ class DatabaseDataHandler:
     
     def __init__(self):
         self.db = get_database()
-        # Keep JSON fallback for migration/backup
-        self.json_file = "data/saved_locations.json"
-        self._migrate_json_data()
     
-    def _migrate_json_data(self):
-        """Migrate existing JSON data to database (one-time operation)"""
-        if os.path.exists(self.json_file):
-            try:
-                with open(self.json_file, 'r') as f:
-                    json_data = json.load(f)
-                    
-                # Migrate saved cities to database
-                for city_data in json_data:
-                    self.db.save_location(
-                        city=city_data.get('city'),
-                        state=city_data.get('state'),
-                        nickname=city_data.get('nickname')
-                    )
-                
-                # Backup and remove JSON file after migration
-                backup_file = f"{self.json_file}.backup"
-                os.rename(self.json_file, backup_file)
-                logger.info(
-                    "Migrated JSON data to database. Backup saved as %s",
-                    backup_file,
-                )
-                
-            except Exception as e:
-                logger.warning("Migration warning: %s", e)
     
     def save_weather_data(self, weather_data: Dict, city: str, state: str = None) -> bool:
         """Save current weather data to database"""

@@ -104,10 +104,10 @@ class TabbedWeatherDashboard:
                         self.logger.info(f"Auto theme changed to: {new_theme}")
                         self._last_auto_theme = new_theme
                         
-                        # Trigger component restyling
+                        # Schedule component restyling on main thread to avoid segfaults
                         if hasattr(self, "restyle_all_components"):
-                            self.restyle_all_components()
-                            self.logger.info("[auto_theme_loop] Components restyled after theme change")
+                            self.app.after(0, self._restyle_components_safe)
+                            self.logger.info("[auto_theme_loop] Components restyle scheduled on main thread")
 
                 # Sleep for 30 minutes before next check
                 for _ in range(1800):
@@ -514,6 +514,14 @@ class TabbedWeatherDashboard:
             except Exception as e:
                 self.logger.error(f"Error restyling trivia component: {e}")
 
+    def _restyle_components_safe(self):
+        """Thread-safe wrapper for component restyling - called from main thread only."""
+        try:
+            self.restyle_all_components()
+            self.logger.info("[main_thread] Components restyled after theme change")
+        except Exception as e:
+            self.logger.error(f"Error during safe component restyle: {e}")
+
     def handle_unit_change(self, new_unit):
         """Handle temperature unit change and update displays, using forecast cache for robustness"""
         self.logger.debug(f"Temperature unit changed to {new_unit}")
@@ -567,7 +575,18 @@ class TabbedWeatherDashboard:
         finally:
             self.logger.info("Cleaning up resources...")
             self.stop_auto_theme_refresh()  # Stop auto theme thread
+            
+            # Close API session to clean up urllib3 connection pools
             try:
-                self.data_handler.db.get_connection().close()  # Close database connection
+                if hasattr(self.weather_api, 'session'):
+                    self.weather_api.session.close()
+                    self.logger.info("API session closed")
+            except Exception as e:
+                self.logger.error(f"Error closing API session: {str(e)}")
+            
+            # Close database connection
+            try:
+                self.data_handler.db.get_connection().close()
+                self.logger.info("Database connection closed")
             except Exception as e:
                 self.logger.error(f"Error closing database connection: {str(e)}")

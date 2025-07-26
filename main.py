@@ -13,6 +13,7 @@ with all business logic and utilities moved to appropriate modules.
 import logging
 import sys
 import os
+import signal
 from pathlib import Path
 from config import Config
 from gui.tabbed_main_window import TabbedWeatherDashboard
@@ -164,6 +165,10 @@ class App:
             print("\nTo fix this, install missing dependencies:")
             print("pip install -r requirements.txt")
             sys.exit(1)
+            
+        except KeyboardInterrupt:
+            self.logger.info("Application interrupted by user")
+            print("\nShutting down gracefully...")
             
         except Exception as e:
             self.logger.exception("Unexpected error occurred")

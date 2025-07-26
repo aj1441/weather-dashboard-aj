@@ -40,6 +40,9 @@ class WeatherInputComponent:
         tb.Label(self.input_frame, text="State:").pack(side=LEFT)
         self.state_entry = tb.Entry(self.input_frame, textvariable=self.state_var, width=5)
         self.state_entry.pack(side=LEFT, padx=(5, 10))
+        
+        # Bind Enter key to trigger weather request
+        self.state_entry.bind('<Return>', lambda _: self.on_get_weather())
 
         # Get weather button
         self.get_weather_btn = tb.Button(

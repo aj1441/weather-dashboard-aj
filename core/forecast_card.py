@@ -2,7 +2,7 @@
 Reusable function to create a forecast card (Tkinter/Ttkbootstrap).
 Call from both forecast and saved cities components for deduplication.
 """
-def create_forecast_card_tk(parent, day_data, index, icon_manager, style='main', unit_label="°F", theme_style="primary"):
+def create_forecast_card_tk(parent, day_data, index, icon_manager, style='main', unit_label="°F"):
     """
     Create a forecast card frame for a given day's data.
     Args:
@@ -25,25 +25,27 @@ def create_forecast_card_tk(parent, day_data, index, icon_manager, style='main',
     #     Label = tk.Label
     # from datetime import datetime
     import tkinter as tk
-    # from utils.custom_styles import apply_custom_styles
     try:
         import ttkbootstrap as tb
         Frame = tb.Frame
         Label = tb.Label
-        # Apply custom styles once when creating forecast cards
-        try:
-            from utils.custom_styles import apply_custom_styles
-            style = tb.Style()
-            apply_custom_styles(style)
-        except Exception:
-            pass  # Ignore if custom styles fail
+        
+        # Use forecast-specific styles (applied by theme system)
+        frame_style = 'ForecastCard.TFrame'
+        day_label_style = 'ForecastDay.TLabel'
+        icon_label_style = 'ForecastIcon.TLabel'
+        temp_high_style = 'ForecastTempHigh.TLabel'
+        temp_low_style = 'ForecastTempLow.TLabel'
+        desc_label_style = 'ForecastDesc.TLabel'
+        precip_label_style = 'ForecastPrecip.TLabel'
+        
     except ImportError:
         Frame = tk.Frame
         Label = tk.Label
+        # No styling for plain tkinter
+        frame_style = day_label_style = icon_label_style = temp_high_style = temp_low_style = desc_label_style = precip_label_style = None
+    
     from datetime import datetime
-
-    frame_style = apply_custom_styles.Custom.TFrame
-    label_style = apply_custom_styles.Custom.TLabel
 
     # Card frame with uniform sizing
     if style == 'main':
@@ -67,38 +69,66 @@ def create_forecast_card_tk(parent, day_data, index, icon_manager, style='main',
     except:
         day_text = f"Day {index + 1}"
 
+    # Day label with specific style
     font_main = ("Helvetica Neue", 12, "bold") if style == 'main' else ("Helvetica Neue", 9, "bold")
-    Label(card_frame, text=day_text, font=font_main, anchor="center", style=label_style).pack(pady=(5, 5) if style=='main' else 0)
+    day_label = Label(card_frame, text=day_text, anchor="center", style=day_label_style)
+    if not day_label_style:  # Apply font only if no custom style
+        day_label.configure(font=font_main)
+    day_label.pack(pady=(5, 5) if style=='main' else 0)
 
-    # Weather icon
+    # Weather icon with specific style
     weather_description = day_data.get('description', 'Clear')
     weather_icon = icon_manager.get_weather_icon(weather_description)
     font_icon = ("Helvetica Neue", 28) if style == 'main' else ("Helvetica Neue", 16)
-    Label(card_frame, text=weather_icon, font=font_icon, anchor="center", style=label_style).pack(pady=5 if style=='main' else 0)
+    icon_label = Label(card_frame, text=weather_icon, anchor="center", style=icon_label_style)
+    if not icon_label_style:  # Apply font only if no custom style
+        icon_label.configure(font=font_icon)
+    icon_label.pack(pady=5 if style=='main' else 0)
 
-    # Temperature
+    # Temperature with specific styles
     temp_min = day_data.get('temp_min', 0)
     temp_max = day_data.get('temp_max', 0)
     if style == 'main':
-        Label(card_frame, text=f"{int(temp_max)}{unit_label}", font=("Helvetica Neue", 14, "bold"), style=label_style).pack()
-        Label(card_frame, text=f"{int(temp_min)}{unit_label}", font=("Helvetica Neue", 12), style=label_style).pack()
+        # High temperature
+        temp_high_label = Label(card_frame, text=f"{int(temp_max)}{unit_label}", style=temp_high_style)
+        if not temp_high_style:
+            temp_high_label.configure(font=("Helvetica Neue", 14, "bold"))
+        temp_high_label.pack()
+        
+        # Low temperature  
+        temp_low_label = Label(card_frame, text=f"{int(temp_min)}{unit_label}", style=temp_low_style)
+        if not temp_low_style:
+            temp_low_label.configure(font=("Helvetica Neue", 12))
+        temp_low_label.pack()
     else:
-        Label(card_frame, text=f"{int(temp_max)}{unit_label}/{int(temp_min)}{unit_label}", font=("Helvetica Neue", 9), anchor="center", style=label_style).pack()
+        temp_combined_label = Label(card_frame, text=f"{int(temp_max)}{unit_label}/{int(temp_min)}{unit_label}", anchor="center", style=temp_high_style)
+        if not temp_high_style:
+            temp_combined_label.configure(font=("Helvetica Neue", 9))
+        temp_combined_label.pack()
 
-    # Description
-    desc_label = day_data.get('description', '')
+    # Description with specific style
+    desc_text = day_data.get('description', '')
     if style == 'main':
-        Label(card_frame, text=desc_label, font=("Helvetica Neue", 9), wraplength=120, justify="center", style=label_style).pack(pady=(5, 0))
+        desc_label = Label(card_frame, text=desc_text, wraplength=120, justify="center", style=desc_label_style)
+        if not desc_label_style:
+            desc_label.configure(font=("Helvetica Neue", 9))
+        desc_label.pack(pady=(5, 0))
 
-    # Precipitation probability
+    # Precipitation probability with specific style
     pop = day_data.get('pop')
     if pop is not None:
         if (style == 'main' and pop > 0) or (style == 'mini' and pop > 0.2):
             pop_text = f"\U0001F4A7 {int(pop * 100)}%"  # 💧
             if style == 'main':
-                Label(card_frame, text=pop_text, font=("Helvetica Neue", 8), style=label_style).pack(pady=(5, 5))
+                precip_label = Label(card_frame, text=pop_text, style=precip_label_style)
+                if not precip_label_style:
+                    precip_label.configure(font=("Helvetica Neue", 8))
+                precip_label.pack(pady=(5, 5))
             else:
-                Label(card_frame, text=pop_text, font=("Helvetica Neue", 8), anchor="center", style=label_style).pack()
+                precip_label = Label(card_frame, text=pop_text, anchor="center", style=precip_label_style)
+                if not precip_label_style:
+                    precip_label.configure(font=("Helvetica Neue", 8))
+                precip_label.pack()
 
     # Return the card frame without packing it
     # Let the parent component handle the layout

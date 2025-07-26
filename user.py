@@ -33,7 +33,7 @@ USER_THEMES = {
             "dark": "#343a40",
             "bg": "#e5e9ec",
             "fg": "#343a40",
-            "selectbg": "#ccb9ec",
+            "selectbg": "#cfc2e5",
             "selectfg": "#212529",
             "border": "#ced4da",
             "inputfg": "#212529",

@@ -26,6 +26,7 @@ from .theme_system import (
     ThemeRegistry
 )
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -223,11 +224,11 @@ class TtkBootstrapThemeApplicator:
                     try:
                         colors = theme_data["colors"]
                         theme_def = ThemeDefinition(
-                            themename=theme_name,
+                            name=theme_name,
                             themetype=theme_data["type"],
-                            **colors
+                            colors=colors
                         )
-                        tb.Style.register_theme(theme_def)
+                        tb.Style().register_theme(theme_def)
                         self._logger.info(f"Registered custom theme from user.py: {theme_name}")
                     except Exception as e:
                         self._logger.error(f"Failed to register theme {theme_name}: {e}")
@@ -238,11 +239,11 @@ class TtkBootstrapThemeApplicator:
                     try:
                         colors = theme_data["colors"]
                         theme_def = ThemeDefinition(
-                            themename=theme_name,
+                            name=theme_name,
                             themetype=theme_data["type"],
-                            **colors
+                            colors=colors
                         )
-                        tb.Style.register_theme(theme_def)
+                        tb.Style().register_theme(theme_def)
                         self._logger.info(f"Registered fallback theme: {theme_name}")
                     except Exception as e:
                         self._logger.error(f"Failed to register fallback theme {theme_name}: {e}")
@@ -265,9 +266,13 @@ class TtkBootstrapThemeApplicator:
             try:
                 if self._app and hasattr(self._app, 'style'):
                     self._app.style.theme_use(theme_name)
+                    # Apply custom styles for the current theme
+                    self._apply_custom_styles(self._app.style, theme_name)
                 else:
                     style = tb.Style()
                     style.theme_use(theme_name)
+                    # Apply custom styles for the current theme
+                    self._apply_custom_styles(style, theme_name)
                     
                 self._logger.info(f"Successfully applied theme: {theme_name}")
                 return True
@@ -301,6 +306,24 @@ class TtkBootstrapThemeApplicator:
         except Exception as e:
             self._logger.warning(f"Error getting available themes: {e}")
             return ThemeRegistry.get_all_themes()
+    
+    def _apply_custom_styles(self, style_obj, theme_name: str) -> None:
+        """Apply custom styles for the given theme."""
+        if apply_custom_styles is None:
+            self._logger.debug("Custom styles not available")
+            return
+            
+        try:
+            # Check if this is a custom theme that has specific styling
+            if theme_name in ['aj_darkly', 'aj_lightly']:
+                apply_custom_styles(style_obj, theme_name)
+                self._logger.debug(f"Applied custom styles for theme: {theme_name}")
+            else:
+                # For non-custom themes, still apply general custom styles with default theme
+                apply_custom_styles(style_obj, "aj_lightly")
+                self._logger.debug(f"Applied default custom styles for theme: {theme_name}")
+        except Exception as e:
+            self._logger.warning(f"Error applying custom styles for theme {theme_name}: {e}")
 
 
 # ============================================================================
