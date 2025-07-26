@@ -60,10 +60,10 @@ class WeatherDatabase:
                 cursor.execute("""
                     SELECT name FROM sqlite_master 
                     WHERE type='table' AND name IN 
-                    ('current_weather', 'forecast_weather', 'saved_locations', 'user_preferences', 'historical_weather', 'weather_predictions')
+                    ('current_weather', 'forecast_weather', 'saved_locations', 'user_preferences', 'historical_weather', 'recent_historical_weather', 'weather_predictions')
                 """)
                 existing_tables = {row[0] for row in cursor.fetchall()}
-                required_tables = {'current_weather', 'forecast_weather', 'saved_locations', 'user_preferences', 'historical_weather', 'weather_predictions'}
+                required_tables = {'current_weather', 'forecast_weather', 'saved_locations', 'user_preferences', 'historical_weather', 'recent_historical_weather', 'weather_predictions'}
                 missing_tables = required_tables - existing_tables
                 
                 if missing_tables:
@@ -181,6 +181,31 @@ class WeatherDatabase:
                     longitude REAL,
                     sunrise INTEGER,
                     sunset INTEGER,
+                    UNIQUE(city, state, date)
+                )
+            ''')
+            
+            # Recent historical weather table (7-day data from OpenWeatherMap History API)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS recent_historical_weather (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    city TEXT NOT NULL,
+                    state TEXT,
+                    date DATE NOT NULL,
+                    temperature_max REAL,
+                    temperature_min REAL,
+                    temperature_mean REAL,
+                    precipitation REAL,
+                    rain REAL,
+                    wind_speed_max REAL,
+                    wind_gusts_max REAL,
+                    cloud_cover INTEGER,
+                    humidity INTEGER,
+                    latitude REAL,
+                    longitude REAL,
+                    sunrise INTEGER,
+                    sunset INTEGER,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(city, state, date)
                 )
             ''')
@@ -521,6 +546,95 @@ class WeatherDatabase:
                 
         except Exception as e:
             logger.error(f"Error retrieving historical weather data: {str(e)}")
+            return []
+    
+    def save_recent_historical_weather(self, city: str, state: str, data: Dict) -> bool:
+        """
+        Save recent historical weather data (7-day) to database
+        
+        Args:
+            city: City name
+            state: State code
+            data: Dictionary with recent historical weather data
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Insert or replace recent historical data
+                cursor.execute('''
+                    INSERT OR REPLACE INTO recent_historical_weather
+                    (city, state, date, temperature_max, temperature_min, temperature_mean,
+                     precipitation, rain, wind_speed_max, wind_gusts_max, cloud_cover,
+                     humidity, latitude, longitude, sunrise, sunset)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    city,
+                    state,
+                    data['date'],
+                    data['temperature_max'],
+                    data['temperature_min'],
+                    data['temperature_mean'],
+                    data['precipitation'],
+                    data['rain'],
+                    data['wind_speed_max'],
+                    data['wind_gusts_max'],
+                    data['cloud_cover'],
+                    data['humidity'],
+                    data['latitude'],
+                    data['longitude'],
+                    data['sunrise'],
+                    data['sunset']
+                ))
+                conn.commit()
+                logger.debug(f"Saved recent historical data for {city}, {state} on {data['date']}")
+                return True
+        except Exception as e:
+            logger.error(f"Error saving recent historical weather data: {str(e)}")
+            return False
+    
+    def get_recent_historical_weather(self, city: str, state: str, start_date: str = None, end_date: str = None) -> List[Dict]:
+        """
+        Get recent historical weather data (7-day) for a city between dates
+        
+        Args:
+            city: City name
+            state: State code
+            start_date: Start date string (YYYY-MM-DD), optional
+            end_date: End date string (YYYY-MM-DD), optional
+            
+        Returns:
+            List of weather data dictionaries
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                if start_date and end_date:
+                    # Get data between specific dates
+                    cursor.execute('''
+                        SELECT *
+                        FROM recent_historical_weather
+                        WHERE city = ? AND state = ?
+                        AND date BETWEEN ? AND ?
+                        ORDER BY date ASC
+                    ''', (city, state, start_date, end_date))
+                else:
+                    # Get all recent historical data for this city/state
+                    cursor.execute('''
+                        SELECT *
+                        FROM recent_historical_weather
+                        WHERE city = ? AND state = ?
+                        ORDER BY date ASC
+                    ''', (city, state))
+                
+                return [dict(row) for row in cursor.fetchall()]
+                
+        except Exception as e:
+            logger.error(f"Error retrieving recent historical weather data: {str(e)}")
             return []
     
     def save_location(

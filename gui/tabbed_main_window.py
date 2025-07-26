@@ -47,7 +47,21 @@ class TabbedWeatherDashboard:
 
         
         self.app.title("Advanced Weather Dashboard")
-        self.app.geometry("1000x700")  # Increased from 800x600
+        
+        # Get screen dimensions
+        screen_width = self.app.winfo_screenwidth()
+        screen_height = self.app.winfo_screenheight()
+        
+        # Calculate window size (90% of screen size)
+        window_width = int(screen_width * 0.9)
+        window_height = int(screen_height * 0.9)
+        
+        # Calculate position to center the window
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+        
+        # Set window geometry (width x height + x_offset + y_offset)
+        self.app.geometry(f"{window_width}x{window_height}+{x}+{y}")
         self.app.minsize(800, 600)  # Set minimum window size
         
         # Initialize data handler and API client with config

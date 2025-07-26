@@ -15,6 +15,8 @@ class Config:
     
     # API settings with defaults
     base_url: str = "https://api.openweathermap.org/data/2.5/weather"
+    forecast_url: str = "https://api.openweathermap.org/data/2.5/forecast"
+    seven_day_history_url: str = "https://history.openweathermap.org/data/2.5/history/city"
     units: str = "imperial"
     
     # Database settings
@@ -65,6 +67,8 @@ class Config:
             config = cls(
                 api_key=api_key,
                 base_url=os.getenv('BASE_URL', cls.base_url),
+                forecast_url=os.getenv('FORECAST_URL', cls.forecast_url),
+                seven_day_history_url=os.getenv('7DAY_WEATHER_HISTORY_URL', cls.seven_day_history_url),
                 units=os.getenv('UNITS', cls.units),
                 database_path=os.getenv('DATABASE_PATH', cls.database_path),
                 request_timeout=int(os.getenv('REQUEST_TIMEOUT', str(cls.request_timeout))),

@@ -78,10 +78,10 @@ class HistoryComponent:
         main_container = tb.Frame(self.main_frame)
         main_container.pack(fill=BOTH, expand=True, padx=10, pady=5)
         
-        # Configure grid weights
-        main_container.rowconfigure(0, weight=1)  # Top section (1/4)
+        # Configure grid weights - fix layout constraints
+        main_container.rowconfigure(0, weight=0, minsize=120)  # Top section (fixed height)
         main_container.rowconfigure(1, weight=0)  # Separator
-        main_container.rowconfigure(2, weight=3)  # Bottom section (3/4)
+        main_container.rowconfigure(2, weight=1)  # Bottom section (expandable)
         main_container.columnconfigure(0, weight=1)
         
         # Top section frame (1/4 of height)
@@ -95,19 +95,29 @@ class HistoryComponent:
             text="📊 Historical Weather Analysis",
             font=("Helvetica Neue", 16, "bold")
         )
-        title_label.grid(row=0, column=0, sticky="w", pady=(2, 8))
+        title_label.grid(row=0, column=0, sticky="ew", pady=(2, 8))
+        title_label.configure(anchor="center")
         
         # Controls frame (full width)
         controls_frame = tb.Frame(top_frame)
         controls_frame.grid(row=1, column=0, sticky="ew", padx=(10, 10))
         
-        # City selection in horizontal layout
-        city_selection_frame = tb.Frame(controls_frame)
-        city_selection_frame.pack(fill=X, pady=(0, 10))
+        # Single row layout with everything in one grid
+        single_row_frame = tb.Frame(controls_frame)
+        single_row_frame.pack(fill=X, pady=(0, 10))
         
-        # City 1 selection
-        city1_frame = tb.Frame(city_selection_frame)
-        city1_frame.pack(side=LEFT, padx=(0, 15))
+        # Configure grid columns - 7 columns for all elements (added Clear button)
+        single_row_frame.columnconfigure(0, weight=0)  # City 1
+        single_row_frame.columnconfigure(1, weight=0)  # City 2 
+        single_row_frame.columnconfigure(2, weight=0)  # Compare checkbox
+        single_row_frame.columnconfigure(3, weight=1)  # Spacer
+        single_row_frame.columnconfigure(4, weight=0)  # Analyze button
+        single_row_frame.columnconfigure(5, weight=0)  # Fetch button
+        single_row_frame.columnconfigure(6, weight=0)  # Clear button
+        
+        # City 1 selection (Column 0)
+        city1_frame = tb.Frame(single_row_frame)
+        city1_frame.grid(row=0, column=0, sticky="w", padx=(0, 15))
         
         tb.Label(
             city1_frame,
@@ -119,13 +129,13 @@ class HistoryComponent:
             city1_frame,
             textvariable=self.city1_var,
             state="readonly",
-            width=30
+            width=20
         )
         self.city1_dropdown.pack(pady=(3, 0), anchor=W)
         self.city1_dropdown.bind('<<ComboboxSelected>>', self._on_city_selection_changed)
         
-        # City 2 selection (initially hidden, same row)
-        self.city2_frame = tb.Frame(city_selection_frame)
+        # City 2 selection (Column 1, initially hidden)
+        self.city2_frame = tb.Frame(single_row_frame)
         
         tb.Label(
             self.city2_frame,
@@ -137,46 +147,50 @@ class HistoryComponent:
             self.city2_frame,
             textvariable=self.city2_var,
             state="readonly",
-            width=30
+            width=20
         )
         self.city2_dropdown.pack(pady=(3, 0), anchor=W)
         self.city2_dropdown.bind('<<ComboboxSelected>>', self._on_city_selection_changed)
         
-        # Compare mode checkbox below city selections
-        compare_frame = tb.Frame(controls_frame)
-        compare_frame.pack(fill=X, pady=(8, 0))
-        
+        # Compare checkbox (Column 2)
         self.compare_checkbox = tb.Checkbutton(
-            compare_frame,
+            single_row_frame,
             text="Compare 2 Cities",
             variable=self.compare_mode,
             command=self._on_compare_mode_changed,
             bootstyle="primary"
         )
-        self.compare_checkbox.pack(anchor=W)
+        self.compare_checkbox.grid(row=0, column=2, sticky="w", padx=(15, 20))
         
-        # Button frame with both buttons
-        button_frame = tb.Frame(controls_frame)
-        button_frame.pack(fill=X, pady=(15, 0))
-        
+        # Analyze button (Column 4)
         self.analyze_button = tb.Button(
-            button_frame,
+            single_row_frame,
             text="📊 Analyze Historical Data",
             command=self._on_analyze_clicked,
             bootstyle="primary",
             state="disabled"
         )
-        self.analyze_button.pack(side=LEFT, anchor=W, padx=(0, 10))
+        self.analyze_button.grid(row=0, column=4, sticky="e", padx=(0, 10))
         
-        # New 7-day data button
+        # Fetch 7-day button (Column 5)
         self.fetch_7day_button = tb.Button(
-            button_frame,
+            single_row_frame,
             text="📊 Get Latest History",
             command=self._on_fetch_7day_clicked,
             bootstyle="success-outline",
             state="disabled"
         )
-        self.fetch_7day_button.pack(side=LEFT, anchor=W)
+        self.fetch_7day_button.grid(row=0, column=5, sticky="e", padx=(0, 10))
+        
+        # Clear charts button (Column 6)
+        self.clear_charts_button = tb.Button(
+            single_row_frame,
+            text="🗑️ Clear Charts",
+            command=self._on_clear_charts_clicked,
+            bootstyle="danger-outline",
+            state="disabled"
+        )
+        self.clear_charts_button.grid(row=0, column=6, sticky="e")
         
         # Separator
         separator = tb.Separator(main_container, orient="horizontal")
@@ -249,12 +263,12 @@ class HistoryComponent:
     def _on_compare_mode_changed(self):
         """Handle compare mode checkbox change"""
         if self.compare_mode.get():
-            # Show second city dropdown in same row
-            self.city2_frame.pack(side=LEFT, padx=(15, 0))
+            # Show second city dropdown in grid position (column 1)
+            self.city2_frame.grid(row=0, column=1, sticky="w", padx=(0, 15))
             self._update_city2_options()
         else:
             # Hide second city dropdown
-            self.city2_frame.pack_forget()
+            self.city2_frame.grid_forget()
             self.city2_var.set("")
         
         self._update_analyze_button_state()
@@ -296,6 +310,10 @@ class HistoryComponent:
         
         self.analyze_button.configure(state="normal" if can_analyze else "disabled")
         self.fetch_7day_button.configure(state="normal" if can_analyze else "disabled")
+        
+        # Enable clear button when we have chart data
+        has_chart_data = hasattr(self, 'chart_data') and self.chart_data
+        self.clear_charts_button.configure(state="normal" if has_chart_data else "disabled")
     
     def _on_analyze_clicked(self):
         """Handle analyze button click"""
@@ -376,6 +394,21 @@ class HistoryComponent:
             bootstyle="info"
         )
         loading_label.pack(expand=True)
+    
+    def _show_loading_indicator(self, message: str):
+        """Show loading indicator with custom message"""
+        self._clear_chart_area()
+        
+        loading_label = tb.Label(
+            self.chart_area,
+            text=f"⏳ {message}",
+            font=("Helvetica Neue", 14),
+            bootstyle="info"
+        )
+        loading_label.pack(expand=True)
+        
+        # Force GUI update
+        self.chart_area.update_idletasks()
     
     def _show_chart_placeholder(self, city1_data: Dict, city2_data: Optional[Dict] = None):
         """Show placeholder for where the actual chart will be"""
@@ -494,7 +527,7 @@ class HistoryComponent:
     
     @log_execution_time()
     def _on_fetch_7day_clicked(self):
-        """Handle 7-day data fetch button click"""
+        """Handle 7-day data fetch button click with OpenWeatherMap History API"""
         try:
             selected_city1 = self.city1_var.get()
             selected_city2 = self.city2_var.get() if self.compare_mode.get() else None
@@ -515,17 +548,72 @@ class HistoryComponent:
                 self._show_error_message("Selected city data not found")
                 return
             
-            # Fetch chart data using service
-            self._fetch_chart_data(city1_data, city2_data)
+            # Show loading indicator
+            self._show_loading_indicator("Fetching recent historical data...")
+            
+            # Disable button during fetch
+            self.fetch_7day_button.configure(state="disabled")
+            
+            # Import and use OpenWeatherMap History client
+            from core.openweather_history_client import OpenWeatherHistoryClient
+            
+            client = OpenWeatherHistoryClient()
+            
+            # Fetch data for city1
+            df1, error1 = client.get_7day_history(
+                city1_data['latitude'],
+                city1_data['longitude'],
+                city1_data['city'],
+                city1_data['state']
+            )
+            
+            if error1:
+                self._show_error_message(f"Error fetching data for {city1_data['display_name']}: {error1}")
+                return
+            
+            # Save city1 data
+            if df1 is not None and not df1.empty:
+                records1, save_error1 = client.save_to_database(df1, self.db)
+                if save_error1:
+                    self.logger.warning(f"Error saving data for {city1_data['display_name']}: {save_error1}")
+                else:
+                    self.logger.info(f"Saved {records1} records for {city1_data['display_name']}")
+            
+            # Fetch data for city2 if in comparison mode
+            if city2_data:
+                df2, error2 = client.get_7day_history(
+                    city2_data['latitude'],
+                    city2_data['longitude'],
+                    city2_data['city'],
+                    city2_data['state']
+                )
+                
+                if error2:
+                    self._show_error_message(f"Error fetching data for {city2_data['display_name']}: {error2}")
+                    return
+                
+                # Save city2 data
+                if df2 is not None and not df2.empty:
+                    records2, save_error2 = client.save_to_database(df2, self.db)
+                    if save_error2:
+                        self.logger.warning(f"Error saving data for {city2_data['display_name']}: {save_error2}")
+                    else:
+                        self.logger.info(f"Saved {records2} records for {city2_data['display_name']}")
+            
+            # Refresh charts with new data
+            self._fetch_chart_data(city1_data, city2_data, use_recent_data=True)
             
         except Exception as e:
             self.logger.error(f"Error fetching 7-day data: {e}")
             self._show_error_message("Failed to fetch 7-day data")
+        finally:
+            # Re-enable button
+            self.fetch_7day_button.configure(state="normal")
     
-    def _fetch_chart_data(self, city1_data: Dict, city2_data: Optional[Dict] = None):
+    def _fetch_chart_data(self, city1_data: Dict, city2_data: Optional[Dict] = None, use_recent_data: bool = False):
         """Fetch chart data using the chart data service"""
         try:
-            self.logger.debug(f"Fetching chart data for {city1_data.get('display_name')} and {city2_data.get('display_name') if city2_data else 'None'}")
+            self.logger.debug(f"Fetching chart data for {city1_data.get('display_name')} and {city2_data.get('display_name') if city2_data else 'None'}, use_recent_data: {use_recent_data}")
             
             # Ensure chart quadrants are properly set up
             if not hasattr(self, 'temp_chart_frame') or not self.temp_chart_frame:
@@ -536,7 +624,8 @@ class HistoryComponent:
             chart_data, error = self.chart_service.get_chart_data(
                 city1_data, 
                 city2_data, 
-                days_back=7
+                days_back=7,
+                use_recent_data=use_recent_data
             )
             
             if error:
@@ -557,9 +646,36 @@ class HistoryComponent:
             # Update charts with processed data
             self._update_chart_quadrants()
             
+            # Update button states (enable clear button)
+            self._update_analyze_button_state()
+            
         except Exception as e:
             self.logger.error(f"Error fetching chart data: {e}", exc_info=True)
             self._show_chart_error("Failed to load chart data")
+    
+    def _on_clear_charts_clicked(self):
+        """Handle clear charts button click"""
+        try:
+            # Clear stored chart data
+            self.chart_data = {}
+            
+            # Reset selections if desired (optional)
+            # self.city1_var.set("")
+            # self.city2_var.set("")
+            # self.compare_mode.set(False)
+            # self.city2_frame.grid_forget()
+            
+            # Show placeholder
+            self._show_placeholder()
+            
+            # Update button states
+            self._update_analyze_button_state()
+            
+            self.logger.info("Charts cleared successfully")
+            
+        except Exception as e:
+            self.logger.error(f"Error clearing charts: {e}")
+            self._show_error_message("Failed to clear charts")
     
     
     
@@ -729,15 +845,19 @@ class HistoryComponent:
         humidity1 = city1_humid.get('humidity', [])
         
         if dates and humidity1:
-            ax.fill_between(range(len(dates)), humidity1, alpha=0.6, color='#FF6B6B', 
-                           label=self.chart_data['city1']['info']['display_name'])
+            # Use line plot with area fill for city1 (red/pink)
+            ax.plot(range(len(dates)), humidity1, color='#FF6B6B', linewidth=2, marker='o', 
+                   label=self.chart_data['city1']['info']['display_name'])
+            ax.fill_between(range(len(dates)), humidity1, alpha=0.2, color='#FF6B6B')
         
         if self.chart_data.get('city2'):
             city2_humid = self.chart_data['city2']['processed'].get('humidity', {})
             humidity2 = city2_humid.get('humidity', [])
             if humidity2:
-                ax.fill_between(range(len(dates)), humidity2, alpha=0.4, color='#4ECDC4', 
-                               label=self.chart_data['city2']['info']['display_name'])
+                # Use line plot with area fill for city2 (blue/teal)
+                ax.plot(range(len(dates)), humidity2, color='#4ECDC4', linewidth=2, marker='s',
+                       label=self.chart_data['city2']['info']['display_name'])
+                ax.fill_between(range(len(dates)), humidity2, alpha=0.15, color='#4ECDC4')
                 ax.legend(fontsize=8)
         
         ax.set_title('Average Daily Humidity', fontsize=10, pad=10)
@@ -952,7 +1072,7 @@ class HistoryComponent:
         self.city1_var.set("")
         self.city2_var.set("")
         self.compare_mode.set(False)
-        self.city2_frame.pack_forget()
+        self.city2_frame.grid_forget()
         
         # Update UI
         self._update_analyze_button_state()

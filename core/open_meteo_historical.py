@@ -39,7 +39,7 @@ class OpenMeteoHistorical:
         """
         try:
             # Fixed start date and calculate end date (6 days before current date)
-            end_date = datetime.now() - timedelta(days=6)
+            end_date = datetime.now() - timedelta(days=5)
             
             params = {
                 "latitude": latitude,

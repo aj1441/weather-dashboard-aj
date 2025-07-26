@@ -20,7 +20,8 @@ class ChartDataService:
         self, 
         city1_info: Dict, 
         city2_info: Optional[Dict] = None, 
-        days_back: int = 7
+        days_back: int = 7,
+        use_recent_data: bool = False
     ) -> Tuple[Optional[Dict], Optional[str]]:
         """
         Get processed data ready for chart display
@@ -29,31 +30,54 @@ class ChartDataService:
             city1_info: Dict with city, state, display_name keys
             city2_info: Optional second city for comparison
             days_back: Number of days to retrieve
+            use_recent_data: If True, use recent_historical_weather table instead
             
         Returns:
             Tuple of (chart_data_dict, error_message)
         """
         try:
-            # Get data for city1
-            city1_data, error1 = self.historical_coordinator.get_historical_data(
-                city1_info['city'], 
-                city1_info['state'], 
-                days_back
-            )
-            
-            if error1:
-                return None, f"Error fetching data for {city1_info['display_name']}: {error1}"
-            
-            # Get data for city2 if provided
-            city2_data = []
-            if city2_info:
-                city2_data, error2 = self.historical_coordinator.get_historical_data(
-                    city2_info['city'], 
-                    city2_info['state'], 
+            if use_recent_data:
+                # Get recent historical data from OpenWeatherMap History API table
+                city1_data = self._get_recent_historical_data(
+                    city1_info['city'], 
+                    city1_info['state'], 
                     days_back
                 )
-                if error2:
-                    return None, f"Error fetching data for {city2_info['display_name']}: {error2}"
+                
+                if not city1_data:
+                    return None, f"No recent historical data available for {city1_info['display_name']}"
+                
+                # Get data for city2 if provided
+                city2_data = []
+                if city2_info:
+                    city2_data = self._get_recent_historical_data(
+                        city2_info['city'], 
+                        city2_info['state'], 
+                        days_back
+                    )
+                    if not city2_data:
+                        return None, f"No recent historical data available for {city2_info['display_name']}"
+            else:
+                # Use existing historical coordinator (original long-term data)
+                city1_data, error1 = self.historical_coordinator.get_historical_data(
+                    city1_info['city'], 
+                    city1_info['state'], 
+                    days_back
+                )
+                
+                if error1:
+                    return None, f"Error fetching data for {city1_info['display_name']}: {error1}"
+                
+                # Get data for city2 if provided
+                city2_data = []
+                if city2_info:
+                    city2_data, error2 = self.historical_coordinator.get_historical_data(
+                        city2_info['city'], 
+                        city2_info['state'], 
+                        days_back
+                    )
+                    if error2:
+                        return None, f"Error fetching data for {city2_info['display_name']}: {error2}"
             
             # Process data for charts
             chart_data = self._prepare_chart_data(
@@ -203,3 +227,37 @@ class ChartDataService:
                 'counts': counts,
                 'percentages': {cat: 0 for cat in categories}
             }
+    
+    def _get_recent_historical_data(self, city: str, state: str, days_back: int) -> List[Dict]:
+        """
+        Get recent historical data from the recent_historical_weather table
+        
+        Args:
+            city: City name
+            state: State code
+            days_back: Number of days back to retrieve
+            
+        Returns:
+            List of weather data dictionaries
+        """
+        try:
+            from datetime import datetime, timedelta
+            
+            # Calculate date range
+            end_date = datetime.now().date()
+            start_date = end_date - timedelta(days=days_back)
+            
+            # Get recent historical data
+            data = self.db.get_recent_historical_weather(
+                city, 
+                state, 
+                start_date.strftime('%Y-%m-%d'), 
+                end_date.strftime('%Y-%m-%d')
+            )
+            
+            logger.info(f"Retrieved {len(data)} recent historical records for {city}, {state}")
+            return data
+            
+        except Exception as e:
+            logger.error(f"Error retrieving recent historical data: {e}")
+            return []
