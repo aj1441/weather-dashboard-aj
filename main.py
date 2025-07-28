@@ -18,6 +18,7 @@ from pathlib import Path
 from config import Config
 from gui.tabbed_main_window import TabbedWeatherDashboard
 from utils.conversion_utils import add_numbers, convert_to_fahrenheit
+from utils.performance_optimizer import cleanup_performance_data
 
 
 class App:
@@ -177,7 +178,13 @@ class App:
             sys.exit(1)
         
         finally:
+            # Clean up performance data before shutdown
             if self.logger:
+                try:
+                    cleanup_performance_data()
+                except Exception as e:
+                    self.logger.warning(f"Error during performance cleanup: {e}")
+                
                 self.logger.info("Weather Dashboard application shutting down")
 
 

@@ -9,3 +9,6 @@ statsmodels
 plotly
 scikit-image
 pillow
+pygame
+openmeteo-requests
+psutil

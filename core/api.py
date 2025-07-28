@@ -5,16 +5,17 @@ import time
 import logging
 from datetime import datetime
 from functools import wraps
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Any, Union
 from config import Config
 from core.data_validator import WeatherDataValidator
 from utils.decorators import rate_limit, retry_on_failure, log_execution_time
+from utils.performance_optimizer import monitor_performance, cache_api_response, connection_pool
 from core.open_meteo_client import OpenMeteoClient
 
 class WeatherAPI:
     """Enhanced weather API client with rate limiting, retries, and data validation"""
     
-    def __init__(self, config: Config = None):
+    def __init__(self, config: Optional[Config] = None) -> None:
         # Use config object if provided, otherwise fall back to legacy approach
         if config:
             self.api_key = config.api_key
@@ -33,8 +34,8 @@ class WeatherAPI:
             self.max_retries = 3
             self.min_request_interval = 1.0
         
-        # Initialize session for connection reuse
-        self.session = requests.Session()
+        # Use connection pool for better performance
+        self.session = connection_pool.get_http_session()
         self.last_request_time = 0
         
         # Initialize data validator with correct temperature unit and logger
@@ -46,7 +47,7 @@ class WeatherAPI:
         
         self.logger.info(f"WeatherAPI initialized with base_url={self.base_url}, units={self.units}")
     
-    def _respect_rate_limit(self):
+    def _respect_rate_limit(self) -> None:
         """Ensure we don't exceed API rate limits"""
         time_since_last = time.time() - self.last_request_time
         if time_since_last < self.min_request_interval:
@@ -55,7 +56,8 @@ class WeatherAPI:
             time.sleep(sleep_time)
         self.last_request_time = time.time()
     
-    def _make_api_request(self, url: str, params: Dict) -> Optional[Dict]:
+    @monitor_performance("api_request")
+    def _make_api_request(self, url: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Make a robust API request with retries and error handling"""
         self._respect_rate_limit()
         
@@ -115,7 +117,7 @@ class WeatherAPI:
         self.logger.error(f"Failed to fetch data after {self.max_retries} attempts")
         return {"error": "API request failed after multiple attempts - please try again later"}
 
-    def _validate_basic_structure(self, data: Dict) -> bool:
+    def _validate_basic_structure(self, data: Dict[str, Any]) -> bool:
         """Validate that the API response has the expected basic structure"""
         try:
             # Check for required top-level fields
@@ -150,9 +152,9 @@ class WeatherAPI:
     @rate_limit()
     @retry_on_failure(max_retries=3, delay=1.0, backoff=2.0)
     @log_execution_time()
-    
-
-    def fetch_weather(self, city: str) -> Optional[Dict]:
+    @cache_api_response(ttl=300)  # Cache for 5 minutes
+    @monitor_performance("fetch_weather")
+    def fetch_weather(self, city: str) -> Optional[Dict[str, Any]]:
         """
         Fetch weather data for a city (WeatherAPI.com format - legacy method)
         
@@ -190,7 +192,7 @@ class WeatherAPI:
         except Exception:
             return {"error": "Something went wrong"}
 
-    def get_coordinates(self, city: str, state: str) -> Optional[Dict]:
+    def get_coordinates(self, city: str, state: str) -> Optional[Dict[str, Any]]:
         """
         Get latitude and longitude for a city using OpenWeatherMap Geocoding API
         
@@ -225,7 +227,7 @@ class WeatherAPI:
         
         return raw_data
 
-    def fetch_comprehensive_weather(self, city: str, state: str, units: str = None) -> Optional[Dict]:
+    def fetch_comprehensive_weather(self, city: str, state: str, units: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
         Fetch comprehensive weather data including current conditions and 7-day forecast
         using OpenWeatherMap APIs
@@ -344,7 +346,7 @@ class WeatherAPI:
         self.logger.info(f"Successfully fetched comprehensive weather data with {len(daily_forecast)} forecast days")
         return comprehensive_data
 
-    def _process_daily_forecast(self, forecast_data: Dict) -> list:
+    def _process_daily_forecast(self, forecast_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Process 30-day climate forecast data, excluding today to show 7 days starting tomorrow
         
@@ -401,7 +403,7 @@ class WeatherAPI:
             self.logger.error(f"Error processing climate forecast: {e}")
             return []
 
-    def _process_5day_forecast_to_daily(self, forecast_data: Dict) -> list:
+    def _process_5day_forecast_to_daily(self, forecast_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Process 5-day/3-hour forecast into daily summaries, excluding today to show 7 days starting tomorrow
         
@@ -496,7 +498,7 @@ class WeatherAPI:
             self.logger.error(f"Error processing 5-day forecast: {e}")
             return []
 
-    def _extend_forecast_with_placeholders(self, existing_forecast: list, target_days: int) -> list:
+    def _extend_forecast_with_placeholders(self, existing_forecast: List[Dict[str, Any]], target_days: int) -> List[Dict[str, Any]]:
         """
         Extend forecast with intelligent predictions when API doesn't provide enough days
         

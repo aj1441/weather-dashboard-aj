@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, List
 from dataclasses import dataclass
 
 @dataclass
@@ -45,12 +45,12 @@ class ValidationRules:
 class WeatherDataValidator:
     """Validates and cleans weather data from API responses"""
     
-    def __init__(self, rules: ValidationRules = None, temperature_unit: str = "imperial"):
+    def __init__(self, rules: Optional[ValidationRules] = None, temperature_unit: str = "imperial") -> None:
         self.rules = rules or ValidationRules()
         self.temperature_unit = temperature_unit
         self.logger = logging.getLogger(__name__)
     
-    def validate_and_clean_current_weather(self, raw_data: Dict) -> Optional[Dict]:
+    def validate_and_clean_current_weather(self, raw_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Validate and clean current weather data from OpenWeatherMap API
         
@@ -158,7 +158,7 @@ class WeatherDataValidator:
         except (ValueError, TypeError, OSError):
             return None
     
-    def _validate_weather_data(self, data: Dict) -> bool:
+    def _validate_weather_data(self, data: Dict[str, Any]) -> bool:
         """Validate cleaned weather data against reasonable ranges"""
         
         # Check required fields
@@ -281,7 +281,7 @@ class WeatherDataValidator:
     #         self.logger.error(f"Error extracting current weather from One Call data: {e}")
     #         return None
     
-    def _extract_and_validate_daily_forecast(self, daily_data: list) -> list:
+    def _extract_and_validate_daily_forecast(self, daily_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Extract and validate daily forecast from One Call API format"""
         try:
             forecast_list = []
@@ -297,7 +297,7 @@ class WeatherDataValidator:
             self.logger.error(f"Error extracting daily forecast: {e}")
             return []
     
-    def _validate_daily_forecast_day(self, day_data: Dict) -> Optional[Dict]:
+    def _validate_daily_forecast_day(self, day_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Validate a single day of forecast data"""
         try:
             # Temperature data
@@ -402,7 +402,7 @@ class WeatherDataValidator:
         except (ValueError, TypeError):
             return False
     
-    def validate_weather_data(self, data: Dict) -> bool:
+    def validate_weather_data(self, data: Dict[str, Any]) -> bool:
         """
         Validate weather data against configured rules
         

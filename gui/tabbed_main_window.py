@@ -5,6 +5,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from features.trivia.trivia_tab import TriviaTab
 
+from typing import Optional, Dict, Any, List
 import tkinter as tk
 import ttkbootstrap as tb
 import logging
@@ -23,7 +24,7 @@ from gui.components import ThemeComponent, WeatherInputComponent, WeatherDisplay
 class TabbedWeatherDashboard:
     """Advanced tabbed GUI with components and additional features"""
 
-    def __init__(self, config=None):
+    def __init__(self, config: Optional[Any] = None) -> None:
         # Store config for components that need it
         self.config = config
         self.logger = logging.getLogger(__name__)
@@ -79,7 +80,7 @@ class TabbedWeatherDashboard:
         # Load initial saved cities
         self.load_saved_cities()
 
-    def start_auto_theme_refresh(self):
+    def start_auto_theme_refresh(self) -> None:
         """Start the auto theme refresh thread if auto mode is enabled"""
         if not self.theme_manager.is_auto_enabled():
             self.logger.info("Auto mode disabled - not starting refresh thread")
@@ -91,7 +92,7 @@ class TabbedWeatherDashboard:
             self.auto_theme_thread.start()
             self.logger.info("Auto theme refresh started")
 
-    def stop_auto_theme_refresh(self):
+    def stop_auto_theme_refresh(self) -> None:
         """Stop the auto theme refresh thread"""
         self.auto_theme_running = False
         if self.auto_theme_thread and self.auto_theme_thread.is_alive():
@@ -99,7 +100,7 @@ class TabbedWeatherDashboard:
             self.logger.info("Auto theme refresh stopped")
 
 
-    def _auto_theme_loop(self):
+    def _auto_theme_loop(self) -> None:
         """Background thread for auto theme switching"""
         while self.auto_theme_running:
             try:
@@ -133,7 +134,7 @@ class TabbedWeatherDashboard:
                 self.logger.error(f"Error in auto theme refresh: {str(e)}")
                 time.sleep(60)  # Wait a minute before trying again
 
-    def setup_gui(self):
+    def setup_gui(self) -> None:
         """Create the tabbed interface"""
         # Theme controls at top (pass theme_manager instead of current_theme)
         self.theme_component = ThemeComponent(self.app, self.theme_manager)
@@ -398,7 +399,7 @@ class TabbedWeatherDashboard:
                 "There was an error loading your saved cities. Please try again later."
             )
 
-    def handle_save_city(self, city_data):
+    def handle_save_city(self, city_data: Dict[str, Any]) -> None:
         """Handle saving a city"""
         self.logger.debug("handle_save_city called with city_data: %s", city_data)
         try:
@@ -422,7 +423,7 @@ class TabbedWeatherDashboard:
                 "An unexpected error occurred while saving the city."
             )
 
-    def handle_weather_request(self, city, state=None, units=None, country=None):
+    def handle_weather_request(self, city: str, state: Optional[str] = None, units: Optional[str] = None, country: Optional[str] = None) -> None:
         """Handle weather data request and display, with forecast cache update. Units-aware."""
         try:
             # Normalize state abbreviation to uppercase
@@ -536,7 +537,7 @@ class TabbedWeatherDashboard:
         except Exception as e:
             self.logger.error(f"Error during safe component restyle: {e}")
 
-    def handle_unit_change(self, new_unit):
+    def handle_unit_change(self, new_unit: str) -> None:
         """Handle temperature unit change and update displays, using forecast cache for robustness"""
         self.logger.debug(f"Temperature unit changed to {new_unit}")
         # Get the currently displayed city and state
@@ -600,7 +601,8 @@ class TabbedWeatherDashboard:
             
             # Close database connection
             try:
-                self.data_handler.db.get_connection().close()
-                self.logger.info("Database connection closed")
+                # The database uses context managers, so we don't need to manually close
+                # SQLite connections are automatically closed when the context manager exits
+                self.logger.info("Database connections will be closed automatically")
             except Exception as e:
-                self.logger.error(f"Error closing database connection: {str(e)}")
+                self.logger.error(f"Error during database cleanup: {str(e)}")

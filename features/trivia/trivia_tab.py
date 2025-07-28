@@ -74,6 +74,10 @@ class TriviaTab(ttk.Frame):
         self.header.update_stats()
 
     def check_answer(self, idx):
+        # Check if we're still within the questions list
+        if self.current_index >= len(self.questions):
+            return  # Round is already complete, ignore the click
+        
         selected = self.answer_vars[idx].get()
         correct = self.questions[self.current_index]['answer']
         self.stats.increment_total_questions()

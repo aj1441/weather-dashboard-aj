@@ -1,5 +1,6 @@
 """Weather input component for the weather dashboard"""
 
+from typing import Callable, Optional
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 from utils.state_utils import normalize_state_abbreviation
@@ -7,14 +8,16 @@ from utils.state_utils import normalize_state_abbreviation
 class WeatherInputComponent:
     """Handles weather input fields and unit selection"""
 
-    def __init__(self, parent):
+    def __init__(self, parent: tb.Frame) -> None:
         self.parent = parent
         self.city_var = tb.StringVar()
         self.state_var = tb.StringVar()
         self.unit_var = tb.StringVar(value="imperial")  # default to Fahrenheit
+        self.weather_callback: Optional[Callable[[str, str, str], None]] = None
+        self.on_unit_change: Optional[Callable[[str], None]] = None
         self.setup_component()
 
-    def setup_component(self):
+    def setup_component(self) -> tb.Frame:
         """Create the input section with city, state, and unit toggle"""
         # Main input frame
         self.input_frame = tb.Frame(self.parent)
@@ -55,13 +58,13 @@ class WeatherInputComponent:
 
         return self.input_frame
 
-    def toggle_units(self):
+    def toggle_units(self) -> None:
         """Toggle between Fahrenheit and Celsius"""
         # This will trigger any callbacks if set
         if hasattr(self, 'on_unit_change'):
             self.on_unit_change(self.unit_var.get())
 
-    def on_get_weather(self):
+    def on_get_weather(self) -> None:
         """Handle get weather button click and pass current unit to callback"""
         city = self.city_var.get().strip()
         state = normalize_state_abbreviation(self.state_var.get())
@@ -71,36 +74,36 @@ class WeatherInputComponent:
             # Always pass the current unit to the callback
             self.weather_callback(city, state, units)
 
-    def get_city(self):
+    def get_city(self) -> str:
         """Get the current city value"""
         return self.city_var.get().strip()
 
-    def get_state(self):
+    def get_state(self) -> str:
         """Get the current state value"""
         return self.state_var.get().strip()
 
-    def get_units(self):
+    def get_units(self) -> str:
         """Get the current units (imperial/metric)"""
         return self.unit_var.get()
 
-    def get_unit_label(self):
+    def get_unit_label(self) -> str:
         """Get the unit label for display (°F or °C)"""
         return "°C" if self.unit_var.get() == "metric" else "°F"
 
-    def set_weather_callback(self, callback):
+    def set_weather_callback(self, callback: Callable[[str, str, str], None]) -> None:
         """Set the callback function for when weather is requested"""
         self.weather_callback = callback
 
-    def set_unit_change_callback(self, callback):
+    def set_unit_change_callback(self, callback: Callable[[str], None]) -> None:
         """Set the callback function for when the temperature unit is changed"""
         self.on_unit_change = callback
 
-    def clear_inputs(self):
+    def clear_inputs(self) -> None:
         """Clear all input fields"""
         self.city_var.set("")
         self.state_var.set("")
 
-    def restyle(self):
+    def restyle(self) -> None:
         """Force a style refresh for weather input widgets."""
         try:
             if hasattr(self, "input_frame"):

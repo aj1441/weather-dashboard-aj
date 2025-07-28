@@ -1,6 +1,7 @@
 """Weather display component for showing current weather"""
 
 import logging
+from typing import Dict, Optional, Callable, Any
 import ttkbootstrap as tb
 from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
 from core.icon_manager import get_weather_icon
@@ -11,13 +12,14 @@ logger = logging.getLogger(__name__)
 class WeatherDisplayComponent:
     """Handles displaying current weather data with emoji and save functionality"""
     
-    def __init__(self, parent):
+    def __init__(self, parent: tb.Frame) -> None:
         self.logger = logging.getLogger(__name__)
         self.parent = parent
-        self.current_weather_data = None
+        self.current_weather_data: Optional[Dict[str, Any]] = None
+        self.save_city_callback: Optional[Callable[[Dict[str, Any]], None]] = None
         self.setup_component()
     
-    def setup_component(self):
+    def setup_component(self) -> tb.Frame:
         """Create the weather display section"""
         self.display_frame = tb.Frame(self.parent)
         
@@ -67,7 +69,7 @@ class WeatherDisplayComponent:
         
         return self.display_frame
     
-    def update_weather_display(self, weather_data, temp_unit="imperial"):
+    def update_weather_display(self, weather_data: Dict[str, Any], temp_unit: str = "imperial") -> None:
         """
         Update the display with new weather data
         
@@ -114,7 +116,7 @@ class WeatherDisplayComponent:
         self.pressure_label.pack(side=LEFT, padx=10)
         self.wind_label.pack(side=LEFT, padx=10)
     
-    def update_display(self, weather_data):
+    def update_display(self, weather_data: Dict[str, Any]) -> None:
         """Update the weather display with new data"""
         if isinstance(weather_data, dict) and weather_data.get("error"):
             self.show_error(weather_data["error"])
@@ -174,7 +176,7 @@ class WeatherDisplayComponent:
             self.logger.error(f"Error updating weather display: {str(e)}")
             self.show_error("Failed to update weather display")
 
-    def show_error(self, error_message):
+    def show_error(self, error_message: str) -> None:
         """Display an error message"""
         self.weather_icon_label.config(text="❌")
         
@@ -196,7 +198,7 @@ class WeatherDisplayComponent:
         self.pressure_label.pack_forget()
         self.wind_label.pack_forget()
     
-    def clear_display(self):
+    def clear_display(self) -> None:
         """Clear the weather display"""
         self.weather_icon_label.config(text="🌡️")
         self.weather_desc_label.config(text="Enter a city to get weather data")
@@ -208,7 +210,7 @@ class WeatherDisplayComponent:
         self.pressure_label.pack_forget()
         self.wind_label.pack_forget()
     
-    def on_save_city(self, city_data=None):
+    def on_save_city(self, city_data: Optional[Dict[str, Any]] = None) -> None:
         """Handle save city button click"""
         logger.debug("on_save_city called with city_data: %s", city_data)
         logger.debug("Has save_city_callback: %s", hasattr(self, 'save_city_callback'))
@@ -218,11 +220,11 @@ class WeatherDisplayComponent:
         else:
             logger.debug("Not calling save_city_callback - city_data is None or callback not set")
     
-    def set_save_city_callback(self, callback):
+    def set_save_city_callback(self, callback: Callable[[Dict[str, Any]], None]) -> None:
         """Set the callback function for when a city is saved"""
         self.save_city_callback = callback
     
-    def show_loading_indicator(self):
+    def show_loading_indicator(self) -> None:
         """Show loading spinner/indicator"""
         self.weather_icon_label.config(text="⏳")
         self.weather_desc_label.config(text="Loading weather data...")
@@ -237,7 +239,7 @@ class WeatherDisplayComponent:
         self.progress_bar.pack(fill=X, padx=10, pady=5)
         self.progress_bar.start()
     
-    def hide_loading_indicator(self):
+    def hide_loading_indicator(self) -> None:
         """Hide loading indicator"""
         # Stop and hide the progress bar
         self.progress_bar.stop()
@@ -248,7 +250,7 @@ class WeatherDisplayComponent:
         self.weather_icon_label.config(text="🌡️")
         self.weather_desc_label.config(text="Enter a city to get weather data")
 
-    def restyle(self):
+    def restyle(self) -> None:
         try:
             def refresh_widget(widget):
                 try:
@@ -266,7 +268,7 @@ class WeatherDisplayComponent:
         except Exception as e:
             self.logger.error(f"Error during restyle in WeatherDisplayComponent: {e}")
 
-    def get_current_data(self) -> dict:
+    def get_current_data(self) -> Optional[Dict[str, Any]]:
         """Get the currently displayed weather data
         
         Returns:

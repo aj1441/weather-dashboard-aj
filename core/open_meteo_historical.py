@@ -2,18 +2,31 @@
 
 import logging
 import pandas as pd
-import openmeteo_requests
-import requests_cache
-from retry_requests import retry
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
+# Optional imports for Open-Meteo API
+try:
+    import openmeteo_requests
+    import requests_cache
+    from retry_requests import retry
+    OPENMETEO_AVAILABLE = True
+except ImportError:
+    OPENMETEO_AVAILABLE = False
+    logger.warning("openmeteo-requests not available - historical data features will be disabled")
+
 class OpenMeteoHistorical:
     """Client for fetching historical weather data from Open-Meteo Archive API"""
     
     def __init__(self):
+        if not OPENMETEO_AVAILABLE:
+            logger.warning("OpenMeteoHistorical initialized but openmeteo-requests not available")
+            self.client = None
+            self.api_url = None
+            return
+            
         # Set up the Open-Meteo API client with cache and retry on error
         cache_session = requests_cache.CachedSession('.cache', expire_after=3600)  # Cache for 1 hour
         retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
@@ -37,6 +50,9 @@ class OpenMeteoHistorical:
         Returns:
             Tuple of (DataFrame with weather data, error message if any)
         """
+        if not OPENMETEO_AVAILABLE or self.client is None:
+            return None, "Open-Meteo API not available - install openmeteo-requests package"
+            
         try:
             # Fixed start date and calculate end date (6 days before current date)
             end_date = datetime.now() - timedelta(days=5)

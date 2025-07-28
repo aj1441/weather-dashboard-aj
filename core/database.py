@@ -7,6 +7,7 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Optional
 from contextlib import contextmanager
+from utils.performance_optimizer import monitor_performance, connection_pool, optimize_database_queries
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,24 @@ class WeatherDatabase:
             self._initialize_database()  # Try to create tables again
             if not self._verify_tables():
                 raise RuntimeError("Failed to initialize database tables")
+        
+        # Apply performance optimizations
+        self._apply_performance_optimizations()
         logger.info("Database initialized successfully at %s", self.db_path)
+    
+    def _apply_performance_optimizations(self):
+        """Apply SQLite performance optimizations."""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                optimizations = optimize_database_queries()
+                
+                for optimization in optimizations:
+                    cursor.execute(optimization)
+                
+                logger.info("Database performance optimizations applied")
+        except Exception as e:
+            logger.warning(f"Could not apply all database optimizations: {e}")
     
     def _ensure_database_directory(self):
         """Create the data directory if it doesn't exist"""
@@ -42,15 +60,15 @@ class WeatherDatabase:
     @contextmanager
     def get_connection(self):
         """Context manager for database connections"""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row  # Enable dict-like access to rows
+        # Use connection pool for better performance
+        conn = connection_pool.get_db_connection(self.db_path)
         try:
             yield conn
         except Exception as e:
             conn.rollback()
             raise e
         finally:
-            conn.close()
+            connection_pool.return_db_connection(conn)
             
     def _verify_tables(self):
         """Verify that all required tables exist"""
@@ -312,6 +330,7 @@ class WeatherDatabase:
         except Exception as e:
             logger.error(f"Error applying database migrations: {e}")
     
+    @monitor_performance("save_current_weather")
     def save_current_weather(self, weather_data: Dict, city: str, state: str = None) -> bool:
         """Save current weather data to database"""
         try:
@@ -461,6 +480,7 @@ class WeatherDatabase:
             logger.error(f"Error saving historical weather data: {str(e)}")
             return False
     
+    @monitor_performance("get_current_weather")
     def get_current_weather(self, city: str, state: str = None, max_age_hours: int = 1) -> Optional[Dict]:
         """Retrieve current weather data from database if recent enough"""
         try:
