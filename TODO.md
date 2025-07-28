@@ -29,11 +29,21 @@
             - [x] Integrated with existing fallback handling logic
             - [x] Added proper cleanup in error and placeholder methods
 
-          - [ ] **Format About Tab**
-            - [ ] Review current grid layout implementation
-            - [ ] Adjust logo placement and sizing
-            - [ ] Improve text content organization
-            - [ ] Test responsiveness on different window sizes
+          - [x] **About Tab Component Refactoring** ✅
+            - [x] Created dedicated `AboutComponent` class in `gui/components/about_component.py`
+            - [x] Extracted About tab content from `tabbed_main_window.py`
+            - [x] Implemented proper component architecture with setup_component() method
+            - [x] Added theme refresh support in restyle_all_components()
+            - [x] Fixed logo transparency issue by removing explicit background setting
+            - [x] Improved content organization with better grid layout
+            - [x] Enhanced features list with more comprehensive descriptions
+            - [x] Added technical architecture section with detailed information
+
+          - [ ] **Forecast Cards in Dark View**
+            - [ ] Review current dark theme implementation
+            - [ ] Check contrast and readability issues
+            - [ ] Adjust colors for better visibility
+            - [ ] Test with different forecast data scenarios
 
 - [ ] **Update About Tab Content**
   - [ ] Review and update project description
