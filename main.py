@@ -138,6 +138,13 @@ class App:
         self.logger.info(f"Config - Rate limit: {self.config.min_request_interval}s")
         self.logger.info("="*50)
         
+        # Print fallback tracking daily report
+        try:
+            from utils.fallback_tracker import fallback_tracker
+            fallback_tracker.print_daily_report()
+        except Exception as e:
+            self.logger.warning(f"Could not load fallback tracker: {e}")
+        
         return True
     
     def run(self):

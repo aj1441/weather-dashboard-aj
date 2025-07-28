@@ -21,9 +21,7 @@ from core.api import WeatherAPI
 from core.data_handler import WeatherDataHandler
 from core.theme_factory import create_theme_manager
 from gui.components import ThemeComponent, WeatherInputComponent, WeatherDisplayComponent, SavedCitiesComponent, ForecastDisplayComponent, HistoryComponent, WeatherTriviaComponent
-# Temporarily disable watermark system to prevent crashes
-# from gui.components.watermark_component import add_watermark_to_main_window, add_watermark_to_tab
-# from gui.components.watermark_control_component import create_watermark_control
+
 
 class TabbedWeatherDashboard:
     """Advanced tabbed GUI with components and additional features"""
@@ -82,8 +80,7 @@ class TabbedWeatherDashboard:
 
         self.setup_gui()
         
-        # Watermark system temporarily disabled
-        self.main_watermark = None
+
         
         # Load initial saved cities
         self.load_saved_cities()
@@ -171,8 +168,7 @@ class TabbedWeatherDashboard:
         weather_tab = tb.Frame(self.notebook)
         self.notebook.add(weather_tab, text="🌤️ Weather")
 
-        # Watermark system temporarily disabled
-        self.weather_watermark = None
+
 
         # Weather input component
         self.input_component = WeatherInputComponent(weather_tab)
@@ -198,8 +194,7 @@ class TabbedWeatherDashboard:
         saved_cities_tab = tb.Frame(self.notebook)
         self.notebook.add(saved_cities_tab, text="💾 Saved Cities")
         
-        # Watermark system temporarily disabled
-        self.saved_cities_watermark = None
+
         
         # Create saved cities component
         self.saved_cities_component = SavedCitiesComponent(saved_cities_tab)
@@ -212,8 +207,7 @@ class TabbedWeatherDashboard:
         history_tab = tb.Frame(self.notebook)
         self.notebook.add(history_tab, text="📊 History")
 
-        # Watermark system temporarily disabled
-        self.history_watermark = None
+
 
         # Create history component
         self.history_component = HistoryComponent(history_tab)
@@ -226,8 +220,7 @@ class TabbedWeatherDashboard:
             trivia_tab = TriviaTab(self.notebook, csv_path="data/combined_data.csv")
             self.notebook.add(trivia_tab, text="🧠 Weather Trivia")
             
-            # Watermark system temporarily disabled
-            self.trivia_watermark = None
+            
             
             self.logger.info("TriviaTab successfully added to notebook")
         except Exception as e:
@@ -238,8 +231,7 @@ class TabbedWeatherDashboard:
         about_tab = tb.Frame(self.notebook)
         self.notebook.add(about_tab, text="ℹ️ About")
         
-        # Watermark system temporarily disabled
-        self.about_watermark = None
+
 
         # Create scrollable frame for all content
         canvas = tb.Canvas(about_tab)
@@ -464,22 +456,7 @@ class TabbedWeatherDashboard:
             bootstyle="secondary"
         ).grid(row=1, column=0, sticky="ew", pady=(5, 20))
 
-        # Watermark Control Section
-        watermark_frame = tb.Frame(scrollable_frame)
-        watermark_frame.grid(row=3, column=0, sticky="ew", padx=40, pady=20)
-        
-        tb.Label(
-            watermark_frame,
-            text="🎨 Customization",
-            font=("Helvetica Neue", 16, "bold"),
-            bootstyle="warning"
-        ).grid(row=0, column=0, sticky="ew", pady=(0, 15))
-        
-        # Watermark control temporarily disabled
-        # self.watermark_control = create_watermark_control(watermark_frame)
-        # self.watermark_control.set_settings_callback(self._on_watermark_settings_changed)
-        # watermark_control_frame = self.watermark_control.setup_component()
-        # watermark_control_frame.grid(row=1, column=0, sticky="ew", pady=10)
+
 
         # Pack canvas and scrollbar
         canvas.pack(side="left", fill="both", expand=True)
@@ -487,29 +464,7 @@ class TabbedWeatherDashboard:
         
         return about_tab
 
-    def _on_watermark_settings_changed(self, settings: Dict[str, Any]):
-        """Handle watermark settings changes."""
-        try:
-            # Update main window watermark
-            if hasattr(self, 'main_watermark'):
-                self.main_watermark.update_settings(settings)
-            
-            # Update tab watermarks
-            watermark_components = [
-                getattr(self, attr, None) for attr in [
-                    'weather_watermark', 'saved_cities_watermark', 
-                    'history_watermark', 'trivia_watermark', 'about_watermark'
-                ]
-            ]
-            
-            for watermark in watermark_components:
-                if watermark:
-                    watermark.update_settings(settings)
-            
-            self.logger.info(f"Watermark settings updated: {settings}")
-            
-        except Exception as e:
-            self.logger.error(f"Error updating watermark settings: {e}")
+
 
     def load_saved_cities(self):
         """Load and display saved cities"""
@@ -554,14 +509,28 @@ class TabbedWeatherDashboard:
     def handle_weather_request(self, city: str, state: Optional[str] = None, units: Optional[str] = None, country: Optional[str] = None) -> None:
         """Handle weather data request and display, with forecast cache update. Units-aware."""
         try:
+            # Show loading indicator
+            self.weather_display.show_loading_indicator()
+            
             # Normalize state abbreviation to uppercase
             state = normalize_state_abbreviation(state)
+            
             # Get comprehensive weather data from API (current + forecast), passing units
             comprehensive_data = self.weather_api.fetch_comprehensive_weather(city, state, units)
+            
+            # Hide loading indicator
+            self.weather_display.hide_loading_indicator()
+            
             if comprehensive_data and 'error' not in comprehensive_data:
                 # Extract current weather data for display and saving
                 current_weather = comprehensive_data.get('current', {})
                 location_data = comprehensive_data.get('location', {})
+                
+                # Check if fallback data was used (look for source field)
+                used_fallback = False
+                if current_weather.get('source') in ['static_fallback', 'random_fallback', 'random_historical_fallback']:
+                    used_fallback = True
+                
                 # Build current weather data in expected format
                 weather_data = {
                     "city": location_data.get('name', city),
@@ -581,15 +550,22 @@ class TabbedWeatherDashboard:
                     "visibility": current_weather.get('visibility'),
                     "timestamp": datetime.now().isoformat()
                 }
+                
                 # Set the correct unit label for display
                 if units == 'metric':
                     weather_data['unit'] = '°C'
                 else:
                     weather_data['unit'] = '°F'
-                # Update display with current weather data
-                self.weather_display.update_display(weather_data)
-                # Save weather data
-                self.data_handler.save_weather_data_validated(weather_data)
+                
+                # Update display with current weather data and fallback status
+                self.weather_display.update_display(weather_data, used_fallback)
+                
+                # Save weather data only if not using fallback
+                if not used_fallback:
+                    self.data_handler.save_weather_data_validated(weather_data)
+                else:
+                    self.logger.info(f"Using fallback data for {city} - skipping database save")
+                
                 # Update forecast if available
                 forecast_data = comprehensive_data.get('forecast', [])
                 if forecast_data:
@@ -600,16 +576,19 @@ class TabbedWeatherDashboard:
                     self.forecast_display.update_forecast_display(forecast_data)
                     # Store forecast data in cache with its unit
                     self.forecast_cache.store(forecast_data, units)
-                    # Save forecast data to database
-                    location_data = comprehensive_data.get('location', {})
-                    forecast_city = location_data.get('name', city)
-                    forecast_state = location_data.get('state', state)
-                    forecast_country = location_data.get('country', country or 'US')
-                    if self.data_handler.save_forecast_data(forecast_city, forecast_state, forecast_country, forecast_data):
-                        self.logger.info(f"Successfully saved {len(forecast_data)} forecast days to database")
+                    # Save forecast data to database only if not using fallback
+                    if not used_fallback:
+                        location_data = comprehensive_data.get('location', {})
+                        forecast_city = location_data.get('name', city)
+                        forecast_state = location_data.get('state', state)
+                        forecast_country = location_data.get('country', country or 'US')
+                        if self.data_handler.save_forecast_data(forecast_city, forecast_state, forecast_country, forecast_data):
+                            self.logger.info(f"Successfully saved {len(forecast_data)} forecast days to database")
+                        else:
+                            self.logger.warning("Failed to save forecast data to database")
+                        self.logger.info(f"Updated forecast with {len(forecast_data)} days")
                     else:
-                        self.logger.warning("Failed to save forecast data to database")
-                    self.logger.info(f"Updated forecast with {len(forecast_data)} days")
+                        self.logger.info(f"Using fallback data for {city} forecast - skipping database save")
                 else:
                     self.logger.warning("No forecast data available")
             else:
@@ -632,6 +611,8 @@ class TabbedWeatherDashboard:
                     title="Invalid City"
                 )
         except Exception as e:
+            # Hide loading indicator on error
+            self.weather_display.hide_loading_indicator()
             self.logger.error(f"Error in handle_weather_request: {str(e)}")
             Messagebox.show_error(
                 message="Error: PLEASE ENTER A VALID CITY AND STATE",

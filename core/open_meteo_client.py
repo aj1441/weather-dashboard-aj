@@ -4,6 +4,7 @@ import requests
 import logging
 from datetime import datetime
 from typing import Dict, Optional
+from utils.fallback_utils import fallback_handler
 
 class OpenMeteoClient:
     """Client for the OpenMeteo API service"""
@@ -40,6 +41,7 @@ class OpenMeteoClient:
             99: {'main': 'Thunderstorm', 'description': 'Thunderstorm with heavy hail', 'icon': '11d'}
         }
 
+    @fallback_handler
     def fetch_weather(self, lat: float, lon: float, units: str = "metric") -> Optional[Dict]:
         """
         Fetch current weather data from OpenMeteo API

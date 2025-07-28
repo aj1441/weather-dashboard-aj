@@ -1,9 +1,10 @@
 """Weather display component for showing current weather"""
 
 import logging
-from typing import Dict, Optional, Callable, Any
+from typing import Dict, Optional, Callable, Any, Tuple
 import ttkbootstrap as tb
 from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
+from ttkbootstrap.dialogs import Messagebox
 from core.icon_manager import get_weather_icon
 from utils.weather_utils import parse_weather_data
 
@@ -16,12 +17,24 @@ class WeatherDisplayComponent:
         self.logger = logging.getLogger(__name__)
         self.parent = parent
         self.current_weather_data: Optional[Dict[str, Any]] = None
+        self.current_fallback_status = False
         self.save_city_callback: Optional[Callable[[Dict[str, Any]], None]] = None
         self.setup_component()
     
     def setup_component(self) -> tb.Frame:
         """Create the weather display section"""
         self.display_frame = tb.Frame(self.parent)
+        
+        # Fallback notification label (initially hidden)
+        self.fallback_notification = tb.Label(
+            self.display_frame,
+            text="⚠️ Current weather conditions are unavailable, but here is what conditions have been in the past.",
+            font=("Helvetica Neue", 10, "bold"),
+            bootstyle="warning",
+            wraplength=400,
+            justify="center"
+        )
+        # Don't pack initially - will be shown when fallback data is used
         
         # Weather emoji/icon
         self.weather_icon_label = tb.Label(
@@ -69,15 +82,23 @@ class WeatherDisplayComponent:
         
         return self.display_frame
     
-    def update_weather_display(self, weather_data: Dict[str, Any], temp_unit: str = "imperial") -> None:
+    def update_weather_display(self, weather_data: Dict[str, Any], temp_unit: str = "imperial", used_fallback: bool = False) -> None:
         """
         Update the display with new weather data
         
         Args:
             weather_data: Dictionary with weather information (cleaned or raw format)
             temp_unit: 'imperial', 'metric', or 'kelvin'
+            used_fallback: Whether fallback data was used
         """
-        logger.debug("update_weather_display called with weather_data: %s", weather_data)
+        logger.debug("update_weather_display called with weather_data: %s, used_fallback: %s", weather_data, used_fallback)
+        
+        # Show fallback notification if fallback data was used
+        if used_fallback:
+            self.fallback_notification.pack(pady=(5, 10))
+        else:
+            self.fallback_notification.pack_forget()
+        
         from utils.unit_label_utils import get_unit_label, get_wind_unit_label
         unit_label = get_unit_label(temp_unit)
         wind_unit_label = get_wind_unit_label(temp_unit)
@@ -86,8 +107,9 @@ class WeatherDisplayComponent:
             self.show_error(weather_data["error"])
             return
         
-        # Store current weather data for saving
+        # Store current weather data and fallback status for saving
         self.current_weather_data = weather_data
+        self.current_fallback_status = used_fallback
         
         # Use modularized parser
         parsed = parse_weather_data(weather_data, unit_label)
@@ -116,8 +138,14 @@ class WeatherDisplayComponent:
         self.pressure_label.pack(side=LEFT, padx=10)
         self.wind_label.pack(side=LEFT, padx=10)
     
-    def update_display(self, weather_data: Dict[str, Any]) -> None:
+    def update_display(self, weather_data: Dict[str, Any], used_fallback: bool = False) -> None:
         """Update the weather display with new data"""
+        # Show fallback notification if fallback data was used
+        if used_fallback:
+            self.fallback_notification.pack(pady=(5, 10))
+        else:
+            self.fallback_notification.pack_forget()
+            
         if isinstance(weather_data, dict) and weather_data.get("error"):
             self.show_error(weather_data["error"])
             return
@@ -178,6 +206,9 @@ class WeatherDisplayComponent:
 
     def show_error(self, error_message: str) -> None:
         """Display an error message"""
+        # Hide fallback notification on error
+        self.fallback_notification.pack_forget()
+        
         self.weather_icon_label.config(text="❌")
         
         # Check for specific error messages and make them more user-friendly
@@ -200,6 +231,9 @@ class WeatherDisplayComponent:
     
     def clear_display(self) -> None:
         """Clear the weather display"""
+        # Hide fallback notification
+        self.fallback_notification.pack_forget()
+        
         self.weather_icon_label.config(text="🌡️")
         self.weather_desc_label.config(text="Enter a city to get weather data")
         self.current_weather_data = None
@@ -212,9 +246,18 @@ class WeatherDisplayComponent:
     
     def on_save_city(self, city_data: Optional[Dict[str, Any]] = None) -> None:
         """Handle save city button click"""
-        logger.debug("on_save_city called with city_data: %s", city_data)
+        logger.debug("on_save_city called with city_data: %s, fallback_status: %s", city_data, self.current_fallback_status)
         logger.debug("Has save_city_callback: %s", hasattr(self, 'save_city_callback'))
         if city_data and hasattr(self, 'save_city_callback'):
+            # Don't save if using fallback data
+            if self.current_fallback_status:
+                logger.info("Using fallback data - preventing city save to avoid data corruption")
+                Messagebox.show_warning(
+                    "Cannot Save City",
+                    "Cannot save city when using fallback data. Please try again when the weather service is available."
+                )
+                return
+            
             logger.debug("Calling save_city_callback with city_data: %s", city_data)
             self.save_city_callback(city_data)
         else:
@@ -226,6 +269,9 @@ class WeatherDisplayComponent:
     
     def show_loading_indicator(self) -> None:
         """Show loading spinner/indicator"""
+        # Hide fallback notification during loading
+        self.fallback_notification.pack_forget()
+        
         self.weather_icon_label.config(text="⏳")
         self.weather_desc_label.config(text="Loading weather data...")
         

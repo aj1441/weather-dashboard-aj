@@ -6,6 +6,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from config import Config
+from utils.fallback_utils import historical_fallback_handler
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ class OpenWeatherHistoryClient:
         self.base_url = config.seven_day_history_url
         self.timeout = config.request_timeout
         
+    @historical_fallback_handler
     def get_7day_history(
         self, 
         latitude: float, 

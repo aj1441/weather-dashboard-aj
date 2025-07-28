@@ -1,0 +1,44 @@
+{
+    "Phoenix": {
+        "location": "Phoenix",
+        "temperature": 98.6,
+        "humidity": 15,
+        "condition": "Clear",
+        "source": "static_fallback"
+    },
+    "Seattle": {
+        "location": "Seattle",
+        "temperature": 68.0,
+        "humidity": 60,
+        "condition": "Cloudy",
+        "source": "static_fallback"
+    },
+    "Chicago": {
+        "location": "Chicago",
+        "temperature": 75.2,
+        "humidity": 45,
+        "condition": "Rain",
+        "source": "static_fallback"
+    },
+    "New York": {
+        "location": "New York",
+        "temperature": 72.5,
+        "humidity": 55,
+        "condition": "Partly Cloudy",
+        "source": "static_fallback"
+    },
+    "Los Angeles": {
+        "location": "Los Angeles",
+        "temperature": 78.3,
+        "humidity": 40,
+        "condition": "Clear",
+        "source": "static_fallback"
+    },
+    "Miami": {
+        "location": "Miami",
+        "temperature": 85.7,
+        "humidity": 70,
+        "condition": "Thunderstorm",
+        "source": "static_fallback"
+    }
+} 

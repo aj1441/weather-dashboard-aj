@@ -4,6 +4,7 @@ import logging
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
+from utils.fallback_utils import fallback_handler
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ class OpenMeteoHistorical:
         self.client = openmeteo_requests.Client(session=retry_session)
         self.api_url = "https://archive-api.open-meteo.com/v1/archive"
     
+    @fallback_handler
     def get_historical_data(
         self,
         latitude: float,

@@ -11,6 +11,7 @@ from core.data_validator import WeatherDataValidator
 from utils.decorators import rate_limit, retry_on_failure, log_execution_time
 from utils.performance_optimizer import monitor_performance, cache_api_response, connection_pool
 from core.open_meteo_client import OpenMeteoClient
+from utils.fallback_utils import fallback_handler
 
 class WeatherAPI:
     """Enhanced weather API client with rate limiting, retries, and data validation"""
@@ -226,6 +227,21 @@ class WeatherAPI:
                 return {"error": "City not found"}
         
         return raw_data
+
+    @fallback_handler
+    def fetch_current_weather(self, city: str, state: str, units: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        # This is a new or refactored method to centralize current weather fetching
+        # (You may need to adapt this to your actual method signature and logic)
+        params = {
+            'q': f'{city},{state},US',
+            'appid': self.api_key,
+            'units': units or self.units
+        }
+        url = f"{self.base_url}"
+        data = self._make_api_request(url, params)
+        if data and "error" not in data:
+            return data
+        return {"error": "API request failed"}
 
     def fetch_comprehensive_weather(self, city: str, state: str, units: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """

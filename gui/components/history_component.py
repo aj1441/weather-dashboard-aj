@@ -69,6 +69,9 @@ class HistoryComponent:
         # Chart data storage
         self.chart_data = {}
         
+        # Fallback notification
+        self.fallback_notification = None
+        
     def setup_component(self):
         """Create and setup the history component"""
         # Main container frame
@@ -196,9 +199,20 @@ class HistoryComponent:
         separator = tb.Separator(main_container, orient="horizontal")
         separator.grid(row=1, column=0, sticky="ew", padx=20, pady=10)
         
+        # Fallback notification (initially hidden)
+        self.fallback_notification = tb.Label(
+            main_container,
+            text="⚠️ Historical data is currently unavailable, but here is what conditions have been in the past.",
+            foreground="orange",
+            font=("Helvetica Neue", 10, "italic"),
+            wraplength=600
+        )
+        self.fallback_notification.grid(row=2, column=0, sticky="ew", padx=20, pady=(5, 0))
+        self.fallback_notification.grid_remove()  # Initially hidden
+        
         # Bottom section - Chart area (2/3 of height)
         self.chart_area = tb.Frame(main_container)
-        self.chart_area.grid(row=2, column=0, sticky="nsew", padx=10, pady=(0, 10))
+        self.chart_area.grid(row=3, column=0, sticky="nsew", padx=10, pady=(0, 10))
         
         # Setup 4-quadrant chart layout
         self._setup_chart_quadrants()
@@ -352,6 +366,9 @@ class HistoryComponent:
         """Show initial placeholder message"""
         self._clear_chart_area()
         
+        # Hide fallback notification when showing placeholder
+        self._hide_fallback_notification()
+        
         placeholder_label = tb.Label(
             self.chart_area,
             text="📊 Select a city to analyze historical weather data\n\n" +
@@ -399,6 +416,10 @@ class HistoryComponent:
         """Show loading indicator with custom message"""
         self._clear_chart_area()
         
+        # Hide fallback notification during loading
+        if self.fallback_notification:
+            self.fallback_notification.grid_remove()
+        
         loading_label = tb.Label(
             self.chart_area,
             text=f"⏳ {message}",
@@ -443,6 +464,9 @@ class HistoryComponent:
         """Show error message in chart area"""
         self._clear_chart_area()
         
+        # Hide fallback notification on error
+        self._hide_fallback_notification()
+        
         error_label = tb.Label(
             self.chart_area,
             text=f"❌ Error: {message}",
@@ -456,6 +480,16 @@ class HistoryComponent:
         """Clear all widgets from chart area"""
         for widget in self.chart_area.winfo_children():
             widget.destroy()
+    
+    def _show_fallback_notification(self):
+        """Show fallback notification"""
+        if self.fallback_notification:
+            self.fallback_notification.grid()
+    
+    def _hide_fallback_notification(self):
+        """Hide fallback notification"""
+        if self.fallback_notification:
+            self.fallback_notification.grid_remove()
     
     
     def _setup_chart_quadrants(self):
@@ -560,45 +594,85 @@ class HistoryComponent:
             client = OpenWeatherHistoryClient()
             
             # Fetch data for city1
-            df1, error1 = client.get_7day_history(
+            result1 = client.get_7day_history(
                 city1_data['latitude'],
                 city1_data['longitude'],
                 city1_data['city'],
                 city1_data['state']
             )
             
+            # Handle the new fallback response format
+            if isinstance(result1, tuple) and len(result1) == 2:
+                # Check if this is the new fallback format (data, used_fallback)
+                if isinstance(result1[1], bool):
+                    df1, used_fallback1 = result1
+                    error1 = None
+                else:
+                    # Original format (data, error)
+                    df1, error1 = result1
+                    used_fallback1 = False
+            else:
+                df1, error1 = result1
+                used_fallback1 = False
+            
             if error1:
                 self._show_error_message(f"Error fetching data for {city1_data['display_name']}: {error1}")
                 return
             
-            # Save city1 data
+            # Save city1 data only if not using fallback
             if df1 is not None and not df1.empty:
-                records1, save_error1 = client.save_to_database(df1, self.db)
-                if save_error1:
-                    self.logger.warning(f"Error saving data for {city1_data['display_name']}: {save_error1}")
+                if used_fallback1:
+                    self.logger.info(f"Using fallback data for {city1_data['display_name']} - skipping database save")
                 else:
-                    self.logger.info(f"Saved {records1} records for {city1_data['display_name']}")
+                    records1, save_error1 = client.save_to_database(df1, self.db)
+                    if save_error1:
+                        self.logger.warning(f"Error saving data for {city1_data['display_name']}: {save_error1}")
+                    else:
+                        self.logger.info(f"Saved {records1} records for {city1_data['display_name']}")
             
             # Fetch data for city2 if in comparison mode
             if city2_data:
-                df2, error2 = client.get_7day_history(
+                result2 = client.get_7day_history(
                     city2_data['latitude'],
                     city2_data['longitude'],
                     city2_data['city'],
                     city2_data['state']
                 )
                 
+                # Handle the new fallback response format
+                if isinstance(result2, tuple) and len(result2) == 2:
+                    # Check if this is the new fallback format (data, used_fallback)
+                    if isinstance(result2[1], bool):
+                        df2, used_fallback2 = result2
+                        error2 = None
+                    else:
+                        # Original format (data, error)
+                        df2, error2 = result2
+                        used_fallback2 = False
+                else:
+                    df2, error2 = result2
+                    used_fallback2 = False
+                
                 if error2:
                     self._show_error_message(f"Error fetching data for {city2_data['display_name']}: {error2}")
                     return
                 
-                # Save city2 data
+                # Save city2 data only if not using fallback
                 if df2 is not None and not df2.empty:
-                    records2, save_error2 = client.save_to_database(df2, self.db)
-                    if save_error2:
-                        self.logger.warning(f"Error saving data for {city2_data['display_name']}: {save_error2}")
+                    if used_fallback2:
+                        self.logger.info(f"Using fallback data for {city2_data['display_name']} - skipping database save")
                     else:
-                        self.logger.info(f"Saved {records2} records for {city2_data['display_name']}")
+                        records2, save_error2 = client.save_to_database(df2, self.db)
+                        if save_error2:
+                            self.logger.warning(f"Error saving data for {city2_data['display_name']}: {save_error2}")
+                        else:
+                            self.logger.info(f"Saved {records2} records for {city2_data['display_name']}")
+            
+            # Show fallback notification if any fallback data was used
+            if used_fallback1 or (city2_data and used_fallback2):
+                self._show_fallback_notification()
+            else:
+                self._hide_fallback_notification()
             
             # Refresh charts with new data
             self._fetch_chart_data(city1_data, city2_data, use_recent_data=True)
