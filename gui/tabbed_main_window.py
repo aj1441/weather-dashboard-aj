@@ -13,6 +13,7 @@ import threading
 from utils.state_utils import normalize_state_abbreviation
 import time
 from datetime import datetime
+from PIL import Image, ImageTk
 from ttkbootstrap.constants import LEFT, RIGHT, BOTH, X, Y, END
 from ttkbootstrap.dialogs import Messagebox
 from ttkbootstrap.widgets import Sizegrip
@@ -20,6 +21,9 @@ from core.api import WeatherAPI
 from core.data_handler import WeatherDataHandler
 from core.theme_factory import create_theme_manager
 from gui.components import ThemeComponent, WeatherInputComponent, WeatherDisplayComponent, SavedCitiesComponent, ForecastDisplayComponent, HistoryComponent, WeatherTriviaComponent
+# Temporarily disable watermark system to prevent crashes
+# from gui.components.watermark_component import add_watermark_to_main_window, add_watermark_to_tab
+# from gui.components.watermark_control_component import create_watermark_control
 
 class TabbedWeatherDashboard:
     """Advanced tabbed GUI with components and additional features"""
@@ -77,6 +81,10 @@ class TabbedWeatherDashboard:
         self.forecast_cache = ForecastCache()
 
         self.setup_gui()
+        
+        # Watermark system temporarily disabled
+        self.main_watermark = None
+        
         # Load initial saved cities
         self.load_saved_cities()
 
@@ -134,6 +142,8 @@ class TabbedWeatherDashboard:
                 self.logger.error(f"Error in auto theme refresh: {str(e)}")
                 time.sleep(60)  # Wait a minute before trying again
 
+
+
     def setup_gui(self) -> None:
         """Create the tabbed interface"""
         # Theme controls at top (pass theme_manager instead of current_theme)
@@ -161,6 +171,9 @@ class TabbedWeatherDashboard:
         weather_tab = tb.Frame(self.notebook)
         self.notebook.add(weather_tab, text="🌤️ Weather")
 
+        # Watermark system temporarily disabled
+        self.weather_watermark = None
+
         # Weather input component
         self.input_component = WeatherInputComponent(weather_tab)
         # Ensure callback signature matches: city, state, units
@@ -185,6 +198,9 @@ class TabbedWeatherDashboard:
         saved_cities_tab = tb.Frame(self.notebook)
         self.notebook.add(saved_cities_tab, text="💾 Saved Cities")
         
+        # Watermark system temporarily disabled
+        self.saved_cities_watermark = None
+        
         # Create saved cities component
         self.saved_cities_component = SavedCitiesComponent(saved_cities_tab)
         self.saved_cities_component.set_weather_callback(self.handle_weather_request)
@@ -196,6 +212,9 @@ class TabbedWeatherDashboard:
         history_tab = tb.Frame(self.notebook)
         self.notebook.add(history_tab, text="📊 History")
 
+        # Watermark system temporarily disabled
+        self.history_watermark = None
+
         # Create history component
         self.history_component = HistoryComponent(history_tab)
         history_frame = self.history_component.setup_component()
@@ -206,6 +225,10 @@ class TabbedWeatherDashboard:
         try:
             trivia_tab = TriviaTab(self.notebook, csv_path="data/combined_data.csv")
             self.notebook.add(trivia_tab, text="🧠 Weather Trivia")
+            
+            # Watermark system temporarily disabled
+            self.trivia_watermark = None
+            
             self.logger.info("TriviaTab successfully added to notebook")
         except Exception as e:
             self.logger.error(f"Error setting up TriviaTab: {e}", exc_info=True)
@@ -214,6 +237,9 @@ class TabbedWeatherDashboard:
         """Setup the about tab with application information"""
         about_tab = tb.Frame(self.notebook)
         self.notebook.add(about_tab, text="ℹ️ About")
+        
+        # Watermark system temporarily disabled
+        self.about_watermark = None
 
         # Create scrollable frame for all content
         canvas = tb.Canvas(about_tab)
@@ -228,46 +254,57 @@ class TabbedWeatherDashboard:
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
-        # Title
+        # Configure grid weights for the main content frame
+        content_frame = tb.Frame(scrollable_frame)
+        content_frame.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+        content_frame.grid_columnconfigure(0, weight=1)  # Left column gets 1 part
+        content_frame.grid_columnconfigure(1, weight=1)  # Right column gets 1 part
+        
+        # Title - spans both columns at the top
         title_label = tb.Label(
-            scrollable_frame,
+            content_frame,
             text="🌦️ Weather Dashboard",
             font=("Helvetica Neue", 28, "bold"),
             bootstyle="primary"
         )
-        title_label.pack(pady=(20, 10))
+        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 10), sticky="ew")
 
-        # Version
+        # Version - spans both columns
         version_label = tb.Label(
-            scrollable_frame,
+            content_frame,
             text="Version 2.0.0 - Component Architecture",
             font=("Helvetica Neue", 14),
             bootstyle="secondary"
         )
-        version_label.pack(pady=(0, 20))
+        version_label.grid(row=1, column=0, columnspan=2, pady=(0, 20), sticky="ew")
 
-        # Description
+        # Left column content (column 0)
+        left_content_frame = tb.Frame(content_frame)
+        left_content_frame.grid(row=2, column=0, sticky="nsew", padx=(0, 10))
+        left_content_frame.grid_columnconfigure(0, weight=1)
+        
+        # Description in left column
         description = """
         A comprehensive weather dashboard application built with modern Python technologies.
         Features a component-based architecture for maintainability and extensibility.
         """
         desc_label = tb.Label(
-            scrollable_frame,
+            left_content_frame,
             text=description,
             font=("Helvetica Neue", 12),
-            justify="center",
-            wraplength=600
+            justify="left",
+            wraplength=400
         )
-        desc_label.pack(pady=10)
+        desc_label.grid(row=0, column=0, pady=10, sticky="ew")
 
-        # Features frame
-        features_frame = tb.Frame(scrollable_frame)
-        features_frame.pack(fill="x", padx=40, pady=20)
+        # Features frame in left column
+        features_frame = tb.Frame(left_content_frame)
+        features_frame.grid(row=1, column=0, sticky="ew", pady=20)
 
         features = [
             ("🌤️ Current Weather", "Real-time weather data from OpenWeather API with detailed conditions"),
-            ("� 7-Day Forecast", "Extended weather forecasts with intelligent data extension"),
-            ("�💾 Save Cities", "Persistent storage of favorite locations with database integration"),
+            ("📅 7-Day Forecast", "Extended weather forecasts with intelligent data extension"),
+            ("💾 Save Cities", "Persistent storage of favorite locations with database integration"),
             ("📊 Weather History", "Complete weather history tracking with searchable records"),
             ("🎨 Custom Themes", "Multiple themes including custom aj_darkly and aj_lightly designs"),
             ("🌓 Auto Day/Night", "Automatic theme switching based on time and location"),
@@ -276,16 +313,16 @@ class TabbedWeatherDashboard:
         ]
 
         # Create feature labels
-        for title, description in features:
+        for i, (title, description) in enumerate(features):
             feature_frame = tb.Frame(features_frame)
-            feature_frame.pack(fill="x", pady=8)
+            feature_frame.grid(row=i, column=0, sticky="ew", pady=8)
             
             tb.Label(
                 feature_frame,
                 text=title,
                 font=("Helvetica Neue", 12, "bold"),
                 bootstyle="primary"
-            ).pack(anchor="w")
+            ).grid(row=0, column=0, sticky="w")
             
             tb.Label(
                 feature_frame,
@@ -293,18 +330,18 @@ class TabbedWeatherDashboard:
                 font=("Helvetica Neue", 11),
                 wraplength=500,
                 bootstyle="secondary"
-            ).pack(anchor="w", padx=(20, 0))
+            ).grid(row=1, column=0, sticky="w", padx=(20, 0))
 
-        # Technical Details
-        tech_frame = tb.Frame(scrollable_frame)
-        tech_frame.pack(fill="x", padx=40, pady=30)
+        # Technical Details in left column
+        tech_frame = tb.Frame(left_content_frame)
+        tech_frame.grid(row=2, column=0, sticky="ew", pady=30)
 
         tb.Label(
             tech_frame,
             text="🔧 Technical Architecture",
             font=("Helvetica Neue", 16, "bold"),
             bootstyle="info"
-        ).pack(pady=(0, 15))
+        ).grid(row=0, column=0, pady=(0, 15), sticky="w")
 
         tech_details = [
             ("Frontend", "ttkbootstrap (modern tkinter)"),
@@ -315,34 +352,82 @@ class TabbedWeatherDashboard:
             ("Configuration", "Centralized config management with environment variables")
         ]
 
-        for tech, desc in tech_details:
+        for i, (tech, desc) in enumerate(tech_details):
             tech_item_frame = tb.Frame(tech_frame)
-            tech_item_frame.pack(fill="x", pady=3)
+            tech_item_frame.grid(row=i+1, column=0, sticky="ew", pady=3)
             
             tb.Label(
                 tech_item_frame,
                 text=f"{tech}:",
                 font=("Helvetica Neue", 11, "bold"),
                 bootstyle="info"
-            ).pack(anchor="w")
+            ).grid(row=0, column=0, sticky="w")
             
             tb.Label(
                 tech_item_frame,
                 text=desc,
                 font=("Helvetica Neue", 10),
                 wraplength=450
-            ).pack(anchor="w", padx=(20, 0))
+            ).grid(row=1, column=0, sticky="w", padx=(20, 0))
 
-        # Status
+        # Right column for logo (column 1)
+        right_content_frame = tb.Frame(content_frame)
+        right_content_frame.grid(row=2, column=1, sticky="nsew", padx=(10, 0))
+        right_content_frame.grid_columnconfigure(0, weight=1)
+        right_content_frame.grid_rowconfigure(0, weight=1)
+        
+        # Add logo to right column
+        try:
+            # Try art_logo.png first (smaller, might have better transparency)
+            logo_path = "assets/images/art_logo.png"
+            if not os.path.exists(logo_path):
+                logo_path = "assets/images/enhanced_logo_clean.png"
+            
+            if os.path.exists(logo_path):
+                # Load and resize the logo
+                image = Image.open(logo_path)
+                
+                # Convert to RGBA if it's not already (for transparency support)
+                if image.mode != 'RGBA':
+                    image = image.convert('RGBA')
+                
+                # Resize to 400x400 pixels while maintaining aspect ratio (larger for right side)
+                image.thumbnail((400, 400), Image.Resampling.LANCZOS)
+                
+                # Create a transparent background
+                transparent_bg = Image.new('RGBA', image.size, (0, 0, 0, 0))
+                
+                # Composite the image onto transparent background
+                if image.mode == 'RGBA':
+                    # If image has alpha channel, use it
+                    result = Image.alpha_composite(transparent_bg, image)
+                else:
+                    # If no alpha channel, just use the image
+                    result = image
+                
+                about_logo_photo = ImageTk.PhotoImage(result)
+                
+                # Create label for logo with transparent background in right column
+                about_logo_label = tk.Label(right_content_frame, image=about_logo_photo, bg='systemTransparent')
+                about_logo_label.image = about_logo_photo  # Keep a reference
+                about_logo_label.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+                
+                self.logger.info("About tab logo added successfully")
+            else:
+                self.logger.warning(f"Logo file not found for about tab: {logo_path}")
+        except Exception as e:
+            self.logger.error(f"Error adding about tab logo: {e}")
+
+        # Status - spans both columns at the bottom
         status_frame = tb.Frame(scrollable_frame)
-        status_frame.pack(fill="x", padx=40, pady=20)
+        status_frame.grid(row=1, column=0, sticky="ew", padx=40, pady=20)
 
         tb.Label(
             status_frame,
             text="✅ Project Status: Fully Functional",
             font=("Helvetica Neue", 14, "bold"),
             bootstyle="success"
-        ).pack(pady=10)
+        ).grid(row=0, column=0, sticky="ew", pady=10)
 
         status_items = [
             "✅ Current weather display working",
@@ -353,35 +438,78 @@ class TabbedWeatherDashboard:
             "✅ Component architecture implemented"
         ]
 
-        for status in status_items:
+        for i, status in enumerate(status_items):
             tb.Label(
                 status_frame,
                 text=status,
                 font=("Helvetica Neue", 11),
                 bootstyle="success"
-            ).pack(anchor="w", padx=20)
+            ).grid(row=i+1, column=0, sticky="w", padx=20)
 
         # Credits
         credits_frame = tb.Frame(scrollable_frame)
-        credits_frame.pack(fill="x", pady=30)
+        credits_frame.grid(row=2, column=0, sticky="ew", pady=30)
 
         tb.Label(
             credits_frame,
             text="Created by AJ",
             font=("Helvetica Neue", 12, "bold"),
             bootstyle="secondary"
-        ).pack()
+        ).grid(row=0, column=0, sticky="ew")
 
         tb.Label(
             credits_frame,
             text="Capstone Project - Weather Dashboard Application",
             font=("Helvetica Neue", 10),
             bootstyle="secondary"
-        ).pack(pady=(5, 20))
+        ).grid(row=1, column=0, sticky="ew", pady=(5, 20))
+
+        # Watermark Control Section
+        watermark_frame = tb.Frame(scrollable_frame)
+        watermark_frame.grid(row=3, column=0, sticky="ew", padx=40, pady=20)
+        
+        tb.Label(
+            watermark_frame,
+            text="🎨 Customization",
+            font=("Helvetica Neue", 16, "bold"),
+            bootstyle="warning"
+        ).grid(row=0, column=0, sticky="ew", pady=(0, 15))
+        
+        # Watermark control temporarily disabled
+        # self.watermark_control = create_watermark_control(watermark_frame)
+        # self.watermark_control.set_settings_callback(self._on_watermark_settings_changed)
+        # watermark_control_frame = self.watermark_control.setup_component()
+        # watermark_control_frame.grid(row=1, column=0, sticky="ew", pady=10)
 
         # Pack canvas and scrollbar
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
+        
+        return about_tab
+
+    def _on_watermark_settings_changed(self, settings: Dict[str, Any]):
+        """Handle watermark settings changes."""
+        try:
+            # Update main window watermark
+            if hasattr(self, 'main_watermark'):
+                self.main_watermark.update_settings(settings)
+            
+            # Update tab watermarks
+            watermark_components = [
+                getattr(self, attr, None) for attr in [
+                    'weather_watermark', 'saved_cities_watermark', 
+                    'history_watermark', 'trivia_watermark', 'about_watermark'
+                ]
+            ]
+            
+            for watermark in watermark_components:
+                if watermark:
+                    watermark.update_settings(settings)
+            
+            self.logger.info(f"Watermark settings updated: {settings}")
+            
+        except Exception as e:
+            self.logger.error(f"Error updating watermark settings: {e}")
 
     def load_saved_cities(self):
         """Load and display saved cities"""
