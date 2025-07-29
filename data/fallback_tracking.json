@@ -1,0 +1,122 @@
+{
+  "events": [
+    {
+      "timestamp": "2025-07-29T15:22:55.710242",
+      "api_name": "openweather_history_client",
+      "endpoint": "get_7day_history",
+      "location": "Unknown, Unknown",
+      "fallback_type": "none",
+      "success": true,
+      "error_message": null,
+      "response_time_ms": 915
+    },
+    {
+      "timestamp": "2025-07-29T15:22:57.747760",
+      "api_name": "openweather_history_client",
+      "endpoint": "get_7day_history",
+      "location": "Unknown, Unknown",
+      "fallback_type": "none",
+      "success": true,
+      "error_message": null,
+      "response_time_ms": 801
+    },
+    {
+      "timestamp": "2025-07-29T15:22:58.714986",
+      "api_name": "openweather_history_client",
+      "endpoint": "get_7day_history",
+      "location": "Unknown, Unknown",
+      "fallback_type": "none",
+      "success": true,
+      "error_message": null,
+      "response_time_ms": 789
+    },
+    {
+      "timestamp": "2025-07-29T15:22:59.516752",
+      "api_name": "openweather_history_client",
+      "endpoint": "get_7day_history",
+      "location": "Unknown, Unknown",
+      "fallback_type": "none",
+      "success": true,
+      "error_message": null,
+      "response_time_ms": 773
+    },
+    {
+      "timestamp": "2025-07-29T15:23:00.479312",
+      "api_name": "openweather_history_client",
+      "endpoint": "get_7day_history",
+      "location": "Unknown, Unknown",
+      "fallback_type": "none",
+      "success": true,
+      "error_message": null,
+      "response_time_ms": 795
+    },
+    {
+      "timestamp": "2025-07-29T15:23:01.285834",
+      "api_name": "openweather_history_client",
+      "endpoint": "get_7day_history",
+      "location": "Unknown, Unknown",
+      "fallback_type": "none",
+      "success": true,
+      "error_message": null,
+      "response_time_ms": 777
+    },
+    {
+      "timestamp": "2025-07-29T15:23:02.090011",
+      "api_name": "openweather_history_client",
+      "endpoint": "get_7day_history",
+      "location": "Unknown, Unknown",
+      "fallback_type": "none",
+      "success": true,
+      "error_message": null,
+      "response_time_ms": 770
+    },
+    {
+      "timestamp": "2025-07-29T15:23:02.918233",
+      "api_name": "openweather_history_client",
+      "endpoint": "get_7day_history",
+      "location": "Unknown, Unknown",
+      "fallback_type": "none",
+      "success": true,
+      "error_message": null,
+      "response_time_ms": 783
+    },
+    {
+      "timestamp": "2025-07-29T15:23:03.754392",
+      "api_name": "openweather_history_client",
+      "endpoint": "get_7day_history",
+      "location": "Unknown, Unknown",
+      "fallback_type": "none",
+      "success": true,
+      "error_message": null,
+      "response_time_ms": 780
+    },
+    {
+      "timestamp": "2025-07-29T15:23:04.702831",
+      "api_name": "openweather_history_client",
+      "endpoint": "get_7day_history",
+      "location": "Unknown, Unknown",
+      "fallback_type": "none",
+      "success": true,
+      "error_message": null,
+      "response_time_ms": 772
+    }
+  ],
+  "stats": {
+    "total_calls": 10,
+    "successful_api_calls": 10,
+    "fallback_usage": {
+      "static": 0,
+      "random": 0,
+      "historical_random": 0,
+      "none": 0
+    },
+    "api_endpoints": {
+      "get_7day_history": 10
+    },
+    "locations": {
+      "Unknown, Unknown": 10
+    },
+    "errors": {}
+  },
+  "last_updated": "2025-07-29T15:23:04.703731"
+}

@@ -605,8 +605,12 @@ class HistoryComponent:
             if isinstance(result1, tuple) and len(result1) == 2:
                 # Check if this is the new fallback format (data, used_fallback)
                 if isinstance(result1[1], bool):
-                    df1, used_fallback1 = result1
-                    error1 = None
+                    # This is the fallback format: (original_result, used_fallback)
+                    original_result, used_fallback1 = result1
+                    if isinstance(original_result, tuple) and len(original_result) == 2:
+                        df1, error1 = original_result
+                    else:
+                        df1, error1 = original_result, None
                 else:
                     # Original format (data, error)
                     df1, error1 = result1
@@ -643,8 +647,12 @@ class HistoryComponent:
                 if isinstance(result2, tuple) and len(result2) == 2:
                     # Check if this is the new fallback format (data, used_fallback)
                     if isinstance(result2[1], bool):
-                        df2, used_fallback2 = result2
-                        error2 = None
+                        # This is the fallback format: (original_result, used_fallback)
+                        original_result, used_fallback2 = result2
+                        if isinstance(original_result, tuple) and len(original_result) == 2:
+                            df2, error2 = original_result
+                        else:
+                            df2, error2 = original_result, None
                     else:
                         # Original format (data, error)
                         df2, error2 = result2
