@@ -3,8 +3,6 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from features.trivia.trivia_tab import TriviaTab
-
 from typing import Optional, Dict, Any, List
 import tkinter as tk
 import ttkbootstrap as tb
@@ -20,7 +18,7 @@ from ttkbootstrap.widgets import Sizegrip
 from core.api import WeatherAPI
 from core.data_handler import WeatherDataHandler
 from core.theme_factory import create_theme_manager
-from gui.components import ThemeComponent, WeatherInputComponent, WeatherDisplayComponent, SavedCitiesComponent, ForecastDisplayComponent, HistoryComponent, WeatherTriviaComponent
+from gui.components import ThemeComponent, WeatherInputComponent, WeatherDisplayComponent, SavedCitiesComponent, ForecastDisplayComponent, HistoryComponent, TriviaTab
 from gui.components.about_component import AboutComponent
 
 

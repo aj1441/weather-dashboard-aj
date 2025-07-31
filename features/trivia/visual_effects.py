@@ -3,11 +3,11 @@
 from pathlib import Path
 from itertools import cycle
 from PIL import Image, ImageTk, ImageSequence
-import ttkbootstrap as ttk
+import ttkbootstrap as tb
 import tkinter as tk
 import random
 
-class ConfettiGif(ttk.Frame):
+class ConfettiGif(tb.Frame):
     def __init__(self, master, gif_path="assets/confetti.gif", width=600, height=400, duration=5000):
         super().__init__(master, width=width, height=height)
         self.place(relx=0.5, rely=0.5, anchor="center")
@@ -20,7 +20,7 @@ class ConfettiGif(ttk.Frame):
             self.image_cycle = cycle(images)
             self.framerate = im.info.get("duration", 100)
 
-        self.img_label = ttk.Label(self, image=next(self.image_cycle))
+        self.img_label = tb.Label(self, image=next(self.image_cycle))
         self.img_label.pack(fill="both", expand="yes")
 
         self.running = True
@@ -39,7 +39,7 @@ class ConfettiGif(ttk.Frame):
         super().destroy()
 
 
-class LightningEffect(ttk.Frame):
+class LightningEffect(tb.Frame):
     def __init__(self, master, duration=1000):
         super().__init__(master)
         self.place(relx=0, rely=0, relwidth=1, relheight=1)

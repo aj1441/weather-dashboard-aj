@@ -20,16 +20,22 @@ class SoundManager:
         self.sounds = {}
         if PYGAME_AVAILABLE:
             try:
+                # More defensive pygame initialization
+                pygame.mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=512)
                 pygame.mixer.init()
+                logger.info("pygame mixer initialized successfully")
+                
                 self.sounds = {
                     "right": self._load_sound(base_path, "right.wav"),
                     "wrong": self._load_sound(base_path, "wrong.wav"),
                     "round_over": self._load_sound(base_path, "round_over.wav"),
                     "thunder": self._load_sound(base_path, "thunder.wav"),
                 }
+                logger.info(f"Loaded {len([s for s in self.sounds.values() if s])} sound files")
             except Exception as e:
                 logger.error(f"Failed to initialize pygame mixer: {e}")
                 PYGAME_AVAILABLE = False
+                self.sounds = {}
 
     def _load_sound(self, base_path, filename):
         if not PYGAME_AVAILABLE:

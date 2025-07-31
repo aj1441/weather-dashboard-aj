@@ -1,10 +1,10 @@
 # trivia/timer_widget.py
 
-import ttkbootstrap as ttk
+import ttkbootstrap as tb
 from ttkbootstrap.widgets import Meter
 from ttkbootstrap.constants import *
 
-class TimerWidget(ttk.Frame):
+class TimerWidget(tb.Frame):
     def __init__(self, master, duration=20, callback=None):
         super().__init__(master)
         self.duration = duration
@@ -32,6 +32,9 @@ class TimerWidget(ttk.Frame):
         self._tick()
 
     def _tick(self):
+        if not self.timer_running:
+            return  # Timer was stopped, don't continue
+            
         if self.remaining <= 0:
             self.stop()
             if self.callback:
@@ -42,12 +45,15 @@ class TimerWidget(ttk.Frame):
             self.meter.configure(bootstyle="danger", subtextstyle="danger")
         elif self.remaining <= 10:
             self.meter.configure(bootstyle="warning", subtextstyle="warning")
+        elif self.remaining <= 15:
+            self.meter.configure(bootstyle="success", subtextstyle="success")    
         else:
             self.meter.configure(bootstyle="info", subtextstyle="secondary")
 
         self.meter.configure(amountused=self.duration - self.remaining)
         self.remaining -= 1
-        self.after(1000, self._tick)
+        if self.timer_running:  # Only schedule next tick if still running
+            self.after(1000, self._tick)
 
     def stop(self):
         self.timer_running = False
