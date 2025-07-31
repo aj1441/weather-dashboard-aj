@@ -31,6 +31,7 @@ class TriviaTab(tb.Frame):
         self.current_round = 0
         self.current_round_correct = 0
         self.game_in_progress = False
+        self.round_in_progress = False
 
         self.question_var = StringVar()
         self.question_var.set("Press 'Start Round' to begin.")
@@ -60,7 +61,8 @@ class TriviaTab(tb.Frame):
 
         control_frame = tb.Frame(self)
         control_frame.pack(pady=10)
-        tb.Button(control_frame, text="Start Round", command=self.start_round).pack(side=LEFT, padx=10)
+        self.start_button = tb.Button(control_frame, text="Start Round", command=self.start_round)
+        self.start_button.pack(side=LEFT, padx=10)
         tb.Button(control_frame, text="Quit", command=self.quit_game).pack(side=LEFT, padx=10)
 
     def _make_answer_handler(self, idx):
@@ -77,6 +79,10 @@ class TriviaTab(tb.Frame):
             # Starting next round in current game
             self.current_round += 1
             
+        # Disable start button during round
+        self.round_in_progress = True
+        self.start_button.config(state="disabled")
+            
         self.questions = self.engine.get_question_round()
         self.current_index = 0
         self.current_round_correct = 0
@@ -90,6 +96,10 @@ class TriviaTab(tb.Frame):
             # Round complete - show round stats only
             round_percent = (self.current_round_correct / self.questions_per_round) * 100
             self.question_var.set(f"Round {self.current_round} complete! You scored {self.current_round_correct} out of {self.questions_per_round} ({round_percent:.1f}%).")
+            
+            # Round is complete - re-enable start button
+            self.round_in_progress = False
+            self.start_button.config(state="normal")
             
             if self.current_round >= self.total_rounds:
                 # Game complete - show final effects
@@ -148,6 +158,10 @@ class TriviaTab(tb.Frame):
         round_percent = (self.current_round_correct / self.questions_per_round) * 100
         self.question_var.set(f"Time's up! Round {self.current_round} complete! You scored {self.current_round_correct} out of {self.questions_per_round} ({round_percent:.1f}%).")
         
+        # Round is complete - re-enable start button
+        self.round_in_progress = False
+        self.start_button.config(state="normal")
+        
         if self.current_round >= self.total_rounds:
             # Game complete
             self.end_game()
@@ -179,6 +193,8 @@ class TriviaTab(tb.Frame):
         self.current_round = 0
         self.current_round_correct = 0
         self.game_in_progress = False
+        self.round_in_progress = False
+        self.start_button.config(state="normal")  # Re-enable start button
         self.question_var.set("Press 'Start Round' to begin.")
         for var in self.answer_vars:
             var.set("")
