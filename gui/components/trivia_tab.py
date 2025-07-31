@@ -25,8 +25,8 @@ class TriviaTab(tb.Frame):
         self.questions = []
         self.current_index = 0
         
-        # Game structure: 5 rounds of 5 questions each
-        self.total_rounds = 5
+        # Game structure: 4 rounds of 5 questions each
+        self.total_rounds = 4
         self.questions_per_round = 5
         self.current_round = 0
         self.current_round_correct = 0
