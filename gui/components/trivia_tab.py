@@ -8,7 +8,7 @@ from features.trivia.stats_manager import StatsManager
 from features.trivia.scoreboard_header import TriviaScoreboardHeader
 from features.trivia.timer_widget import TimerWidget
 from features.trivia.sound_manager import SoundManager
-from features.trivia.visual_effects import ConfettiGif, LightningEffect
+from features.trivia.visual_effects import ConfettiGif, LightningEffect, LightningGif
 
 class TriviaTab(tb.Frame):
     def __init__(self, master, csv_path):
@@ -184,7 +184,7 @@ class TriviaTab(tb.Frame):
         else:
             if self.sound_mgr:
                 self.sound_mgr.play("thunder")
-            LightningEffect(master=self)
+            LightningGif(master=self)
 
     def quit_game(self):
         self.stats.reset()
