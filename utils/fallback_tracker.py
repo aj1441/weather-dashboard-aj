@@ -50,7 +50,18 @@ class FallbackTracker:
                 with open(self.log_file, 'r') as f:
                     data = json.load(f)
                     self.events = [FallbackEvent(**event) for event in data.get('events', [])]
-                    self.stats = data.get('stats', self.stats)
+                    
+                    # Load stats while preserving defaultdict structure
+                    loaded_stats = data.get('stats', {})
+                    if loaded_stats:
+                        # Update counts but keep defaultdict structure
+                        for key, value in loaded_stats.items():
+                            if key in ['fallback_usage', 'api_endpoints', 'locations', 'errors']:
+                                if isinstance(value, dict):
+                                    self.stats[key].update(value)
+                            else:
+                                self.stats[key] = value
+                                
                 logger.info(f"Loaded {len(self.events)} existing fallback events")
         except Exception as e:
             logger.warning(f"Could not load existing fallback data: {e}")

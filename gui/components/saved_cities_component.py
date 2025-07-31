@@ -131,12 +131,12 @@ class SavedCitiesComponent:
         )
         weather_btn.pack(side="right", padx=10, pady=5)
 
-        # Get History Button
+        # Get History Button (Hybrid Approach)
         def get_history():
-            from core.historical_coordinator import HistoricalDataCoordinator
+            from core.hybrid_data_coordinator import HybridWeatherDataCoordinator
             
             try:
-                coordinator = HistoricalDataCoordinator()
+                coordinator = HybridWeatherDataCoordinator()
                 state = normalize_state_abbreviation(city_data.get('state', ''))
                 
                 # Get latitude and longitude from city data
@@ -151,17 +151,17 @@ class SavedCitiesComponent:
                     return
                 
                 # Show loading message
-                self.logger.info(f"Fetching historical data for {city_data.get('city')}")
+                self.logger.info(f"Fetching HYBRID historical data for {city_data.get('city')}")
                 loading_label = tb.Label(
                     card,
-                    text="Loading historical data...",
+                    text="Loading hybrid data (bulk + recent)...",
                     font=("Helvetica Neue", 10, "italic")
                 )
                 loading_label.pack(side="right", padx=5)
                 card.update()
                 
-                # Fetch and store historical data
-                success, error = coordinator.fetch_and_store_historical_data(
+                # Fetch and store HYBRID historical data (both Open-Meteo + OpenWeather)
+                success, error = coordinator.fetch_combined_historical_data(
                     city=city_data.get('city'),
                     state=state,
                     latitude=lat,
@@ -172,28 +172,43 @@ class SavedCitiesComponent:
                 loading_label.destroy()
                 
                 if success:
+                    # Show success with data details
+                    coverage = coordinator._analyze_existing_data_coverage(city_data.get('city'), state)
+                    total_records = coverage.get('total_records', 0)
+                    
                     tb.dialogs.Messagebox.show_info(
-                        title="Success", 
-                        message=f"Historical data for {city_data.get('city')} has been processed.\n\nNew data has been saved (duplicates were skipped automatically)."
+                        title="Hybrid Data Success ✅", 
+                        message=f"Hybrid historical data for {city_data.get('city')} has been processed!\n\n"
+                                f"📊 Total data points: {total_records}\n"
+                                f"🏗️ Bulk historical: {coverage.get('bulk_records', 0)} records (Open-Meteo)\n"
+                                f"⚡ Recent historical: {coverage.get('recent_records', 0)} records (OpenWeather)\n\n"
+                                f"Your predictions will now be much more accurate!"
                     )
                 else:
-                    tb.dialogs.Messagebox.show_error(
-                        title="Error",
-                        message=f"Failed to fetch historical data: {error}"
-                    )
+                    # Show partial success or error
+                    if ";" in str(error):  # Partial success
+                        tb.dialogs.Messagebox.show_warning(
+                            title="Partial Success ⚠️",
+                            message=f"Some data was fetched successfully, but there were issues:\n\n{error}\n\nPredictions may still work with available data."
+                        )
+                    else:
+                        tb.dialogs.Messagebox.show_error(
+                            title="Error",
+                            message=f"Failed to fetch hybrid historical data: {error}"
+                        )
                     
             except Exception as e:
-                self.logger.error(f"Error getting historical data: {e}")
+                self.logger.error(f"Error getting hybrid historical data: {e}")
                 tb.dialogs.Messagebox.show_error(
                     title="Error",
-                    message=f"An error occurred while fetching historical data: {str(e)}"
+                    message=f"An error occurred while fetching hybrid historical data: {str(e)}"
                 )
 
         history_btn = tb.Button(
             card,
             text="📊 History",
             command=get_history,
-            width=10,
+            width=12,
             bootstyle="info-outline"
         )
         history_btn.pack(side="right", padx=10, pady=5)
@@ -234,13 +249,13 @@ class SavedCitiesComponent:
             
             # Check if we have sufficient historical data
             if not self.weather_predictor.has_sufficient_data(city, state):
-                # Show alert for missing historical data
+                # Show option to fetch historical data automatically
                 alert_frame = tb.Frame(prediction_frame)
                 alert_frame.pack(fill="x", pady=10)
                 
                 alert_label = tb.Label(
                     alert_frame,
-                    text="⚠️ Please get history first",
+                    text="⚠️ Insufficient historical data",
                     font=("Helvetica Neue", 14, "bold"),
                     bootstyle="warning"
                 )
@@ -248,11 +263,92 @@ class SavedCitiesComponent:
                 
                 info_label = tb.Label(
                     alert_frame,
-                    text="Need at least 60 days of historical data to generate reliable predictions.\nClick '📊 History' button first to fetch historical weather data.",
+                    text="Need at least 60 days of historical data to generate reliable predictions.",
                     font=("Helvetica Neue", 11),
                     justify="center"
                 )
                 info_label.pack(pady=5)
+                
+                # Add buttons for manual or automatic data fetch
+                button_frame = tb.Frame(alert_frame)
+                button_frame.pack(pady=10)
+                
+                def fetch_data_for_predictions():
+                    """Fetch historical data automatically for predictions"""
+                    # Clear the alert frame
+                    for widget in alert_frame.winfo_children():
+                        widget.destroy()
+                    
+                    # Show loading message
+                    loading_label = tb.Label(
+                        alert_frame,
+                        text="📊 Fetching historical data...",
+                        font=("Helvetica Neue", 12, "italic"),
+                        bootstyle="info"
+                    )
+                    loading_label.pack(pady=10)
+                    alert_frame.update()
+                    
+                    try:
+                        # Import here to avoid issues during app startup
+                        from core.hybrid_data_coordinator import HybridWeatherDataCoordinator
+                        
+                        coordinator = HybridWeatherDataCoordinator()
+                        success, error = coordinator.fetch_combined_historical_data(
+                            city, state, 
+                            city_data.get('latitude'), 
+                            city_data.get('longitude')
+                        )
+                        
+                        # Remove loading message
+                        loading_label.destroy()
+                        
+                        if success:
+                            # Data fetched successfully, regenerate predictions
+                            for widget in prediction_frame.winfo_children():
+                                widget.destroy()
+                            self._generate_ml_predictions(prediction_frame, city_data)
+                        else:
+                            # Show error
+                            error_label = tb.Label(
+                                alert_frame,
+                                text=f"❌ Error fetching data: {error}",
+                                font=("Helvetica Neue", 10),
+                                bootstyle="danger"
+                            )
+                            error_label.pack(pady=5)
+                            
+                    except Exception as e:
+                        loading_label.destroy()
+                        error_label = tb.Label(
+                            alert_frame,
+                            text=f"❌ Error: {str(e)}",
+                            font=("Helvetica Neue", 10),
+                            bootstyle="danger"
+                        )
+                        error_label.pack(pady=5)
+                
+                # Auto-fetch button
+                auto_btn = tb.Button(
+                    button_frame,
+                    text="🚀 Auto-Fetch Data",
+                    command=fetch_data_for_predictions,
+                    bootstyle="success"
+                )
+                auto_btn.pack(side="left", padx=5)
+                
+                # Manual button
+                manual_btn = tb.Button(
+                    button_frame,
+                    text="📊 Use History Button",
+                    command=lambda: tb.dialogs.Messagebox.show_info(
+                        title="Manual Data Fetch",
+                        message="Click the '📊 History' button above to manually fetch historical weather data."
+                    ),
+                    bootstyle="secondary"
+                )
+                manual_btn.pack(side="left", padx=5)
+                
                 return
             
             # Show loading message

@@ -90,18 +90,27 @@ class WeatherPredictor:
             return False, {"error": str(e)}
     
     def _get_historical_data(self, city: str, state: str) -> Optional[pd.DataFrame]:
-        """Retrieve and process historical data for a city"""
+        """Retrieve and process COMBINED historical data for a city (hybrid approach)"""
         try:
-            data = self.db.get_historical_weather(city, state)
+            from .hybrid_data_coordinator import HybridWeatherDataCoordinator
             
-            if not data:
-                return None
+            # Use hybrid coordinator to get combined data
+            coordinator = HybridWeatherDataCoordinator(self.db)
+            combined_data = coordinator._get_combined_historical_data(city, state)
+            
+            if not combined_data:
+                # Fallback to original method for backward compatibility
+                self.logger.warning(f"No combined data found, falling back to bulk historical data only")
+                data = self.db.get_historical_weather(city, state)
+                if not data:
+                    return None
+                combined_data = data
                 
-            df = pd.DataFrame(data)
+            df = pd.DataFrame(combined_data)
             df['date'] = pd.to_datetime(df['date'])
             df = df.sort_values('date').reset_index(drop=True)
             
-            # Remove any duplicates
+            # Remove any duplicates (prefer recent data over bulk data)
             df = df.drop_duplicates(subset=['date'], keep='last')
             
             # Fill missing values with interpolation
@@ -111,6 +120,7 @@ class WeatherPredictor:
                 if col in df.columns:
                     df[col] = df[col].interpolate(method='linear')
             
+            self.logger.info(f"Retrieved {len(df)} days of combined historical data for {city}, {state}")
             return df
             
         except Exception as e:
@@ -392,13 +402,22 @@ class WeatherPredictor:
             return "Stable precipitation"
     
     def has_sufficient_data(self, city: str, state: str) -> bool:
-        """Check if there's sufficient historical data for predictions"""
+        """Check if there's sufficient COMBINED historical data for predictions (hybrid approach)"""
         try:
-            data = self.db.get_historical_weather(city, state)
-            return data and len(data) >= 60
+            from .hybrid_data_coordinator import HybridWeatherDataCoordinator
+            
+            # Use hybrid coordinator to check combined data
+            coordinator = HybridWeatherDataCoordinator(self.db)
+            return coordinator.has_sufficient_data_for_predictions(city, state)
+            
         except Exception as e:
             self.logger.error(f"Error checking data sufficiency: {e}")
-            return False
+            # Fallback to original method
+            try:
+                data = self.db.get_historical_weather(city, state)
+                return data and len(data) >= 60
+            except:
+                return False
     
     def get_prediction_history(self, city: str, state: str, days: int = 30) -> List[Dict]:
         """

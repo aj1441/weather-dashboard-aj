@@ -153,14 +153,19 @@ class WeatherFeatureEngineer:
         # Define columns to exclude from features (targets and non-predictive)
         excluded_columns = {
             'date', 'city', 'state', 'latitude', 'longitude', 'sunrise', 'sunset',
-            'temperature_max', 'temperature_min', 'precipitation', 'humidity', 'wind_speed_max'
+            'temperature_max', 'temperature_min', 'precipitation', 'humidity', 'wind_speed_max',
+            'id', 'created_at', 'temperature_mean', 'rain', 'wind_gusts_max'
         }
         
         # Select feature columns
         feature_columns = [col for col in df.columns if col not in excluded_columns]
         
-        # Remove rows with NaN values (from lag features)
-        df_clean = df.dropna()
+        # Define columns needed for features and targets (to avoid dropping based on irrelevant columns)
+        target_columns = ['temperature_max', 'temperature_min', 'precipitation', 'humidity']
+        columns_to_check = feature_columns + target_columns
+        
+        # Remove rows with NaN values only from the columns we actually need
+        df_clean = df[columns_to_check].dropna()
         
         if len(df_clean) < self.min_data_points:
             raise ValueError(f"Insufficient clean data after feature engineering: {len(df_clean)} < {self.min_data_points}")
