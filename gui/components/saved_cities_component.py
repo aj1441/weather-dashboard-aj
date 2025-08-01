@@ -213,6 +213,87 @@ class SavedCitiesComponent:
         )
         history_btn.pack(side="right", padx=10, pady=5)
 
+        # Get Current Weather Button 
+        def get_current_weather():
+            # Toggle current weather display
+            if current_weather_frame.winfo_viewable():
+                # Hide current weather
+                current_weather_frame.pack_forget()
+                current_weather_btn.configure(text="🌤️ Current Weather")
+            else:
+                # Show current weather
+                current_weather_frame.pack(fill="x", padx=20, pady=(10, 0))
+                current_weather_btn.configure(text="🌤️ Hide Weather")
+                
+                # Clear existing weather display
+                for widget in current_weather_frame.winfo_children():
+                    widget.destroy()
+                
+                # Show loading message
+                loading_label = tb.Label(
+                    current_weather_frame,
+                    text="🌤️ Fetching current weather...",
+                    font=("Helvetica Neue", 12, "italic"),
+                    bootstyle="info"
+                )
+                loading_label.pack(pady=10)
+                current_weather_frame.update()
+                
+                try:
+                    # Import and use WeatherAPI directly
+                    from core.api import WeatherAPI
+                    
+                    weather_api = WeatherAPI()
+                    state = normalize_state_abbreviation(city_data.get('state', ''))
+                    
+                    # Fetch comprehensive weather data
+                    weather_data = weather_api.fetch_comprehensive_weather(
+                        city_data.get('city'),
+                        state,
+                        'imperial'  # Default to Fahrenheit
+                    )
+                    
+                    # Remove loading message
+                    loading_label.destroy()
+                    
+                    if weather_data and 'error' not in weather_data:
+                        # Display current weather data
+                        self._display_current_weather(current_weather_frame, weather_data)
+                    else:
+                        error_msg = weather_data.get('error', 'Unknown error') if weather_data else 'No data received'
+                        error_label = tb.Label(
+                            current_weather_frame,
+                            text=f"❌ Error: {error_msg}",
+                            font=("Helvetica Neue", 12),
+                            bootstyle="danger"
+                        )
+                        error_label.pack(pady=10)
+                        
+                except Exception as e:
+                    # Remove loading message if it exists
+                    try:
+                        loading_label.destroy()
+                    except:
+                        pass
+                        
+                    self.logger.error(f"Error getting current weather: {e}")
+                    error_label = tb.Label(
+                        current_weather_frame,
+                        text=f"❌ Error: {str(e)}",
+                        font=("Helvetica Neue", 12),
+                        bootstyle="danger"
+                    )
+                    error_label.pack(pady=10)
+
+        current_weather_btn = tb.Button(
+            card,
+            text="🌤️ Current Weather",
+            command=get_current_weather,
+            width=15,
+            bootstyle="primary-outline"
+        )
+        current_weather_btn.pack(side="right", padx=10, pady=5)
+
         # Delete button
         def delete_city():
             self.data_handler.delete_city(
@@ -238,8 +319,14 @@ class SavedCitiesComponent:
         prediction_frame.pack(fill="x", padx=20, pady=(10, 0))
         prediction_frame.pack_forget()  # Hide initially
         
-        # Store reference to prediction frame for toggling
+        # Create current weather display frame (initially hidden)
+        current_weather_frame = tb.Frame(container)
+        current_weather_frame.pack(fill="x", padx=20, pady=(10, 0))
+        current_weather_frame.pack_forget()  # Hide initially
+        
+        # Store reference to frames for toggling
         setattr(container, 'prediction_frame', prediction_frame)
+        setattr(container, 'current_weather_frame', current_weather_frame)
 
     def _generate_ml_predictions(self, prediction_frame, city_data):
         """Generate and display ML-based weather predictions"""
@@ -437,26 +524,188 @@ class SavedCitiesComponent:
             )
             error_label.pack(pady=10)
     
+    def _display_current_weather(self, weather_frame, weather_data):
+        """Display current weather data in a compact card matching prediction style"""
+        try:
+            current_data = weather_data.get('current', {})
+            location_data = weather_data.get('location', {})
+            
+            # Use forecast-specific styles (applied by theme system) - same as forecast_card.py
+            try:
+                import ttkbootstrap as tb
+                frame_style = 'ForecastCard.TFrame'
+                day_label_style = 'ForecastDay.TLabel'
+                temp_high_style = 'ForecastTempHigh.TLabel'
+                desc_label_style = 'ForecastDesc.TLabel'
+                precip_label_style = 'ForecastPrecip.TLabel'
+            except ImportError:
+                frame_style = day_label_style = temp_high_style = desc_label_style = precip_label_style = None
+            
+            # Create a compact card with custom theme styling
+            card = tb.Frame(weather_frame, relief="solid", borderwidth=1, style=frame_style)
+            card.pack(pady=5)
+            card.pack_propagate(False)  # Maintain fixed size
+            card.configure(width=250, height=160)  # Slightly taller for grid layout
+            
+            # Configure grid weights for centering
+            card.grid_columnconfigure(0, weight=1)
+            card.grid_columnconfigure(1, weight=1)
+            
+            # Row 0: Header - "Current Weather" (spans both columns, centered)
+            header_label = tb.Label(
+                card,
+                text="Current Weather",
+                style=day_label_style
+            )
+            if not day_label_style:  # Apply font only if no custom style
+                header_label.configure(font=("Helvetica Neue", 11, "bold"))
+            header_label.grid(row=0, column=0, columnspan=2, pady=5, sticky="")
+            
+            # Row 1: Weather condition and current time
+            description = current_data.get('description', 'N/A').title()
+            main_condition = current_data.get('main', 'N/A')
+            
+            weather_emoji = {
+                'Clear': '☀️',
+                'Clouds': '☁️',
+                'Rain': '🌧️',
+                'Drizzle': '🌦️',
+                'Thunderstorm': '⛈️',
+                'Snow': '❄️',
+                'Mist': '🌫️',
+                'Fog': '🌫️',
+                'Haze': '🌫️'
+            }
+            
+            emoji = weather_emoji.get(main_condition, '🌤️')
+            condition_text = f"{emoji} {description}"
+            
+            condition_label = tb.Label(
+                card,
+                text=condition_text,
+                style=desc_label_style
+            )
+            if not desc_label_style:
+                condition_label.configure(font=("Helvetica Neue", 9))
+            condition_label.grid(row=1, column=0, pady=3, padx=5, sticky="")
+            
+            from datetime import datetime
+            current_time = datetime.now().strftime("%I:%M %p")
+            time_label = tb.Label(
+                card,
+                text=current_time,
+                style=desc_label_style
+            )
+            if not desc_label_style:
+                time_label.configure(font=("Helvetica Neue", 9))
+            time_label.grid(row=1, column=1, pady=3, padx=5, sticky="")
+            
+            # Row 2: Temperature and feels like (spans both columns)
+            temp = current_data.get('temp', 0)
+            feels_like = current_data.get('feels_like', 0)
+            temp_text = f"🌡️ {temp:.0f}°F (feels {feels_like:.0f}°F)"
+            
+            temp_label = tb.Label(
+                card,
+                text=temp_text,
+                style=temp_high_style
+            )
+            if not temp_high_style:
+                temp_label.configure(font=("Helvetica Neue", 9, "bold"))
+            temp_label.grid(row=2, column=0, columnspan=2, pady=5, padx=5, sticky="")
+            
+            # Row 3: Humidity and Wind
+            humidity = current_data.get('humidity', 0)
+            humidity_label = tb.Label(
+                card,
+                text=f"💧 Humidity: {humidity}%",
+                style=precip_label_style
+            )
+            if not precip_label_style:
+                humidity_label.configure(font=("Helvetica Neue", 8))
+            humidity_label.grid(row=3, column=0, pady=2, padx=5, sticky="")
+            
+            wind_speed = current_data.get('wind_speed', 0)
+            wind_label = tb.Label(
+                card,
+                text=f"🌪️ Wind: {wind_speed:.0f} mph",
+                style=precip_label_style
+            )
+            if not precip_label_style:
+                wind_label.configure(font=("Helvetica Neue", 8))
+            wind_label.grid(row=3, column=1, pady=2, padx=5, sticky="")
+            
+            # Row 4: Additional info if available (pressure and clouds)
+            pressure = current_data.get('pressure', 0)
+            clouds = current_data.get('clouds', 0)
+            
+            if pressure > 0:
+                pressure_label = tb.Label(
+                    card,
+                    text=f"🌡️ Pressure: {pressure:.0f} hPa",
+                    style=precip_label_style
+                )
+                if not precip_label_style:
+                    pressure_label.configure(font=("Helvetica Neue", 8))
+                pressure_label.grid(row=4, column=0, pady=(2, 8), padx=5, sticky="")
+            
+            if clouds > 0:
+                clouds_label = tb.Label(
+                    card,
+                    text=f"☁️ Clouds: {clouds}%",
+                    style=precip_label_style
+                )
+                if not precip_label_style:
+                    clouds_label.configure(font=("Helvetica Neue", 8))
+                clouds_label.grid(row=4, column=1, pady=(2, 8), padx=5, sticky="")
+                
+        except Exception as e:
+            self.logger.error(f"Error displaying current weather: {e}")
+            error_label = tb.Label(
+                weather_frame,
+                text=f"❌ Error displaying weather data: {str(e)}",
+                font=("Helvetica Neue", 10),
+                bootstyle="danger"
+            )
+            error_label.pack(pady=5)
+    
     def _create_prediction_card(self, parent, day_prediction):
         """Create a prediction card for a single day"""
-        card = tb.Frame(parent, relief="solid", borderwidth=1)
+        # Use forecast-specific styles (applied by theme system) - same as forecast_card.py
+        try:
+            import ttkbootstrap as tb
+            frame_style = 'ForecastCard.TFrame'
+            day_label_style = 'ForecastDay.TLabel'
+            temp_high_style = 'ForecastTempHigh.TLabel'
+            desc_label_style = 'ForecastDesc.TLabel'
+            precip_label_style = 'ForecastPrecip.TLabel'
+        except ImportError:
+            frame_style = day_label_style = temp_high_style = desc_label_style = precip_label_style = None
+        
+        card = tb.Frame(parent, relief="solid", borderwidth=1, style=frame_style)
         card.pack(side="left", fill="both", expand=True, padx=3, pady=5)
         
         # Day header
         day_name = day_prediction.get('day_name', 'Unknown')
         date = day_prediction.get('date', '')
         
-        tb.Label(
+        day_header_label = tb.Label(
             card,
             text=f"{day_name}",
-            font=("Helvetica Neue", 11, "bold")
-        ).pack(pady=2)
+            style=day_label_style
+        )
+        if not day_label_style:
+            day_header_label.configure(font=("Helvetica Neue", 11, "bold"))
+        day_header_label.pack(pady=2)
         
-        tb.Label(
+        date_label = tb.Label(
             card,
             text=date,
-            font=("Helvetica Neue", 9)
-        ).pack()
+            style=desc_label_style
+        )
+        if not desc_label_style:
+            date_label.configure(font=("Helvetica Neue", 9))
+        date_label.pack()
         
         # Weather conditions
         conditions = day_prediction.get('conditions', 'Unknown')
@@ -469,38 +718,50 @@ class SavedCitiesComponent:
         }
         
         condition_text = f"{conditions_emoji.get(conditions, '🌤️')} {conditions}"
-        tb.Label(
+        condition_label = tb.Label(
             card,
             text=condition_text,
-            font=("Helvetica Neue", 9)
-        ).pack(pady=2)
+            style=desc_label_style
+        )
+        if not desc_label_style:
+            condition_label.configure(font=("Helvetica Neue", 9))
+        condition_label.pack(pady=2)
         
         # Temperature
         temp_max = day_prediction.get('temperature_max')
         temp_min = day_prediction.get('temperature_min')
         if temp_max is not None and temp_min is not None:
             temp_text = f"🌡️ {temp_max:.0f}°/{temp_min:.0f}°F"
-            tb.Label(
+            temp_label = tb.Label(
                 card,
                 text=temp_text,
-                font=("Helvetica Neue", 9, "bold")
-            ).pack()
+                style=temp_high_style
+            )
+            if not temp_high_style:
+                temp_label.configure(font=("Helvetica Neue", 9, "bold"))
+            temp_label.pack()
         
         # Precipitation and humidity
         precip = day_prediction.get('precipitation', 0)
         humidity = day_prediction.get('humidity', 0)
         
         if precip > 0:
-            tb.Label(
+            precip_label = tb.Label(
                 card,
                 text=f"🌧️ Precipitation:{precip:.1f}\"",
-                font=("Helvetica Neue", 8)
-            ).pack()
+                style=precip_label_style
+            )
+            if not precip_label_style:
+                precip_label.configure(font=("Helvetica Neue", 8))
+            precip_label.pack()
         
         if humidity:
-            tb.Label(
+            humidity_label = tb.Label(
                 card,
                 text=f"💧 Humidity: {humidity:.0f}%",
-                font=("Helvetica Neue", 8)
-            ).pack()
+                style=precip_label_style
+            )
+            if not precip_label_style:
+                humidity_label.configure(font=("Helvetica Neue", 8))
+            humidity_label.pack()
     
