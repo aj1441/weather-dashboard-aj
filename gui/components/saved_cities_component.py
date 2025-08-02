@@ -683,7 +683,10 @@ class SavedCitiesComponent:
             frame_style = day_label_style = temp_high_style = desc_label_style = precip_label_style = None
         
         card = tb.Frame(parent, relief="solid", borderwidth=1, style=frame_style)
-        card.pack(side="left", fill="both", expand=True, padx=3, pady=5)
+        card.pack(side="left", fill="both", expand=True, padx=5, pady=5)
+        
+        # Add internal padding to the card
+        card.configure(padding=8)
         
         # Day header
         day_name = day_prediction.get('day_name', 'Unknown')
@@ -696,7 +699,7 @@ class SavedCitiesComponent:
         )
         if not day_label_style:
             day_header_label.configure(font=("Helvetica Neue", 11, "bold"))
-        day_header_label.pack(pady=2)
+        day_header_label.pack(pady=(2, 1), padx=2)
         
         date_label = tb.Label(
             card,
@@ -705,7 +708,7 @@ class SavedCitiesComponent:
         )
         if not desc_label_style:
             date_label.configure(font=("Helvetica Neue", 9))
-        date_label.pack()
+        date_label.pack(padx=2)
         
         # Weather conditions
         conditions = day_prediction.get('conditions', 'Unknown')
@@ -725,7 +728,7 @@ class SavedCitiesComponent:
         )
         if not desc_label_style:
             condition_label.configure(font=("Helvetica Neue", 9))
-        condition_label.pack(pady=2)
+        condition_label.pack(pady=2, padx=2)
         
         # Temperature
         temp_max = day_prediction.get('temperature_max')
@@ -739,7 +742,7 @@ class SavedCitiesComponent:
             )
             if not temp_high_style:
                 temp_label.configure(font=("Helvetica Neue", 9, "bold"))
-            temp_label.pack()
+            temp_label.pack(padx=2)
         
         # Precipitation and humidity
         precip = day_prediction.get('precipitation', 0)
@@ -748,12 +751,12 @@ class SavedCitiesComponent:
         if precip > 0:
             precip_label = tb.Label(
                 card,
-                text=f"🌧️ Precipitation:{precip:.1f}\"",
+                text=f"🌧️ Precip: {precip:.1f}\"",
                 style=precip_label_style
             )
             if not precip_label_style:
                 precip_label.configure(font=("Helvetica Neue", 8))
-            precip_label.pack()
+            precip_label.pack(padx=2)
         
         if humidity:
             humidity_label = tb.Label(
@@ -763,5 +766,5 @@ class SavedCitiesComponent:
             )
             if not precip_label_style:
                 humidity_label.configure(font=("Helvetica Neue", 8))
-            humidity_label.pack()
+            humidity_label.pack(padx=2)
     

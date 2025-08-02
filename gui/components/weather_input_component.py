@@ -55,6 +55,10 @@ class WeatherInputComponent:
             bootstyle="primary",
         )
         self.get_weather_btn.pack(side=LEFT, padx=10)
+        
+        # Add hover effects
+        self.get_weather_btn.bind("<Enter>", lambda e: self.get_weather_btn.configure(bootstyle="success"))
+        self.get_weather_btn.bind("<Leave>", lambda e: self.get_weather_btn.configure(bootstyle="primary"))
 
         return self.input_frame
 
