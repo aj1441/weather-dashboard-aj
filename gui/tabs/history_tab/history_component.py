@@ -1199,7 +1199,12 @@ class HistoryComponent:
         self.city1_var.set("")
         self.city2_var.set("")
         self.compare_mode.set(False)
-        self.city2_frame.grid_forget()
+        
+        # Hide city2 components (they use grid_remove, not grid_forget)
+        if hasattr(self, 'city2_dropdown') and self.city2_dropdown:
+            self.city2_dropdown.grid_remove()
+        if hasattr(self, 'city2_label') and self.city2_label:
+            self.city2_label.grid_remove()
         
         # Update UI
         self._update_analyze_button_state()

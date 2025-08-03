@@ -4,190 +4,226 @@
 
 Welcome to the Weather Dashboard documentation! This comprehensive documentation suite provides everything you need to understand, use, and extend the Weather Dashboard application.
 
-## Documentation Structure
+## 📋 Documentation Structure
 
 ```
 docs/
-├── README.md                    # Project overview and quick start
-├── USER_GUIDE.md               # Complete user guide
-├── DEVELOPER_GUIDE.md          # Developer documentation
-├── INSTALLATION_GUIDE.md       # Installation instructions
-├── API_REFERENCE.md            # Complete API documentation
-├── API_DOCUMENTATION.md        # Detailed API documentation
-├── SETUP_GUIDE.md              # Setup instructions
-├── RESEARCH_AND_DEVELOPMENT.md # Research and development notes
-├── TODO.md                     # Development roadmap
-└── class_docs/                 # Class-specific documentation
+├── README.md                           # Project overview (in root)
+├── USER_GUIDE.md                      # Complete user guide
+├── DEVELOPER_GUIDE.md                 # Developer documentation
+├── INSTALLATION_GUIDE.md              # Installation instructions  
+├── SETUP_GUIDE.md                     # Quick setup guide
+├── API_REFERENCE.md                   # Complete API documentation
+├── THEME_SYSTEM.md                    # Theme system overview
+├── AUTO_DAY_NIGHT_THEME_SYSTEM.md     # Dedicated auto theme documentation
+├── WEATHER_PREDICTIONS.md             # ML predictions and hybrid data system
+├── WEATHER_TRIVIA.md                  # Weather trivia game documentation
+├── HYBRID_DATA_IMPLEMENTATION.md      # Hybrid data source system
+├── PERFORMANCE_OPTIMIZATION_SUMMARY.md # Performance improvements
+├── TODO.md                            # Development roadmap
+├── archived_docs/                     # Historical documentation
+│   ├── implementation_summary.md      # Legacy implementation notes
+│   └── instructor_feedback_implementation.md # Historical feedback
+└── class_docs/                        # Class-specific documentation
+    └── RESEARCH_AND_DEVELOPMENT.md    # Research and development notes
 ```
 
-## Quick Navigation
+## 🚀 Quick Navigation
 
-### For End Users
+### **For End Users**
+- **[README.md](../README.md)** - Project overview and quick start
 - **[USER_GUIDE.md](USER_GUIDE.md)** - Complete guide to using the Weather Dashboard
 - **[INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md)** - Step-by-step installation instructions
 - **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Quick setup guide
 
-### For Developers
+### **For Developers**
 - **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** - Comprehensive developer documentation
 - **[API_REFERENCE.md](API_REFERENCE.md)** - Complete API reference
-- **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)** - Detailed API documentation
+- **[PERFORMANCE_OPTIMIZATION_SUMMARY.md](PERFORMANCE_OPTIMIZATION_SUMMARY.md)** - Performance improvements
 
-### For Contributors
-- **[RESEARCH_AND_DEVELOPMENT.md](RESEARCH_AND_DEVELOPMENT.md)** - Research notes and development insights
+### **For Contributors**
 - **[TODO.md](TODO.md)** - Development roadmap and feature plans
+- **[class_docs/RESEARCH_AND_DEVELOPMENT.md](class_docs/RESEARCH_AND_DEVELOPMENT.md)** - Research notes and development insights
 
-## Documentation by Topic
+## 🎯 Feature-Specific Documentation
 
-### Getting Started
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| [README.md](../README.md) | Project overview and quick start | All users |
-| [SETUP_GUIDE.md](SETUP_GUIDE.md) | Basic setup instructions | New users |
-| [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) | Detailed installation guide | System administrators |
+### **🎨 Theme System**
+- **[THEME_SYSTEM.md](THEME_SYSTEM.md)** - Complete theme system overview
+  - Custom themes (`aj_lightly`, `aj_darkly`)
+  - Manual theme selection
+  - Custom widget system
+  - **→ Points to**: [AUTO_DAY_NIGHT_THEME_SYSTEM.md](AUTO_DAY_NIGHT_THEME_SYSTEM.md)
 
-### User Documentation
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| [USER_GUIDE.md](USER_GUIDE.md) | Complete user guide | End users |
-| [API_DOCUMENTATION.md](API_DOCUMENTATION.md) | API usage examples | Users integrating APIs |
+- **[AUTO_DAY_NIGHT_THEME_SYSTEM.md](AUTO_DAY_NIGHT_THEME_SYSTEM.md)** - Dedicated auto theme documentation
+  - Location-aware theme switching
+  - Sunrise/sunset API integration
+  - Configuration and troubleshooting
+  - Technical implementation details
 
-### Developer Documentation
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) | Development setup and practices | Developers |
-| [API_REFERENCE.md](API_REFERENCE.md) | Complete API reference | Developers |
-| [API_DOCUMENTATION.md](API_DOCUMENTATION.md) | Detailed API documentation | Developers |
+### **🔮 Weather Predictions**
+- **[WEATHER_PREDICTIONS.md](WEATHER_PREDICTIONS.md)** - ML predictions system
+  - Random Forest and Linear Regression models
+  - 3-day forecasts with trend analysis
+  - Feature engineering and model performance
+  - **→ Integrates with**: [HYBRID_DATA_IMPLEMENTATION.md](HYBRID_DATA_IMPLEMENTATION.md)
 
-### Project Documentation
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| [RESEARCH_AND_DEVELOPMENT.md](RESEARCH_AND_DEVELOPMENT.md) | Research insights | Contributors |
-| [TODO.md](TODO.md) | Development roadmap | Contributors |
+- **[HYBRID_DATA_IMPLEMENTATION.md](HYBRID_DATA_IMPLEMENTATION.md)** - Data source system
+  - Open-Meteo and OpenWeatherMap integration
+  - Smart data fusion and prioritization
+  - Automatic data fetching for predictions
 
-## Documentation by Use Case
+### **🎮 Weather Trivia**
+- **[WEATHER_TRIVIA.md](WEATHER_TRIVIA.md)** - Group project trivia game
+  - Team collaboration features
+  - GitHub organization: [Just-A-Fancy-Calculator](https://github.com/Just-A-Fancy-Calculator)
+  - Team repository: [team6](https://github.com/Just-A-Fancy-Calculator/team6)
+  - Static and data-driven question generation
+  - Performance tracking and visual effects
 
-### I want to...
+## 📖 Documentation by Use Case
 
-#### Use the Weather Dashboard
-1. **Start with**: [USER_GUIDE.md](USER_GUIDE.md)
-2. **For installation**: [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md)
-3. **For quick setup**: [SETUP_GUIDE.md](SETUP_GUIDE.md)
+### **I want to...**
 
-#### Install the Application
-1. **Quick setup**: [SETUP_GUIDE.md](SETUP_GUIDE.md)
-2. **Detailed installation**: [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md)
-3. **Troubleshooting**: [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md#troubleshooting)
+#### **Install and Use the Application**
+1. **Quick Start**: [SETUP_GUIDE.md](SETUP_GUIDE.md) (5-minute setup)
+2. **Detailed Installation**: [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md)
+3. **User Instructions**: [USER_GUIDE.md](USER_GUIDE.md)
+4. **Troubleshooting**: Each guide has dedicated troubleshooting sections
 
-#### Develop with the Codebase
-1. **Development setup**: [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)
-2. **API reference**: [API_REFERENCE.md](API_REFERENCE.md)
-3. **Architecture overview**: [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md#architecture-overview)
+#### **Understand the Theme System**
+1. **Overview**: [THEME_SYSTEM.md](THEME_SYSTEM.md) (start here)
+2. **Auto Day/Night**: [AUTO_DAY_NIGHT_THEME_SYSTEM.md](AUTO_DAY_NIGHT_THEME_SYSTEM.md)
+3. **User Controls**: [USER_GUIDE.md#theme-system](USER_GUIDE.md#theme-system)
+4. **Development**: [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)
 
-#### Add New Features
-1. **Development practices**: [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md#adding-new-features)
-2. **API documentation**: [API_REFERENCE.md](API_REFERENCE.md)
-3. **Testing guidelines**: [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md#testing)
+#### **Learn About Weather Predictions**
+1. **Main Documentation**: [WEATHER_PREDICTIONS.md](WEATHER_PREDICTIONS.md)
+2. **Data Sources**: [HYBRID_DATA_IMPLEMENTATION.md](HYBRID_DATA_IMPLEMENTATION.md)
+3. **User Guide**: [USER_GUIDE.md](USER_GUIDE.md)
+4. **API Reference**: [API_REFERENCE.md](API_REFERENCE.md)
 
-#### Integrate with APIs
-1. **API reference**: [API_REFERENCE.md](API_REFERENCE.md)
-2. **API documentation**: [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
-3. **Integration examples**: [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md#api-integration)
+#### **Understand the Trivia Game**
+1. **Complete Guide**: [WEATHER_TRIVIA.md](WEATHER_TRIVIA.md)
+2. **Team Collaboration**: [Just-A-Fancy-Calculator/team6](https://github.com/Just-A-Fancy-Calculator/team6)
+3. **User Instructions**: [USER_GUIDE.md](USER_GUIDE.md)
 
-#### Troubleshoot Issues
-1. **User issues**: [USER_GUIDE.md](USER_GUIDE.md#troubleshooting)
-2. **Installation issues**: [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md#troubleshooting)
-3. **Development issues**: [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md#troubleshooting)
+#### **Develop with the Codebase**
+1. **Development Setup**: [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)
+2. **API Reference**: [API_REFERENCE.md](API_REFERENCE.md)
+3. **Architecture Overview**: [DEVELOPER_GUIDE.md#architecture-overview](DEVELOPER_GUIDE.md#architecture-overview)
+4. **Performance**: [PERFORMANCE_OPTIMIZATION_SUMMARY.md](PERFORMANCE_OPTIMIZATION_SUMMARY.md)
 
-## Documentation Features
+#### **Contribute to the Project**
+1. **Development Roadmap**: [TODO.md](TODO.md)
+2. **Development Guidelines**: [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)
+3. **Research Notes**: [class_docs/RESEARCH_AND_DEVELOPMENT.md](class_docs/RESEARCH_AND_DEVELOPMENT.md)
 
-### Cross-References
+## 🔍 Documentation Features
+
+### **Cross-References**
 All documentation files include cross-references to related documents, making it easy to navigate between topics.
 
-### Code Examples
+### **Code Examples**
 Comprehensive code examples are provided throughout the documentation to illustrate concepts and usage patterns.
 
-### Troubleshooting Guides
+### **Troubleshooting Guides**
 Each major document includes troubleshooting sections with common issues and solutions.
 
-### Performance Information
+### **Performance Information**
 Performance considerations and optimization techniques are documented for both users and developers.
 
-## Documentation Standards
+### **GitHub Integration** 
+Links to team repositories and pull requests for collaborative features:
+- Team Organization: [Just-A-Fancy-Calculator](https://github.com/Just-A-Fancy-Calculator)
+- Team Repository: [team6](https://github.com/Just-A-Fancy-Calculator/team6)
 
-### Writing Style
-- **Clear and concise**: Information is presented in a straightforward manner
-- **Progressive disclosure**: Basic concepts are introduced before advanced topics
-- **Practical focus**: Emphasis on real-world usage and examples
+## 📊 Documentation Quality Standards
 
-### Code Examples
-- **Complete examples**: All code examples are complete and runnable
-- **Best practices**: Examples follow established coding standards
-- **Error handling**: Examples include proper error handling
+### **Comprehensive Coverage**
+- **User Documentation**: Complete user-facing instructions
+- **Developer Documentation**: Technical implementation details
+- **API Documentation**: Complete API reference with examples
+- **Feature Documentation**: Dedicated docs for major features
 
-### Visual Elements
-- **Diagrams**: Architecture and flow diagrams where helpful
-- **Tables**: Information organized in tables for easy scanning
-- **Code blocks**: Properly formatted code with syntax highlighting
+### **Consistency Standards**
+- **File Naming**: All uppercase .md files (except README.md)
+- **Structure**: Consistent document structure and formatting
+- **Cross-References**: Proper linking between related documents
+- **Code Examples**: Complete, runnable examples throughout
 
-## Contributing to Documentation
+### **Maintenance Process**
+- **Regular Updates**: Documentation updated with code changes
+- **Version Control**: All documentation versioned with code
+- **Review Process**: Documentation changes reviewed alongside code
+- **User Feedback**: Documentation improved based on user feedback
 
-### Documentation Guidelines
-1. **Keep it current**: Update documentation when code changes
-2. **Be comprehensive**: Cover all major features and use cases
-3. **Include examples**: Provide practical examples for all concepts
-4. **Cross-reference**: Link to related documentation
-5. **Test examples**: Ensure all code examples work correctly
+## 🛠️ Contributing to Documentation
 
-### Documentation Workflow
-1. **Create feature branch**: `git checkout -b docs/feature-name`
-2. **Update relevant docs**: Modify appropriate documentation files
-3. **Test examples**: Verify all code examples work
-4. **Review and submit**: Create pull request for documentation changes
+### **Documentation Guidelines**
+1. **Keep it Current**: Update documentation when code changes
+2. **Be Comprehensive**: Cover all major features and use cases
+3. **Include Examples**: Provide practical examples for all concepts
+4. **Cross-Reference**: Link to related documentation
+5. **Test Examples**: Ensure all code examples work correctly
 
-### Documentation Tools
-- **Markdown**: All documentation is written in Markdown
-- **Code highlighting**: Syntax highlighting for code blocks
-- **Cross-references**: Internal links between documents
-- **Version control**: Documentation is versioned with code
+### **File Organization**
+- **Central Location**: All documentation in `docs/` directory (except README.md)
+- **Uppercase Naming**: All .md files use UPPERCASE naming
+- **Logical Grouping**: Related files grouped together
+- **Clear Structure**: Intuitive navigation and organization
 
-## Documentation Maintenance
-
-### Regular Reviews
-- **Monthly reviews**: Check for outdated information
-- **Version updates**: Update documentation for new releases
-- **User feedback**: Incorporate user suggestions and questions
-
-### Quality Assurance
+### **Quality Assurance**
 - **Accuracy**: Verify all information is correct and current
 - **Completeness**: Ensure all features are documented
 - **Clarity**: Review for clarity and ease of understanding
+- **Examples**: Test all code examples for accuracy
 
-### Update Process
-1. **Identify changes**: Track code changes that affect documentation
-2. **Update docs**: Modify relevant documentation files
-3. **Review changes**: Have documentation reviewed by team
-4. **Publish updates**: Deploy updated documentation
+## 🗂️ Archive and Historical Documentation
 
-## Getting Help
+### **Archived Documentation**
+Historical documentation preserved in `archived_docs/`:
+- **implementation_summary.md**: Legacy implementation notes
+- **instructor_feedback_implementation.md**: Historical feedback implementation
 
-### Documentation Issues
+### **Class Documentation**
+Academic and research documentation in `class_docs/`:
+- **RESEARCH_AND_DEVELOPMENT.md**: Research notes and advanced features
+- **Weekly Reflections**: Development progress documentation
+- **Project Guides**: Academic project guidance and requirements
+
+## 📞 Getting Help
+
+### **Documentation Issues**
 If you find issues with the documentation:
-1. **Check existing issues**: Look for similar issues in the repository
-2. **Create new issue**: Report documentation problems
-3. **Suggest improvements**: Propose documentation enhancements
+1. **Check Cross-References**: Look for related information in linked documents
+2. **Search TODO.md**: Check if improvements are already planned
+3. **Review Archives**: Historical context may be in archived docs
 
-### Contributing Improvements
+### **Contributing Improvements**
 To contribute to documentation:
-1. **Fork repository**: Create your own fork
-2. **Make changes**: Update documentation files
-3. **Submit pull request**: Create PR with your improvements
-4. **Follow guidelines**: Adhere to documentation standards
+1. **Follow Standards**: Adhere to documentation quality standards
+2. **Update Cross-References**: Maintain proper linking between documents
+3. **Test Examples**: Verify all code examples work correctly
+4. **Follow Naming**: Use UPPERCASE naming for .md files
 
-### Additional Resources
-- **GitHub Issues**: Report bugs and request features
-- **Discussions**: Ask questions and share ideas
-- **Wiki**: Additional community-maintained documentation
+### **Additional Resources**
+- **GitHub Repository**: Main project repository
+- **Team Collaboration**: [Just-A-Fancy-Calculator Organization](https://github.com/Just-A-Fancy-Calculator)
+- **Issue Tracking**: GitHub issues for documentation improvements
 
 ---
 
-*This documentation index provides a comprehensive overview of all available documentation. Use the navigation links to find the information you need quickly and efficiently.*
+## 🎯 Quick Reference
+
+| Feature | Main Documentation | Supporting Docs |
+|---------|-------------------|-----------------|
+| **Theme System** | [THEME_SYSTEM.md](THEME_SYSTEM.md) | [AUTO_DAY_NIGHT_THEME_SYSTEM.md](AUTO_DAY_NIGHT_THEME_SYSTEM.md) |
+| **Weather Predictions** | [WEATHER_PREDICTIONS.md](WEATHER_PREDICTIONS.md) | [HYBRID_DATA_IMPLEMENTATION.md](HYBRID_DATA_IMPLEMENTATION.md) |
+| **Weather Trivia** | [WEATHER_TRIVIA.md](WEATHER_TRIVIA.md) | [Team Repository](https://github.com/Just-A-Fancy-Calculator/team6) |
+| **Installation** | [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) | [SETUP_GUIDE.md](SETUP_GUIDE.md) |
+| **Development** | [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) | [API_REFERENCE.md](API_REFERENCE.md) |
+| **Performance** | [PERFORMANCE_OPTIMIZATION_SUMMARY.md](PERFORMANCE_OPTIMIZATION_SUMMARY.md) | [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) |
+
+---
+
+*This documentation index provides a comprehensive overview of all available documentation. The Weather Dashboard's documentation is designed to be thorough, accessible, and maintainable, supporting both end users and developers in understanding and extending the application.*
