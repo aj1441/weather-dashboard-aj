@@ -23,7 +23,6 @@ def create_forecast_card_tk(parent, day_data, index, icon_manager, style='main',
     # except ImportError:
     #     Frame = tk.Frame
     #     Label = tk.Label
-    # from datetime import datetime
     import tkinter as tk
     try:
         import ttkbootstrap as tb

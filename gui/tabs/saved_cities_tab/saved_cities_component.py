@@ -1,6 +1,7 @@
 """Saved cities component for managing favorite locations"""
 
 import logging
+from datetime import datetime
 import ttkbootstrap as tb
 from ttkbootstrap.scrolled import ScrolledFrame
 from core.database.data_handler import WeatherDataHandler
@@ -609,7 +610,6 @@ class SavedCitiesComponent:
                 condition_label.configure(font=("Helvetica Neue", 9))
             condition_label.grid(row=1, column=0, pady=3, padx=5, sticky="")
             
-            from datetime import datetime
             current_time = datetime.now().strftime("%I:%M %p")
             time_label = tb.Label(
                 card,

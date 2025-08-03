@@ -5,7 +5,7 @@ import ttkbootstrap as tb
 from ttkbootstrap.constants import PRIMARY, SUCCESS, WARNING, DANGER, INFO, LEFT, RIGHT, TOP, BOTTOM, BOTH
 
 class ConfettiGif(tb.Frame):
-    def __init__(self, master, gif_path="assets/confetti.gif", width=600, height=400, duration=5000):
+    def __init__(self, master, gif_path="assets/gifs/confetti.gif", width=600, height=400, duration=5000):
         super().__init__(master, width=width, height=height)
         self.place(relx=0.5, rely=0.5, anchor="center")  # center overlay
         self.master = master

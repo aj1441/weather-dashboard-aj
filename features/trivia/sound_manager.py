@@ -15,7 +15,7 @@ except ImportError:
     logger.warning("pygame not available - sound features will be disabled")
 
 class SoundManager:
-    def __init__(self, base_path="assets"):
+    def __init__(self, base_path="assets/audio"):
         global PYGAME_AVAILABLE
         self.sounds = {}
         if PYGAME_AVAILABLE:

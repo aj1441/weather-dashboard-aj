@@ -910,5 +910,24 @@
     "visibility": 10000,
     "timestamp": "2025-08-03T15:49:11.646628",
     "unit": "°F"
+  },
+  {
+    "city": "Phoenix",
+    "state": "AZ",
+    "country": "US",
+    "latitude": 33.4484367,
+    "longitude": -112.074141,
+    "temperature": 111.2,
+    "feels_like": 104.67,
+    "humidity": 8,
+    "pressure": 1007.0,
+    "weather_main": "Clouds",
+    "weather_description": "few clouds",
+    "weather_icon": "02d",
+    "wind_speed": 12.66,
+    "wind_direction": 270,
+    "visibility": 10000,
+    "timestamp": "2025-08-03T16:38:31.992723",
+    "unit": "°F"
   }
 ]

@@ -241,8 +241,6 @@ class ChartDataService:
             List of weather data dictionaries
         """
         try:
-            from datetime import datetime, timedelta
-            
             # Calculate date range
             end_date = datetime.now().date()
             start_date = end_date - timedelta(days=days_back)

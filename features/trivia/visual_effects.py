@@ -8,7 +8,7 @@ import tkinter as tk
 import random
 
 class ConfettiGif(tb.Frame):
-    def __init__(self, master, gif_path="assets/confetti.gif", width=600, height=400, duration=5000):
+    def __init__(self, master, gif_path="assets/gifs/confetti.gif", width=600, height=400, duration=5000):
         super().__init__(master, width=width, height=height)
         self.place(relx=0.5, rely=0.5, anchor="center")
         self.master = master
@@ -69,7 +69,7 @@ class LightningEffect(tb.Frame):
 
 
 class LightningGif(tb.Frame):
-    def __init__(self, master, gif_path="assets/purpleLightning.gif", width=800, height=600, duration=3000):
+    def __init__(self, master, gif_path="assets/gifs/purpleLightning.gif", width=800, height=600, duration=3000):
         super().__init__(master)
         # Position to cover most of the trivia tab
         self.place(relx=0, rely=0, relwidth=1, relheight=1)

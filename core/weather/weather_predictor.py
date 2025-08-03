@@ -456,8 +456,6 @@ class WeatherPredictor:
             List of prediction records
         """
         try:
-            from datetime import datetime, timedelta
-            
             end_date = datetime.now().date()
             start_date = end_date - timedelta(days=days)
             

@@ -40,6 +40,7 @@ docs/
 - **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** - Comprehensive developer documentation
 - **[API_REFERENCE.md](API_REFERENCE.md)** - Complete API reference
 - **[PERFORMANCE_OPTIMIZATION_SUMMARY.md](PERFORMANCE_OPTIMIZATION_SUMMARY.md)** - Performance improvements
+- **[WIREFRAME.md](WIREFRAME.md)** - Original application wireframe design
 
 ### **For Contributors**
 - **[TODO.md](TODO.md)** - Development roadmap and feature plans

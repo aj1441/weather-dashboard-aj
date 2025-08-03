@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from .open_meteo_historical import OpenMeteoHistorical
-from core.database.db_data_handler import DatabaseDataHandler
+from core.database.data_handler import WeatherDataHandler
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ class HistoricalDataCoordinator:
     
     def __init__(self):
         self.api_client = OpenMeteoHistorical()
-        self.data_handler = DatabaseDataHandler()
+        self.data_handler = WeatherDataHandler()
         
     def fetch_and_store_historical_data(
         self,
