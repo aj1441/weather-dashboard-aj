@@ -1,80 +1,70 @@
-# Weather Dashboard
+# Weather Dashboard Application
+
+![Weather Dashboard](docs/images/dashboard.png)
 
 A modern, extensible weather dashboard built with Python and ttkbootstrap. Features real-time and historical weather data, intelligent theme switching, and a modular architecture designed for easy expansion.
 
 ## Features
 
-- **Real-time Weather**: Current conditions and 7-day forecasts via OpenWeatherMap API
-- **Historical Weather**: Historical data from 2010-present via Open-Meteo API (no key required)
-- **🌅 Auto Day/Night Mode**: Intelligent theme switching using sunrise-sunset.org API
-- **Custom Themes**: Beautiful light (`aj_lightly`) and dark (`aj_darkly`) themes
-- **Location-Aware**: Automatic location detection with manual override options
-- **Data Validation**: Robust data validation and cleaning with decorator-based validation
-- **Rate Limiting**: API rate limiting and retry mechanisms using Python decorators
-- **Error Handling**: Comprehensive error handling with decorator-based retries and fallbacks
-- **Persistent Storage**: SQLite database with JSON backup for user settings and saved cities
-- **Theme Support**: Light and dark themes with user preferences and auto/manual modes
-- **Saved Locations**: Save and manage favorite cities with quick access
-- **API Caching**: Built-in API response caching with session reuse
-- **Modular Architecture**: Extensible component-based design with decorator patterns
+### Core Weather Features
+- 🌡️ **Real-time Weather Data** - Current conditions and 7-day forecasts via OpenWeatherMap API
+- 📊 **Historical Weather Analysis** - Historical data from 2010-present via Open-Meteo API (no key required)
+- 🌍 **Multiple Location Support** - Save and manage favorite cities with quick access
+- 📈 **Interactive Visualizations** - Explore weather patterns with dynamic charts and graphs
 
-## Auto Day/Night Theme Feature
+### Custom Theme System
+- 🌅 **Auto Day/Night Mode** - Intelligent theme switching using sunrise-sunset.org API
+- 🎨 **Custom Themes** - Beautiful light (`aj_lightly`) and dark (`aj_darkly`) themes
+- 📱 **Location-Aware Themes** - Theme updates based on day/night at searched locations
+- ⚙️ **Manual Override** - Disable auto mode for manual theme control
 
-The weather dashboard automatically switches between light and dark themes based on:
+### Advanced Features
+- 🔒 **Data Validation** - Robust data validation and cleaning with decorator-based validation
+- ⚡ **Rate Limiting** - API rate limiting and retry mechanisms using Python decorators
+- 🛡️ **Error Handling** - Comprehensive error handling with decorator-based retries and fallbacks
+- 💾 **Persistent Storage** - SQLite database with JSON backup for user settings and saved cities
+- 🚀 **API Caching** - Built-in API response caching with session reuse
+- 🏗️ **Modular Architecture** - Extensible component-based design with decorator patterns
 
-- **Your Location**: Uses IP geolocation to determine your approximate location
-- **Sunrise/Sunset Times**: Calculates actual sunrise and sunset times for your location
-- **Location Updates**: When you search for weather in a new city, the theme updates based on day/night at that location
-- **Automatic Refresh**: Theme refreshes every 30 minutes to stay current
+## Installation
 
-### Theme Controls
+### Prerequisites
 
-- **🌅 Auto Day/Night**: Toggle automatic theme switching on/off
-- **☀ Light / 🌙 Dark**: Manual theme control (only available when auto mode is disabled)
-- **Persistent Settings**: Your theme preferences are saved between sessions
+- **Python 3.8 or higher**
+- **Git** (for cloning the repository)
+- **Weather API key** (free from [OpenWeatherMap](https://openweathermap.org/api))
 
-### How It Works
+### Quick Start
 
-1. **Startup**: App detects your location and applies appropriate theme
-2. **Weather Search**: Theme updates based on day/night at the searched location
-3. **Periodic Updates**: Theme refreshes automatically every 30 minutes
-4. **Manual Override**: You can disable auto mode and manually control themes
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/yourusername/weather-dashboard.git
+   cd weather-dashboard
+   ```
 
-## Quick Start
+2. **Create a virtual environment (recommended):**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-### 1. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### 2. Configuration
-Copy the example environment file and add your API key:
-```bash
-cp .env.example .env
-```
+4. **Set up your API key:**
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your OpenWeatherMap API key
+   ```
 
-Edit `.env` and add your OpenWeatherMap API key:
-```
-API_KEY=your_32_character_api_key_here
-```
+5. **Run the application:**
+   ```bash
+   python main.py
+   ```
 
-Get a free API key from [OpenWeatherMap](https://openweathermap.org/api).
-
-### 3. Run the Application
-```bash
-python main.py
-```
-
-### 4. Test Auto Theme Feature (Optional)
-```bash
-# Demonstrate auto day/night theme functionality
-python demo_auto_theme.py
-
-# Run comprehensive auto theme tests
-python test_day_night_theme.py
-```
-
-## Configuration Options
+### Configuration Options
 
 The application supports the following environment variables in your `.env` file:
 
@@ -88,6 +78,75 @@ The application supports the following environment variables in your `.env` file
 | `MAX_RETRIES` | Maximum API retry attempts | `3` |
 | `CACHE_DURATION` | Weather data cache duration in hours | `1` |
 | `LOG_LEVEL` | Logging level (DEBUG/INFO/WARNING/ERROR) | `INFO` |
+
+## Usage
+
+### First Launch
+
+When you first launch the application, you'll be prompted to:
+- Enter your default location
+- Choose your preferred units (Imperial/Metric)
+- Select a theme (Light/Dark/Auto)
+- These can be changed later in Settings
+
+### Main Features
+
+#### Viewing Current Weather
+
+The main dashboard displays current conditions including:
+- **Temperature** (actual and feels-like)
+- **Humidity and pressure**
+- **Wind speed and direction**
+- **UV index and visibility**
+- **Weather description and icon**
+
+#### Checking Forecasts
+
+Click the "Forecast" tab to view:
+- **7-day forecast** with daily highs/lows
+- **Precipitation probability**
+- **Expected conditions**
+- **Wind and humidity forecasts**
+
+#### Analyzing Historical Data
+
+The "Historical Data" tab allows you to:
+- **View past weather patterns** from 2010 to present
+- **Compare different time periods**
+- **Export data** for further analysis
+- **Interactive charts** for temperature, precipitation, and wind
+
+#### Managing Saved Locations
+
+- **Save favorite cities** for quick access
+- **Organize locations** with custom names
+- **Quick weather lookup** from saved list
+- **Persistent storage** between sessions
+
+### Auto Day/Night Theme Feature
+
+The weather dashboard automatically switches between light and dark themes based on:
+
+- **Your Location**: Uses IP geolocation to determine your approximate location
+- **Sunrise/Sunset Times**: Calculates actual sunrise and sunset times for your location
+- **Location Updates**: When you search for weather in a new city, the theme updates based on day/night at that location
+- **Automatic Refresh**: Theme refreshes every 30 minutes to stay current
+
+#### Theme Controls
+
+- **🌅 Auto Day/Night**: Toggle automatic theme switching on/off
+- **☀ Light / 🌙 Dark**: Manual theme control (only available when auto mode is disabled)
+- **Persistent Settings**: Your theme preferences are saved between sessions
+
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+R` | Refresh weather data |
+| `Ctrl+L` | Change location |
+| `Ctrl+,` | Open settings |
+| `Ctrl+Q` | Quit application |
+| `F11` | Toggle fullscreen |
 
 ## Architecture
 
@@ -103,16 +162,9 @@ The application follows a modular architecture with clear separation of concerns
 - **`core/custom_themes.py`**: Custom theme definitions
 - **`gui/`**: Modular GUI components with theme support
 
-## Development
-
-### Running Tests
-```bash
-pytest test/
-```
-
 ### Code Structure
 ```
-weather-dashboard-aj/
+weather-dashboard/
 ├── config.py                    # Application configuration
 ├── main.py                     # Application entry point
 ├── core/                       # Core business logic
@@ -135,7 +187,17 @@ weather-dashboard-aj/
 │   ├── weather_history.json # Historical data
 │   └── user_settings.json   # User preferences
 └── docs/                     # Documentation
-    └── AUTO_THEME_IMPLEMENTATION.md
+    ├── USER_GUIDE.md
+    ├── DEVELOPER_GUIDE.md
+    ├── INSTALLATION_GUIDE.md
+    └── API_REFERENCE.md
+```
+
+## Development
+
+### Running Tests
+```bash
+pytest test/
 ```
 
 ### Adding New Features
@@ -146,34 +208,6 @@ The modular architecture makes it easy to add new features:
 2. **Additional Validation**: Add rules to `WeatherDataValidator`
 3. **New GUI Components**: Create components in `gui/components/`
 4. **Data Processing**: Add new decorators or data handlers
-
-## Logging
-
-The application logs to both console and file:
-- Console: Real-time feedback during development
-- File: `data/weather_dashboard.log` for debugging and monitoring
-
-Set `LOG_LEVEL=DEBUG` in your `.env` file for detailed debugging information.
-
-## Troubleshooting
-
-### Missing API Key
-```
-Configuration Error: Weather API key is required
-```
-**Solution**: Add `API_KEY=your_key_here` to your `.env` file.
-
-### Import Errors
-```
-Import Error: No module named 'ttkbootstrap'
-```
-**Solution**: Install dependencies with `pip install -r requirements.txt`
-
-### Database Issues
-The application automatically creates the SQLite database. If you encounter issues:
-1. Check that the `data/` directory is writable
-2. Delete `data/weather.db` to recreate the database
-3. Check the log file for detailed error messages
 
 ## API Integration
 
@@ -206,8 +240,6 @@ The application uses Python decorators extensively for:
 - **@handle_api_error**: Standardized error handling
 - **@validate_input**: Input parameter validation
 
-Each API client is wrapped with appropriate decorators to ensure robust operation and optimal performance. The decorator pattern allows for easy addition of cross-cutting concerns like logging, monitoring, and error handling.
-
 ## Performance Optimizations
 
 The application includes comprehensive performance optimizations:
@@ -229,15 +261,43 @@ The application includes comprehensive performance optimizations:
 - **Historical Data**: Performance trend analysis
 - **Automatic Cleanup**: Memory and cache management
 
-### HTTP Optimizations
-- **Session Reuse**: Persistent connections for faster API calls
-- **Connection Pooling**: Reduced connection overhead
-- **Optimized Headers**: Better HTTP/1.1 utilization
+## Troubleshooting
 
-### Memory Management
-- **Bounded Cache Sizes**: Prevents memory leaks
-- **Automatic Cleanup**: Expired entries removed automatically
-- **Performance Metrics**: Limited to prevent unbounded growth
+### Common Issues
+
+#### Missing API Key
+```
+Configuration Error: Weather API key is required
+```
+**Solution**: Add `API_KEY=your_key_here` to your `.env` file.
+
+#### Import Errors
+```
+Import Error: No module named 'ttkbootstrap'
+```
+**Solution**: Install dependencies with `pip install -r requirements.txt`
+
+#### Database Issues
+The application automatically creates the SQLite database. If you encounter issues:
+1. Check that the `data/` directory is writable
+2. Delete `data/weather.db` to recreate the database
+3. Check the log file for detailed error messages
+
+#### Theme Not Updating
+**Problem**: Auto day/night theme doesn't change
+**Solution**:
+1. Check that auto mode is enabled in settings
+2. Verify your location is correctly detected
+3. Wait for the 30-minute refresh cycle
+4. Try manually toggling themes to test functionality
+
+## Logging
+
+The application logs to both console and file:
+- **Console**: Real-time feedback during development
+- **File**: `data/weather_dashboard.log` for debugging and monitoring
+
+Set `LOG_LEVEL=DEBUG` in your `.env` file for detailed debugging information.
 
 ## Contributing
 
@@ -250,3 +310,10 @@ The application includes comprehensive performance optimizations:
 ## License
 
 This project is for educational purposes as part of a capstone project.
+
+## Acknowledgments
+
+- Weather data provided by [OpenWeatherMap](https://openweathermap.org/)
+- Historical data from [Open-Meteo](https://open-meteo.com/)
+- Sunrise/sunset data from [Sunrise-Sunset.org](https://sunrise-sunset.org/)
+- Built with Python, ttkbootstrap, and modern GUI frameworks
