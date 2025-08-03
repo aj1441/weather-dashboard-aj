@@ -85,9 +85,29 @@ def create_forecast_card_tk(parent, day_data, index, icon_manager, style='main',
         icon_label.configure(font=font_icon)
     icon_label.pack(pady=5 if style=='main' else 0)
 
-    # Temperature with specific styles
+    # Temperature with validation and specific styles
     temp_min = day_data.get('temp_min', 0)
     temp_max = day_data.get('temp_max', 0)
+    
+    # Validate temperature values
+    try:
+        temp_min_float = float(temp_min) if temp_min is not None else 0
+        temp_max_float = float(temp_max) if temp_max is not None else 0
+        
+        # Basic sanity check for temperature values
+        if temp_min_float < -200 or temp_min_float > 200:
+            print(f"Warning: Suspicious temp_min value {temp_min_float} detected in forecast card")
+            temp_min_float = 0
+        if temp_max_float < -200 or temp_max_float > 200:
+            print(f"Warning: Suspicious temp_max value {temp_max_float} detected in forecast card")
+            temp_max_float = 0
+        
+        temp_min = temp_min_float
+        temp_max = temp_max_float
+    except (ValueError, TypeError):
+        print(f"Warning: Non-numeric temperature values detected: min={temp_min}, max={temp_max}. Using defaults.")
+        temp_min = 0
+        temp_max = 0
     if style == 'main':
         # High temperature
         temp_high_label = Label(card_frame, text=f"{int(temp_max)}{unit_label}", style=temp_high_style)
@@ -114,21 +134,32 @@ def create_forecast_card_tk(parent, day_data, index, icon_manager, style='main',
             desc_label.configure(font=("Helvetica Neue", 9))
         desc_label.pack(pady=(5, 0))
 
-    # Precipitation probability with specific style
+    # Precipitation probability with validation and specific style
     pop = day_data.get('pop')
     if pop is not None:
-        if (style == 'main' and pop > 0) or (style == 'mini' and pop > 0.2):
-            pop_text = f"\U0001F4A7 {int(pop * 100)}%"  # 💧
-            if style == 'main':
-                precip_label = Label(card_frame, text=pop_text, style=precip_label_style)
-                if not precip_label_style:
-                    precip_label.configure(font=("Helvetica Neue", 8))
-                precip_label.pack(pady=(5, 5))
+        # Validate POP before displaying
+        try:
+            pop_float = float(pop)
+            # Check if POP is in valid range (0-1)
+            if 0 <= pop_float <= 1:
+                if (style == 'main' and pop_float > 0) or (style == 'mini' and pop_float > 0.2):
+                    pop_text = f"\U0001F4A7 {int(pop_float * 100)}%"  # 💧
+                    if style == 'main':
+                        precip_label = Label(card_frame, text=pop_text, style=precip_label_style)
+                        if not precip_label_style:
+                            precip_label.configure(font=("Helvetica Neue", 8))
+                        precip_label.pack(pady=(5, 5))
+                    else:
+                        precip_label = Label(card_frame, text=pop_text, anchor="center", style=precip_label_style)
+                        if not precip_label_style:
+                            precip_label.configure(font=("Helvetica Neue", 8))
+                        precip_label.pack()
             else:
-                precip_label = Label(card_frame, text=pop_text, anchor="center", style=precip_label_style)
-                if not precip_label_style:
-                    precip_label.configure(font=("Helvetica Neue", 8))
-                precip_label.pack()
+                # Invalid POP value (like the 7.6 bug) - log warning but don't crash
+                print(f"Warning: Invalid POP value {pop_float} detected in forecast card (should be 0-1, got {pop_float*100:.1f}%). Skipping precipitation display.")
+        except (ValueError, TypeError):
+            # Non-numeric POP value - log warning but don't crash
+            print(f"Warning: Non-numeric POP value '{pop}' detected in forecast card. Skipping precipitation display.")
 
     # Return the card frame without packing it
     # Let the parent component handle the layout

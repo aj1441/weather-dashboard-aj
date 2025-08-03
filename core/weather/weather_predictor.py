@@ -210,7 +210,7 @@ class WeatherPredictor:
             
             # Make predictions for each weather variable
             predictions = {}
-            for target_name in ['temperature_max', 'temperature_min', 'precipitation', 'humidity']:
+            for target_name in ['temperature_max', 'temperature_min', 'precipitation', 'pop']:
                 if target_name in self.models:
                     try:
                         # Scale features

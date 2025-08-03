@@ -300,26 +300,37 @@ class WeatherDataValidator:
     def _validate_daily_forecast_day(self, day_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Validate a single day of forecast data"""
         try:
-            # Temperature data
-            temp_data = day_data.get('temp', {})
-            temp_min = temp_data.get('min')
-            temp_max = temp_data.get('max')
-            temp_day = temp_data.get('day')
-            temp_night = temp_data.get('night')
+            # Temperature data - handle both nested and direct formats
+            if 'temp' in day_data and isinstance(day_data['temp'], dict):
+                # Nested format (climate API)
+                temp_data = day_data.get('temp', {})
+                temp_min = temp_data.get('min')
+                temp_max = temp_data.get('max')
+                temp_day = temp_data.get('day')
+                temp_night = temp_data.get('night')
+            else:
+                # Direct format (16-day daily API)
+                temp_min = day_data.get('temp_min')
+                temp_max = day_data.get('temp_max')
+                temp_day = day_data.get('temp_day')
+                temp_night = day_data.get('temp_night')
             
             if not self._is_valid_temperature(temp_min) or not self._is_valid_temperature(temp_max):
                 self.logger.warning(f"Invalid forecast temperatures: min={temp_min}, max={temp_max}")
                 return None
             
-            # Weather description
-            weather_list = day_data.get('weather', [])
-            if not weather_list:
-                return None
-            
-            weather_info = weather_list[0]
-            description = weather_info.get('description', '').title()
-            main_weather = weather_info.get('main', '')
-            icon = weather_info.get('icon', '')
+            # Weather description - handle both nested and direct formats
+            if 'weather' in day_data and isinstance(day_data['weather'], list) and day_data['weather']:
+                # Nested format (climate API)
+                weather_info = day_data['weather'][0]
+                description = weather_info.get('description', '').title()
+                main_weather = weather_info.get('main', '')
+                icon = weather_info.get('icon', '')
+            else:
+                # Direct format (16-day daily API)
+                description = day_data.get('description', '')
+                main_weather = day_data.get('main', '')
+                icon = day_data.get('icon', '')
             
             # Additional forecast data
             humidity = day_data.get('humidity')
@@ -344,7 +355,7 @@ class WeatherDataValidator:
                 'wind_speed': wind_speed if self._is_valid_wind_speed(wind_speed) else None,
                 'wind_deg': wind_deg,
                 'clouds': clouds,
-                'pop': pop,  # Probability of precipitation (0-1)
+                'pop': pop if self._is_valid_pop(pop) else None,  # Probability of precipitation (0-1)
                 'uv_index': uv_index,
                 'sunrise': day_data.get('sunrise'),
                 'sunset': day_data.get('sunset')
@@ -361,45 +372,73 @@ class WeatherDataValidator:
         try:
             temp_float = float(temp)
             if self.temperature_unit == "imperial":
-                return self.rules.min_temperature_fahrenheit <= temp_float <= self.rules.max_temperature_fahrenheit
+                if not (self.rules.min_temperature_fahrenheit <= temp_float <= self.rules.max_temperature_fahrenheit):
+                    self.logger.warning(f"Temperature out of range: {temp_float}°F (valid range: {self.rules.min_temperature_fahrenheit}-{self.rules.max_temperature_fahrenheit}°F)")
+                    return False
+                return True
             elif self.temperature_unit == "metric":
-                return self.rules.min_temperature_celsius <= temp_float <= self.rules.max_temperature_celsius
+                if not (self.rules.min_temperature_celsius <= temp_float <= self.rules.max_temperature_celsius):
+                    self.logger.warning(f"Temperature out of range: {temp_float}°C (valid range: {self.rules.min_temperature_celsius}-{self.rules.max_temperature_celsius}°C)")
+                    return False
+                return True
             else:  # kelvin
-                return self.rules.min_temperature_kelvin <= temp_float <= self.rules.max_temperature_kelvin
+                if not (self.rules.min_temperature_kelvin <= temp_float <= self.rules.max_temperature_kelvin):
+                    self.logger.warning(f"Temperature out of range: {temp_float}K (valid range: {self.rules.min_temperature_kelvin}-{self.rules.max_temperature_kelvin}K)")
+                    return False
+                return True
         except (ValueError, TypeError):
+            self.logger.warning(f"Non-numeric temperature value: {temp}")
             return False
     
     def _is_valid_humidity(self, humidity: Any) -> bool:
-        """Check if humidity is within valid range"""
+        """Check if humidity is within valid range (0-100%)"""
         if humidity is None:
-            return False
+            return True  # Humidity is optional
         try:
-            humidity_int = int(humidity)
-            return self.rules.min_humidity <= humidity_int <= self.rules.max_humidity
+            humidity_float = float(humidity)
+            if not (self.rules.min_humidity <= humidity_float <= self.rules.max_humidity):
+                self.logger.warning(f"Humidity out of range: {humidity_float}% (valid range: {self.rules.min_humidity}-{self.rules.max_humidity}%)")
+                return False
+            return True
         except (ValueError, TypeError):
+            self.logger.warning(f"Non-numeric humidity value: {humidity}")
             return False
     
     def _is_valid_pressure(self, pressure: Any) -> bool:
-        """Check if pressure is within valid range"""
+        """Check if atmospheric pressure is within valid range (hPa)"""
         if pressure is None:
-            return False
+            return True  # Pressure is optional
         try:
             pressure_float = float(pressure)
-            return self.rules.min_pressure <= pressure_float <= self.rules.max_pressure
+            if not (self.rules.min_pressure <= pressure_float <= self.rules.max_pressure):
+                self.logger.warning(f"Pressure out of range: {pressure_float} hPa (valid range: {self.rules.min_pressure}-{self.rules.max_pressure} hPa)")
+                return False
+            return True
         except (ValueError, TypeError):
+            self.logger.warning(f"Non-numeric pressure value: {pressure}")
             return False
     
     def _is_valid_wind_speed(self, wind_speed: Any) -> bool:
         """Check if wind speed is within valid range"""
         if wind_speed is None:
-            return False
+            return True  # Wind speed is optional
         try:
             wind_float = float(wind_speed)
+            if wind_float < 0:
+                self.logger.warning(f"Negative wind speed: {wind_float}")
+                return False
+            
             if self.temperature_unit == "imperial":
-                return 0 <= wind_float <= self.rules.max_wind_speed_imperial
+                if wind_float > self.rules.max_wind_speed_imperial:
+                    self.logger.warning(f"Wind speed out of range: {wind_float} mph (max: {self.rules.max_wind_speed_imperial} mph)")
+                    return False
             else:  # metric
-                return 0 <= wind_float <= self.rules.max_wind_speed_metric
+                if wind_float > self.rules.max_wind_speed_metric:
+                    self.logger.warning(f"Wind speed out of range: {wind_float} m/s (max: {self.rules.max_wind_speed_metric} m/s)")
+                    return False
+            return True
         except (ValueError, TypeError):
+            self.logger.warning(f"Non-numeric wind speed value: {wind_speed}")
             return False
     
     def validate_weather_data(self, data: Dict[str, Any]) -> bool:
@@ -463,7 +502,130 @@ class WeatherDataValidator:
             self.logger.error(f"Error validating weather data: {str(e)}")
             return False
     
-    # Internal validation methods are handled within the main validation methods
+    def _is_valid_pop(self, pop: Any) -> bool:
+        """Check if probability of precipitation is within valid range (0-1)"""
+        if pop is None:
+            return True  # POP is optional
+        try:
+            pop_float = float(pop)
+            # POP should be between 0 and 1 (0% to 100%)
+            if 0 <= pop_float <= 1:
+                return True
+            else:
+                self.logger.warning(f"Invalid POP value: {pop_float} (should be 0-1, got {pop_float*100:.1f}%)")
+                return False
+        except (ValueError, TypeError):
+            self.logger.warning(f"Non-numeric POP value: {pop}")
+            return False
     
-    # Default initialization is sufficient
+    def _is_valid_uv_index(self, uv_index: Any) -> bool:
+        """Check if UV index is within valid range (0-15+)"""
+        if uv_index is None:
+            return True  # UV index is optional
+        try:
+            uv_float = float(uv_index)
+            if uv_float < 0:
+                self.logger.warning(f"Negative UV index: {uv_float}")
+                return False
+            if uv_float > 20:  # Extremely high but possible UV values
+                self.logger.warning(f"Unusually high UV index: {uv_float} (typically 0-15)")
+                return False
+            return True
+        except (ValueError, TypeError):
+            self.logger.warning(f"Non-numeric UV index value: {uv_index}")
+            return False
+    
+    def _is_valid_visibility(self, visibility: Any) -> bool:
+        """Check if visibility is within valid range (meters)"""
+        if visibility is None:
+            return True  # Visibility is optional
+        try:
+            visibility_float = float(visibility)
+            if visibility_float < 0:
+                self.logger.warning(f"Negative visibility: {visibility_float}")
+                return False
+            if visibility_float > self.rules.max_visibility:
+                self.logger.warning(f"Visibility out of range: {visibility_float}m (max: {self.rules.max_visibility}m)")
+                return False
+            return True
+        except (ValueError, TypeError):
+            self.logger.warning(f"Non-numeric visibility value: {visibility}")
+            return False
+    
+    def validate_comprehensive_weather_data(self, weather_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Comprehensive validation of all weather data fields"""
+        validated_data = {}
+        validation_errors = []
+        
+        # Temperature validation
+        temp_fields = ['temperature', 'temp', 'feels_like', 'temp_min', 'temp_max', 'temp_day', 'temp_night']
+        for field in temp_fields:
+            if field in weather_data:
+                if self._is_valid_temperature(weather_data[field]):
+                    validated_data[field] = weather_data[field]
+                else:
+                    validation_errors.append(f"Invalid {field}: {weather_data[field]}")
+                    validated_data[field] = None
+        
+        # Atmospheric conditions validation
+        if 'humidity' in weather_data:
+            if self._is_valid_humidity(weather_data['humidity']):
+                validated_data['humidity'] = weather_data['humidity']
+            else:
+                validation_errors.append(f"Invalid humidity: {weather_data['humidity']}")
+                validated_data['humidity'] = None
+        
+        if 'pressure' in weather_data:
+            if self._is_valid_pressure(weather_data['pressure']):
+                validated_data['pressure'] = weather_data['pressure']
+            else:
+                validation_errors.append(f"Invalid pressure: {weather_data['pressure']}")
+                validated_data['pressure'] = None
+        
+        # Wind validation
+        if 'wind_speed' in weather_data:
+            if self._is_valid_wind_speed(weather_data['wind_speed']):
+                validated_data['wind_speed'] = weather_data['wind_speed']
+            else:
+                validation_errors.append(f"Invalid wind_speed: {weather_data['wind_speed']}")
+                validated_data['wind_speed'] = None
+        
+        # POP validation
+        if 'pop' in weather_data:
+            if self._is_valid_pop(weather_data['pop']):
+                validated_data['pop'] = weather_data['pop']
+            else:
+                validation_errors.append(f"Invalid pop: {weather_data['pop']}")
+                validated_data['pop'] = None
+        
+        # UV Index validation
+        if 'uv_index' in weather_data:
+            if self._is_valid_uv_index(weather_data['uv_index']):
+                validated_data['uv_index'] = weather_data['uv_index']
+            else:
+                validation_errors.append(f"Invalid uv_index: {weather_data['uv_index']}")
+                validated_data['uv_index'] = None
+        
+        # Visibility validation
+        if 'visibility' in weather_data:
+            if self._is_valid_visibility(weather_data['visibility']):
+                validated_data['visibility'] = weather_data['visibility']
+            else:
+                validation_errors.append(f"Invalid visibility: {weather_data['visibility']}")
+                validated_data['visibility'] = None
+        
+        # Copy non-numeric fields as-is
+        string_fields = ['city', 'description', 'main', 'icon', 'country', 'weather_main', 'weather_description', 'weather_icon']
+        for field in string_fields:
+            if field in weather_data:
+                validated_data[field] = weather_data[field]
+        
+        # Log validation results
+        if validation_errors:
+            self.logger.warning(f"Weather data validation found {len(validation_errors)} issues: {validation_errors}")
+        else:
+            self.logger.debug("Weather data validation passed")
+        
+        validated_data['validation_errors'] = validation_errors
+        return validated_data
 

@@ -288,12 +288,16 @@ class WeatherAPI:
         if not cleaned_current:
             return {"error": "Current weather data validation failed"}
         
-        # Now fetch 7-day climate forecast data using the student API endpoint
-        forecast_url = "https://pro.openweathermap.org/data/2.5/forecast/climate"
+        # Use Daily Forecast 16 Days API to get 7 days of forecast with POP values
+        forecast_url = "https://api.openweathermap.org/data/2.5/forecast/daily"
+        
+        # Get dedicated forecast API key if available
+        import os
+        forecast_api_key = os.getenv('7DAY_FORECAST_API_KEY', self.api_key)
         forecast_params = {
             'lat': lat,
             'lon': lon,
-            'appid': self.api_key,
+            'appid': forecast_api_key,
             'units': units,
             'cnt': 8  # Get 8 days to ensure we have 7 after excluding today
         }
@@ -301,12 +305,12 @@ class WeatherAPI:
         forecast_data = self._make_api_request(forecast_url, forecast_params)
         
         if forecast_data and "error" not in forecast_data:
-            # Process daily forecast data
-            daily_forecast = self._process_daily_forecast(forecast_data)
-            self.logger.info(f"Successfully fetched climate forecast with {len(daily_forecast)} days")
+            # Process daily forecast data from 16-day API
+            daily_forecast = self._process_16day_daily_forecast(forecast_data)
+            self.logger.info(f"Successfully fetched 16-day daily forecast with {len(daily_forecast)} days")
         else:
-            # If climate forecast fails, try to use 5-day forecast as fallback
-            self.logger.warning("Climate forecast unavailable, trying 5-day forecast as fallback")
+            # If daily forecast fails, try 5-day forecast as fallback
+            self.logger.warning("16-day daily forecast unavailable, trying 5-day forecast as fallback")
             fallback_url = "https://api.openweathermap.org/data/2.5/forecast"
             fallback_params = {
                 'lat': lat,
@@ -327,7 +331,7 @@ class WeatherAPI:
                     self.logger.info(f"Extended forecast to {len(daily_forecast)} days with placeholders")
             else:
                 daily_forecast = []
-                self.logger.warning("Both climate and 5-day forecasts unavailable")
+                self.logger.warning("Both 16-day daily and 5-day forecasts unavailable")
         
         # Create comprehensive weather data structure
         comprehensive_data = {
@@ -361,6 +365,73 @@ class WeatherAPI:
         
         self.logger.info(f"Successfully fetched comprehensive weather data with {len(daily_forecast)} forecast days")
         return comprehensive_data
+
+    def _process_16day_daily_forecast(self, forecast_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Process 16-day daily forecast data from OpenWeatherMap, excluding today to show 7 days starting tomorrow
+        
+        Args:
+            forecast_data: Raw daily forecast data from API
+            
+        Returns:
+            List of daily forecast summaries (7 days starting from tomorrow)
+        """
+        try:
+            forecast_list = forecast_data.get('list', [])
+            daily_forecast = []
+            today_date = datetime.now().strftime('%Y-%m-%d')
+            
+            for item in forecast_list:
+                # Get the date for this forecast item
+                dt = item.get('dt')
+                if dt:
+                    forecast_date = datetime.fromtimestamp(dt).strftime('%Y-%m-%d')
+                    
+                    # Skip today's forecast
+                    if forecast_date == today_date:
+                        continue
+                
+                # Extract temperature data
+                temp_data = item.get('temp', {})
+                feels_like_data = item.get('feels_like', {})
+                weather_data = item.get('weather', [{}])[0]
+                
+                daily_item = {
+                    'dt': item.get('dt'),
+                    'temp_min': round(temp_data.get('min', 0), 1) if temp_data.get('min') is not None else 0,
+                    'temp_max': round(temp_data.get('max', 0), 1) if temp_data.get('max') is not None else 0,
+                    'temp_day': round(temp_data.get('day', 0), 1) if temp_data.get('day') is not None else 0,
+                    'temp_night': round(temp_data.get('night', 0), 1) if temp_data.get('night') is not None else 0,
+                    'description': weather_data.get('description', '').title(),
+                    'main': weather_data.get('main', ''),
+                    'icon': weather_data.get('icon', ''),
+                    'humidity': item.get('humidity'),
+                    'pressure': item.get('pressure'),
+                    'wind_speed': item.get('speed'),  # Wind speed field name in daily API
+                    'wind_deg': item.get('deg'),      # Wind direction field name in daily API  
+                    'clouds': item.get('clouds'),
+                    'pop': item.get('pop', 0),        # Probability of precipitation (0-1 scale) - this is the key field!
+                    'uv_index': None,                 # Not available in this API
+                    'sunrise': item.get('sunrise'),
+                    'sunset': item.get('sunset')
+                }
+                
+                # Validate the forecast item
+                validated_item = self.validator._validate_daily_forecast_day(daily_item)
+                if validated_item:
+                    daily_forecast.append(validated_item)
+                else:
+                    self.logger.warning(f"Forecast item validation failed for dt={item.get('dt')}")
+                
+                # Stop when we have 7 days (excluding today)
+                if len(daily_forecast) >= 7:
+                    break
+            
+            return daily_forecast
+            
+        except Exception as e:
+            self.logger.error(f"Error processing 16-day daily forecast: {e}")
+            return []
 
     def _process_daily_forecast(self, forecast_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
@@ -406,7 +477,7 @@ class WeatherAPI:
                     'wind_speed': item.get('speed'),  # Note: 'speed' not 'wind_speed' in climate API
                     'wind_deg': item.get('deg'),
                     'clouds': item.get('clouds'),
-                    'pop': item.get('rain', 0) + item.get('snow', 0),  # Precipitation amount as probability estimate
+                    'pop': item.get('pop', 0),  # Probability of precipitation (0-1 scale)
                     'uv_index': None,  # Not available in this API
                     'sunrise': item.get('sunrise'),
                     'sunset': item.get('sunset')
