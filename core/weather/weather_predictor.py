@@ -61,13 +61,14 @@ class WeatherPredictor:
             # Analyze trends using Linear Regression
             trend_analysis = self._analyze_trends(historical_data)
             
-            # Calculate confidence based on model performance
-            confidence = self._calculate_confidence(model_performance, len(historical_data))
+            # Calculate separate confidence levels
+            confidence_levels = self._calculate_confidence(model_performance, len(historical_data))
             
             predictions = {
                 "forecast": forecast,
                 "trend": trend_analysis,
-                "confidence": confidence,
+                "confidence": confidence_levels['overall'],  # Backward compatibility
+                "confidence_levels": confidence_levels,      # New detailed confidence
                 "model_performance": model_performance,
                 "city": city,
                 "state": state,
@@ -329,8 +330,8 @@ class WeatherPredictor:
         
         return trends
     
-    def _calculate_confidence(self, model_performance: Dict, data_points: int) -> float:
-        """Calculate overall prediction confidence"""
+    def _calculate_confidence(self, model_performance: Dict, data_points: int) -> Dict[str, float]:
+        """Calculate separate confidence levels for different prediction types"""
         
         # Base confidence on amount of data
         if data_points < 60:
@@ -342,19 +343,42 @@ class WeatherPredictor:
         else:
             base_confidence = 0.9
         
-        # Adjust based on model performance
-        performance_scores = []
+        # Separate temperature and precipitation performance
+        temp_scores = []
+        precip_scores = []
+        
         for target, metrics in model_performance.items():
             if 'r2_score' in metrics:
-                performance_scores.append(max(0, metrics['r2_score']))
+                r2_score = max(0, metrics['r2_score'])
+                if target in ['temperature_max', 'temperature_min']:
+                    temp_scores.append(r2_score)
+                elif target in ['precipitation', 'pop']:
+                    precip_scores.append(r2_score)
         
-        if performance_scores:
-            avg_performance = np.mean(performance_scores)
-            confidence = (base_confidence + avg_performance) / 2
+        # Calculate separate confidence levels
+        temp_confidence = base_confidence * 0.5  # Default if no temp models
+        if temp_scores:
+            avg_temp_performance = np.mean(temp_scores)
+            temp_confidence = (base_confidence + avg_temp_performance) / 2
+        
+        precip_confidence = base_confidence * 0.5  # Default if no precip models
+        if precip_scores:
+            avg_precip_performance = np.mean(precip_scores)
+            precip_confidence = (base_confidence + avg_precip_performance) / 2
+        
+        # Overall confidence is weighted average (temperature more reliable)
+        all_scores = temp_scores + precip_scores
+        if all_scores:
+            # Weight temperature predictions more heavily (70% temp, 30% precip)
+            overall_confidence = (temp_confidence * 0.7 + precip_confidence * 0.3)
         else:
-            confidence = base_confidence * 0.5  # Lower confidence if models failed
+            overall_confidence = base_confidence * 0.5
         
-        return round(min(1.0, max(0.1, confidence)), 2)
+        return {
+            'temperature': round(min(1.0, max(0.1, temp_confidence)), 2),
+            'precipitation': round(min(1.0, max(0.1, precip_confidence)), 2),
+            'overall': round(min(1.0, max(0.1, overall_confidence)), 2)
+        }
     
     def _predict_conditions(self, precipitation: float, humidity: float) -> str:
         """Predict weather conditions based on precipitation and humidity"""

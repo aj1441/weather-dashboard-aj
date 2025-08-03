@@ -465,29 +465,49 @@ class SavedCitiesComponent:
                 error_label.pack(pady=10)
                 return
             
-            # Display prediction header with confidence and trends
+            # Display prediction header with confidence and trends  
             header_frame = tb.Frame(prediction_frame)
             header_frame.pack(fill="x", pady=(0, 10))
             
-            confidence = predictions.get('confidence', 0)
-            confidence_color = "success" if confidence > 0.7 else "warning" if confidence > 0.5 else "danger"
+            # Get confidence levels (new format with fallback to old format)
+            confidence_levels = predictions.get('confidence_levels', {})
+            overall_confidence = confidence_levels.get('overall', predictions.get('confidence', 0))
+            temp_confidence = confidence_levels.get('temperature', overall_confidence)
+            precip_confidence = confidence_levels.get('precipitation', overall_confidence)
             
+            confidence_color = "success" if overall_confidence > 0.7 else "warning" if overall_confidence > 0.5 else "danger"
+            
+            # Main forecast header
             tb.Label(
                 header_frame,
-                text=f"🔮 3-Day ML Forecast (Confidence: {confidence:.0%})",
+                text=f"🔮 3-Day ML Predictions",
                 font=("Helvetica Neue", 14, "bold"),
                 bootstyle=confidence_color
             ).pack()
             
-            # Display trend information
+            # Confidence levels section - inline format
+            confidence_section_frame = tb.Frame(header_frame)
+            confidence_section_frame.pack(fill="x", pady=(8, 0))
+            
+            tb.Label(
+                confidence_section_frame,
+                text=f"📊 Confidence Levels: 🌡️ Temperature: {temp_confidence:.0%}  |  🌧️ Precipitation: {precip_confidence:.0%}  |  📊 Overall: {overall_confidence:.0%}",
+                font=("Helvetica Neue", 10, "bold"),
+                bootstyle="info"
+            ).pack()
+            
+            # Trend analysis section - inline format
             trend_data = predictions.get('trend', {})
             if 'temperature' in trend_data:
+                trend_section_frame = tb.Frame(header_frame)
+                trend_section_frame.pack(fill="x", pady=(5, 0))
+                
                 temp_trend = trend_data['temperature']
-                trend_text = f"📈 {temp_trend.get('description', 'No trend data')}"
+                trend_text = temp_trend.get('description', 'No trend data')
                 
                 tb.Label(
-                    header_frame,
-                    text=trend_text,
+                    trend_section_frame,
+                    text=f"📈 Trend Analysis: {trend_text}",
                     font=("Helvetica Neue", 10),
                     bootstyle="info"
                 ).pack()
