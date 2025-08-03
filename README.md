@@ -6,25 +6,41 @@ A modern, extensible weather dashboard built with Python and ttkbootstrap. Featu
 
 ## Features
 
-### Core Weather Features
-- 🌡️ **Real-time Weather Data** - Current conditions and 7-day forecasts via OpenWeatherMap API
-- 📊 **Historical Weather Analysis** - Historical data from 2010-present via Open-Meteo API (no key required)
-- 🌍 **Multiple Location Support** - Save and manage favorite cities with quick access
-- 📈 **Interactive Visualizations** - Explore weather patterns with dynamic charts and graphs
+### ⭐ Basic Data Features
+- **Weather History Tracker** - Save daily weather data and display historical patterns with interactive charts
+- **City Comparison** - Compare current weather between two cities side-by-side on the Saved Cities tab
+- **Historical Comparison** - Compare last 7 days of weather data between multiple cities on the History tab
 
-### Custom Theme System
-- 🌅 **Auto Day/Night Mode** - Intelligent theme switching using sunrise-sunset.org API
-- 🎨 **Custom Themes** - Beautiful light (`aj_lightly`) and dark (`aj_darkly`) themes
-- 📱 **Location-Aware Themes** - Theme updates based on day/night at searched locations
-- ⚙️ **Manual Override** - Disable auto mode for manual theme control
+### ⭐⭐ Visual Features
+- **Weather Icons** - Dynamic weather icons that visually represent current conditions (sun, clouds, rain, etc.)
+- **Temperature Graphs** - Interactive line graphs showing temperature trends over time using matplotlib
+- **Theme Switcher** - Advanced theme system with automatic day/night switching based on sunrise/sunset times
 
-### Advanced Features
-- 🔒 **Data Validation** - Robust data validation and cleaning with decorator-based validation
-- ⚡ **Rate Limiting** - API rate limiting and retry mechanisms using Python decorators
-- 🛡️ **Error Handling** - Comprehensive error handling with decorator-based retries and fallbacks
-- 💾 **Persistent Storage** - SQLite database with JSON backup for user settings and saved cities
-- 🚀 **API Caching** - Built-in API response caching with session reuse
-- 🏗️ **Modular Architecture** - Extensible component-based design with decorator patterns
+### ⭐⭐ Interactive Features
+- **Favorite Cities** - Save and manage preferred cities with quick access and comparison features
+- **Weather Alerts** - Notify users when temperature crosses certain thresholds
+- **Historical Data Visualization** - Interactive charts for temperature, precipitation, and wind patterns
+
+### ⭐⭐⭐ Smart Features
+- **Tomorrow's Guess** - 3-day weather predictions with trend analysis
+- **Trend Detection** - Visual indicators and analysis for rising/falling weather trends
+- **Activity Suggester** - Suggest activities based on current weather conditions
+
+### ✨ Enhancement Features
+- **Custom Themes** - Beautiful light (`aj_lightly`) and dark (`aj_darkly`) themes with custom widgets
+- **Sound Effects** - Audio feedback for weather trivia game and user interactions
+- **Animations** - Smooth animations for score displays and weather transitions
+- **Custom Logo** - Personalized branding with custom logo on the About page
+
+### Advanced Technical Features
+- **Auto Day/Night Theme System** - Intelligent theme switching using sunrise-sunset.org API
+- **Location-Aware Themes** - Theme updates based on day/night at searched locations
+- **Data Validation** - Robust data validation and cleaning with decorator-based validation
+- **Rate Limiting** - API rate limiting and retry mechanisms using Python decorators
+- **Error Handling** - Comprehensive error handling with decorator-based retries and fallbacks
+- **Persistent Storage** - SQLite database with JSON backup for user settings and saved cities
+- **API Caching** - Built-in API response caching with session reuse
+- **Modular Architecture** - Extensible component-based design with decorator patterns
 
 ## Installation
 
@@ -112,14 +128,14 @@ Click the "Forecast" tab to view:
 
 The "Historical Data" tab allows you to:
 - **View past weather patterns** from 2010 to present
-- **Compare different time periods**
+- **Compare different time periods** between cities
 - **Export data** for further analysis
 - **Interactive charts** for temperature, precipitation, and wind
 
 #### Managing Saved Locations
 
 - **Save favorite cities** for quick access
-- **Organize locations** with custom names
+- **Compare current weather** between saved cities
 - **Quick weather lookup** from saved list
 - **Persistent storage** between sessions
 
