@@ -18,6 +18,7 @@ debug_*.py
 demo_*.py
 quick_*.py
 archived_files/
+docs/class_docs/
 
 
 
