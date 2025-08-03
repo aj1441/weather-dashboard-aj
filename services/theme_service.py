@@ -9,8 +9,8 @@ import logging
 from typing import Optional, Dict, Any
 
 from config import Config
-from core.theme_factory import create_theme_manager
-from core.theme_system import ThemeManager, ThemeConfig
+from core.theme.theme_factory import create_theme_manager
+from core.theme.theme_system import ThemeManager, ThemeConfig
 
 
 class ThemeService:

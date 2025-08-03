@@ -12,7 +12,7 @@ from typing import Dict, Any
 
 from config import Config
 from services import WeatherService, DataService, ThemeService, ValidationService
-from core.weather_models import WeatherData, ForecastData, ComprehensiveWeatherData, SavedCity
+from core.weather.weather_models import WeatherData, ForecastData, ComprehensiveWeatherData, SavedCity
 
 
 class TestWeatherService(unittest.TestCase):

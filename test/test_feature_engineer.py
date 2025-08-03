@@ -15,7 +15,7 @@ import os
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from prediction_services.feature_engineer import WeatherFeatureEngineer, FeatureValidator
+from services.feature_engineering_service import WeatherFeatureEngineer, FeatureValidator
 
 
 class TestWeatherFeatureEngineer(unittest.TestCase):

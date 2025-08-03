@@ -10,9 +10,9 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 
 from config import Config
-from core.api import WeatherAPI
-from core.weather_models import WeatherData, ForecastData, ComprehensiveWeatherData
-from core.data_validator import WeatherDataValidator
+from core.weather.api import WeatherAPI
+from core.weather.weather_models import WeatherData, ForecastData, ComprehensiveWeatherData
+from core.weather.data_validator import WeatherDataValidator
 
 
 class WeatherService:

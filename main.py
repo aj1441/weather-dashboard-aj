@@ -16,9 +16,9 @@ import os
 import signal
 from pathlib import Path
 from config import Config
-from gui.tabbed_main_window import TabbedWeatherDashboard
-from utils.conversion_utils import add_numbers, convert_to_fahrenheit
-from utils.performance_optimizer import cleanup_performance_data
+from gui.main_window import TabbedWeatherDashboard
+from utils.conversion.conversion_utils import add_numbers, convert_to_fahrenheit
+from utils.performance.performance_optimizer import cleanup_performance_data
 
 
 class App:
@@ -140,7 +140,7 @@ class App:
         
         # Print fallback tracking daily report
         try:
-            from utils.fallback_tracker import fallback_tracker
+            from utils.fallback.fallback_tracker import fallback_tracker
             fallback_tracker.print_daily_report()
         except Exception as e:
             self.logger.warning(f"Could not load fallback tracker: {e}")

@@ -1,0 +1,124 @@
+"""Weather input component for the weather dashboard"""
+
+from typing import Callable, Optional
+import ttkbootstrap as tb
+from ttkbootstrap.constants import PRIMARY, SUCCESS, WARNING, DANGER, INFO, LEFT, RIGHT
+from utils.data.state_utils import normalize_state_abbreviation
+
+class WeatherInputComponent:
+    """Handles weather input fields and unit selection"""
+
+    def __init__(self, parent: tb.Frame) -> None:
+        self.parent = parent
+        self.city_var = tb.StringVar()
+        self.state_var = tb.StringVar()
+        self.unit_var = tb.StringVar(value="imperial")  # default to Fahrenheit
+        self.weather_callback: Optional[Callable[[str, str, str], None]] = None
+        self.on_unit_change: Optional[Callable[[str], None]] = None
+        self.setup_component()
+
+    def setup_component(self) -> tb.Frame:
+        """Create the input section with city, state, and unit toggle"""
+        # Main input frame
+        self.input_frame = tb.Frame(self.parent)
+
+        # Unit toggle (F/C)
+        self.unit_toggle = tb.Checkbutton(
+            self.input_frame,
+            text="°F / °C",
+            variable=self.unit_var,
+            onvalue="metric",
+            offvalue="imperial",
+            command=self.toggle_units,
+            bootstyle="primary-round-toggle",
+        )
+        self.unit_toggle.pack(side=RIGHT, padx=5)
+
+        # City input
+        tb.Label(self.input_frame, text="City:").pack(side=LEFT)
+        self.city_entry = tb.Entry(self.input_frame, textvariable=self.city_var, width=15)
+        self.city_entry.pack(side=LEFT, padx=(5, 10))
+
+        # State input
+        tb.Label(self.input_frame, text="State:").pack(side=LEFT)
+        self.state_entry = tb.Entry(self.input_frame, textvariable=self.state_var, width=5)
+        self.state_entry.pack(side=LEFT, padx=(5, 10))
+        
+        # Bind Enter key to trigger weather request
+        self.state_entry.bind('<Return>', lambda _: self.on_get_weather())
+
+        # Get weather button
+        self.get_weather_btn = tb.Button(
+            self.input_frame,
+            text="Get Weather",
+            command=self.on_get_weather,
+            bootstyle="primary",
+        )
+        self.get_weather_btn.pack(side=LEFT, padx=10)
+        
+        # Add hover effects
+        self.get_weather_btn.bind("<Enter>", lambda e: self.get_weather_btn.configure(bootstyle="success"))
+        self.get_weather_btn.bind("<Leave>", lambda e: self.get_weather_btn.configure(bootstyle="primary"))
+
+        return self.input_frame
+
+    def toggle_units(self) -> None:
+        """Toggle between Fahrenheit and Celsius"""
+        # This will trigger any callbacks if set
+        if hasattr(self, 'on_unit_change'):
+            self.on_unit_change(self.unit_var.get())
+
+    def on_get_weather(self) -> None:
+        """Handle get weather button click and pass current unit to callback"""
+        city = self.city_var.get().strip()
+        state = normalize_state_abbreviation(self.state_var.get())
+        units = self.unit_var.get()  # Always get the latest value
+
+        if hasattr(self, 'weather_callback'):
+            # Always pass the current unit to the callback
+            self.weather_callback(city, state, units)
+
+    def get_city(self) -> str:
+        """Get the current city value"""
+        return self.city_var.get().strip()
+
+    def get_state(self) -> str:
+        """Get the current state value"""
+        return self.state_var.get().strip()
+
+    def get_units(self) -> str:
+        """Get the current units (imperial/metric)"""
+        return self.unit_var.get()
+
+    def get_unit_label(self) -> str:
+        """Get the unit label for display (°F or °C)"""
+        return "°C" if self.unit_var.get() == "metric" else "°F"
+
+    def set_weather_callback(self, callback: Callable[[str, str, str], None]) -> None:
+        """Set the callback function for when weather is requested"""
+        self.weather_callback = callback
+
+    def set_unit_change_callback(self, callback: Callable[[str], None]) -> None:
+        """Set the callback function for when the temperature unit is changed"""
+        self.on_unit_change = callback
+
+    def clear_inputs(self) -> None:
+        """Clear all input fields"""
+        self.city_var.set("")
+        self.state_var.set("")
+
+    def restyle(self) -> None:
+        """Force a style refresh for weather input widgets."""
+        try:
+            if hasattr(self, "input_frame"):
+                self.input_frame.update_idletasks()
+
+                for widget in self.input_frame.winfo_children():
+                    try:
+                        widget.configure()
+                    except Exception:
+                        pass  # Some widgets might not need reconfiguration
+
+            print("[restyle] WeatherInputComponent restyled.")
+        except Exception as e:
+            print(f"[restyle] Error restyling WeatherInputComponent: {e}")

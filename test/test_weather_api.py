@@ -7,7 +7,7 @@ import requests
 import time
 import os
 
-from core.api import WeatherAPI
+from core.weather.api import WeatherAPI
 from config import Config
 
 

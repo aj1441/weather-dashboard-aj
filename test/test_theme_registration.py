@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import ttkbootstrap as tb
 from core.custom_themes import register_custom_themes
-from user import USER_THEMES
+from core.theme.user_themes import USER_THEMES
 
 def test_theme_registration():
     """Test that custom themes are properly registered"""

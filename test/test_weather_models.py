@@ -9,7 +9,7 @@ import unittest
 from datetime import datetime
 from typing import Dict, Any
 
-from core.weather_models import WeatherData, ForecastData, ComprehensiveWeatherData, SavedCity
+from core.weather.weather_models import WeatherData, ForecastData, ComprehensiveWeatherData, SavedCity
 
 
 class TestWeatherData(unittest.TestCase):

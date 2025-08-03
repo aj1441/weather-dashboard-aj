@@ -9,7 +9,7 @@ import logging
 from typing import Dict, Optional, Any
 
 from config import Config
-from core.data_validator import WeatherDataValidator, ValidationRules
+from core.weather.data_validator import WeatherDataValidator, ValidationRules
 
 
 class ValidationService:

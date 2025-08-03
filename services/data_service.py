@@ -10,8 +10,8 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 
 from config import Config
-from core.data_handler import WeatherDataHandler
-from core.weather_models import WeatherData, ForecastData, SavedCity
+from core.database.data_handler import WeatherDataHandler
+from core.weather.weather_models import WeatherData, ForecastData, SavedCity
 
 
 class DataService:

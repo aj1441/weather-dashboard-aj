@@ -1,10 +1,10 @@
 from pathlib import Path
 from itertools import cycle
 from PIL import Image, ImageTk, ImageSequence
-import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
+import ttkbootstrap as tb
+from ttkbootstrap.constants import PRIMARY, SUCCESS, WARNING, DANGER, INFO, LEFT, RIGHT, TOP, BOTTOM, BOTH
 
-class ConfettiGif(ttk.Frame):
+class ConfettiGif(tb.Frame):
     def __init__(self, master, gif_path="assets/confetti.gif", width=600, height=400, duration=5000):
         super().__init__(master, width=width, height=height)
         self.place(relx=0.5, rely=0.5, anchor="center")  # center overlay
@@ -18,7 +18,7 @@ class ConfettiGif(ttk.Frame):
             self.image_cycle = cycle(images)
             self.framerate = im.info.get("duration", 100)
 
-        self.img_label = ttk.Label(self, image=next(self.image_cycle))
+        self.img_label = tb.Label(self, image=next(self.image_cycle))
         self.img_label.pack(fill="both", expand="yes")
 
         self.running = True

@@ -20,13 +20,13 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from utils.performance_optimizer import (
+from utils.performance.performance_optimizer import (
     PerformanceMonitor, LRUCache, ConnectionPool, APICache,
     monitor_performance, cache_api_response, connection_pool, api_cache
 )
 from config import Config
-from core.database import WeatherDatabase
-from core.api import WeatherAPI
+from core.database.database import WeatherDatabase
+from core.weather.api import WeatherAPI
 
 class TestPerformanceOptimizations(unittest.TestCase):
     """Test performance optimization features."""
