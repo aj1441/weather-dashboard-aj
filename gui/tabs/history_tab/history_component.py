@@ -56,6 +56,7 @@ class HistoryComponent:
         self.main_frame = None
         self.city1_dropdown = None
         self.city2_dropdown = None
+        self.city2_label = None
         self.city2_frame = None
         self.analyze_button = None
         self.chart_area = None
@@ -105,96 +106,88 @@ class HistoryComponent:
         # Controls frame (full width)
         controls_frame = tb.Frame(top_frame)
         controls_frame.grid(row=1, column=0, sticky="ew", padx=(10, 10))
+        controls_frame.columnconfigure(0, weight=1)
+        controls_frame.columnconfigure(1, weight=1)
+        controls_frame.columnconfigure(2, weight=1)
+        controls_frame.columnconfigure(3, weight=0)
+        controls_frame.columnconfigure(4, weight=0)
+        controls_frame.columnconfigure(5, weight=0)
+        controls_frame.columnconfigure(6, weight=0)
         
-        # Single row layout with everything in one grid
-        single_row_frame = tb.Frame(controls_frame)
-        single_row_frame.pack(fill="x", pady=(0, 10))
-        
-        # Configure grid columns - 7 columns for all elements (added Clear button)
-        single_row_frame.columnconfigure(0, weight=0)  # City 1
-        single_row_frame.columnconfigure(1, weight=0)  # City 2 
-        single_row_frame.columnconfigure(2, weight=0)  # Compare checkbox
-        single_row_frame.columnconfigure(3, weight=1)  # Spacer
-        single_row_frame.columnconfigure(4, weight=0)  # Analyze button
-        single_row_frame.columnconfigure(5, weight=0)  # Fetch button
-        single_row_frame.columnconfigure(6, weight=0)  # Clear button
-        
-        # City 1 selection (Column 0)
-        city1_frame = tb.Frame(single_row_frame)
-        city1_frame.grid(row=0, column=0, sticky="w", padx=(0, 15))
-        
+        # City 1 selection
         tb.Label(
-            city1_frame,
+            controls_frame,
             text="Select City:",
             font=("Helvetica Neue", 11, "bold")
-        ).pack(anchor=W)
+        ).grid(row=0, column=0, sticky="w", padx=(0, 5), pady=(0, 3))
         
         self.city1_dropdown = tb.Combobox(
-            city1_frame,
+            controls_frame,
             textvariable=self.city1_var,
             state="readonly",
-            width=20
+            width=18
         )
-        self.city1_dropdown.pack(pady=(3, 0), anchor="w")
+        self.city1_dropdown.grid(row=1, column=0, sticky="w", padx=(0, 15))
         self.city1_dropdown.bind('<<ComboboxSelected>>', self._on_city_selection_changed)
         
-        # City 2 selection (Column 1, initially hidden)
-        self.city2_frame = tb.Frame(single_row_frame)
-        
-        tb.Label(
-            self.city2_frame,
+        # City 2 selection (initially hidden)
+        self.city2_label = tb.Label(
+            controls_frame,
             text="Second City:",
             font=("Helvetica Neue", 11, "bold")
-        ).pack(anchor="w")
+        )
+        self.city2_label.grid(row=0, column=1, sticky="w", padx=(0, 5), pady=(0, 3))
+        self.city2_label.grid_remove()  # Initially hidden
         
         self.city2_dropdown = tb.Combobox(
-            self.city2_frame,
+            controls_frame,
             textvariable=self.city2_var,
             state="readonly",
-            width=20
+            width=18
         )
-        self.city2_dropdown.pack(pady=(3, 0), anchor="w")
+        self.city2_dropdown.grid(row=1, column=1, sticky="w", padx=(0, 15))
+        self.city2_dropdown.grid_remove()  # Initially hidden
         self.city2_dropdown.bind('<<ComboboxSelected>>', self._on_city_selection_changed)
         
-        # Compare checkbox (Column 2)
+        # Compare checkbox
         self.compare_checkbox = tb.Checkbutton(
-            single_row_frame,
+            controls_frame,
             text="Compare 2 Cities",
             variable=self.compare_mode,
             command=self._on_compare_mode_changed,
             bootstyle="primary"
         )
-        self.compare_checkbox.grid(row=0, column=2, sticky="w", padx=(15, 20))
+        self.compare_checkbox.grid(row=1, column=2, sticky="w", padx=(0, 15))
         
-        # Analyze button (Column 4)
+        # Analyze button
         self.analyze_button = tb.Button(
-            single_row_frame,
+            controls_frame,
             text="📊 Analyze Historical Data",
             command=self._on_analyze_clicked,
             bootstyle="primary",
             state="disabled"
         )
-        self.analyze_button.grid(row=0, column=4, sticky="e", padx=(0, 10))
+        self.analyze_button.grid(row=1, column=3, sticky="e", padx=(10, 5))
         
-        # Fetch 7-day button (Column 5)
+        # Fetch 7-day button
         self.fetch_7day_button = tb.Button(
-            single_row_frame,
+            controls_frame,
             text="📊 Get Latest History",
             command=self._on_fetch_7day_clicked,
             bootstyle="success-outline",
             state="disabled"
         )
-        self.fetch_7day_button.grid(row=0, column=5, sticky="e", padx=(0, 10))
+        self.fetch_7day_button.grid(row=1, column=4, sticky="e", padx=(5, 5))
         
-        # Clear charts button (Column 6)
+        # Clear charts button
         self.clear_charts_button = tb.Button(
-            single_row_frame,
+            controls_frame,
             text="🗑️ Clear Charts",
             command=self._on_clear_charts_clicked,
             bootstyle="danger-outline",
             state="disabled"
         )
-        self.clear_charts_button.grid(row=0, column=6, sticky="e")
+        self.clear_charts_button.grid(row=1, column=5, sticky="e", padx=(5, 0))
         
         # Separator
         separator = tb.Separator(main_container, orient="horizontal")
@@ -281,12 +274,14 @@ class HistoryComponent:
     def _on_compare_mode_changed(self):
         """Handle compare mode checkbox change"""
         if self.compare_mode.get():
-            # Show second city dropdown in grid position (column 1)
-            self.city2_frame.grid(row=0, column=1, sticky="w", padx=(0, 15))
+            # Show second city dropdown and label
+            self.city2_label.grid()
+            self.city2_dropdown.grid()
             self._update_city2_options()
         else:
-            # Hide second city dropdown
-            self.city2_frame.grid_forget()
+            # Hide second city dropdown and label
+            self.city2_label.grid_remove()
+            self.city2_dropdown.grid_remove()
             self.city2_var.set("")
         
         self._update_analyze_button_state()
@@ -540,9 +535,49 @@ class HistoryComponent:
         )
         self.weather_chart_frame.grid(row=1, column=1, sticky="nsew", padx=(5, 0), pady=(5, 0))
         
-        # Initialize placeholders if no chart data is available
-        if not hasattr(self, 'chart_data') or not self.chart_data:
-            self._show_chart_placeholders()
+        # Schedule chart creation after frames are properly sized
+        self.chart_area.after(100, self._create_charts_when_ready)
+        
+    def _create_canvas_with_proper_sizing(self, fig, frame, chart_name="chart"):
+        """Helper method to create canvas with proper initial sizing"""
+        try:
+            if not frame or not frame.winfo_exists():
+                self.logger.error(f"{chart_name} frame does not exist")
+                return None
+                
+            # Clear existing widgets in frame
+            for widget in frame.winfo_children():
+                widget.destroy()
+            
+            # Simple canvas creation - let tkinter handle the sizing
+            canvas = FigureCanvasTkAgg(fig, frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill=BOTH, expand=True, padx=5, pady=5)
+            
+            return canvas
+            
+        except Exception as e:
+            self.logger.error(f"Error creating canvas for {chart_name}: {e}")
+            return None
+            
+    def _create_charts_when_ready(self):
+        """Create charts after ensuring frame geometry is ready"""
+        try:
+            # Check if chart area still exists before proceeding
+            if not hasattr(self, 'chart_area') or not self.chart_area.winfo_exists():
+                return
+                
+            # Simple check - if we have chart data, create charts
+            if not hasattr(self, 'chart_data') or not self.chart_data:
+                self._show_chart_placeholders()
+            else:
+                self._update_charts()
+                
+        except Exception as e:
+            self.logger.error(f"Error creating charts when ready: {e}")
+            # Only show placeholders if chart area still exists
+            if hasattr(self, 'chart_area') and self.chart_area.winfo_exists():
+                self._show_chart_placeholders()
     
     def _show_chart_placeholders(self):
         """Show placeholder messages in chart quadrants"""
@@ -554,14 +589,16 @@ class HistoryComponent:
         ]
         
         for frame, text in charts:
-            placeholder = tb.Label(
-                frame,
-                text=text,
-                font=("Helvetica Neue", 10),
-                justify=CENTER,
-                bootstyle="secondary"
-            )
-            placeholder.pack(expand=True)
+            # Check if frame exists and is valid before creating widgets
+            if frame and frame.winfo_exists():
+                placeholder = tb.Label(
+                    frame,
+                    text=text,
+                    font=("Helvetica Neue", 10),
+                    justify=CENTER,
+                    bootstyle="secondary"
+                )
+                placeholder.pack(expand=True)
     
     @log_execution_time()
     def _on_fetch_7day_clicked(self):
@@ -804,20 +841,8 @@ class HistoryComponent:
     
     def _get_responsive_figure_size(self, frame):
         """Calculate responsive figure size based on frame dimensions"""
-        try:
-            frame.update_idletasks()  # Ensure geometry is calculated
-            width = frame.winfo_width()
-            height = frame.winfo_height()
-            
-            # Convert pixels to inches (assuming 100 DPI)
-            # Leave some padding for labels and borders
-            fig_width = max(3, (width - 40) / 100)
-            fig_height = max(2, (height - 60) / 100)
-            
-            return (fig_width, fig_height)
-        except:
-            # Fallback to reasonable default
-            return (4, 3)
+        # Use a consistent, reasonable size that works well in quadrants
+        return (4, 3)
     
     def _on_chart_area_resize(self, event=None):
         """Handle chart area resize events to update chart sizes"""
@@ -881,20 +906,9 @@ class HistoryComponent:
         
         fig.tight_layout()
         
-        try:
-            if self.temp_chart_frame and self.temp_chart_frame.winfo_exists():
-                # Clear existing widgets in frame
-                for widget in self.temp_chart_frame.winfo_children():
-                    widget.destroy()
-                
-                canvas = FigureCanvasTkAgg(fig, self.temp_chart_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill=BOTH, expand=True, padx=5, pady=5)
-            else:
-                self.logger.error("Temperature chart frame does not exist")
-                self._show_chart_error("Temperature chart frame not available")
-        except Exception as e:
-            self.logger.error(f"Error displaying temperature chart: {e}")
+        # Use helper method for proper canvas creation
+        canvas = self._create_canvas_with_proper_sizing(fig, self.temp_chart_frame, "Temperature")
+        if not canvas:
             self._show_chart_error("Temperature chart display failed")
     
     def _create_precipitation_chart(self):
@@ -944,20 +958,9 @@ class HistoryComponent:
         
         fig.tight_layout()
         
-        try:
-            if self.precip_chart_frame and self.precip_chart_frame.winfo_exists():
-                # Clear existing widgets in frame
-                for widget in self.precip_chart_frame.winfo_children():
-                    widget.destroy()
-                
-                canvas = FigureCanvasTkAgg(fig, self.precip_chart_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill=BOTH, expand=True, padx=5, pady=5)
-            else:
-                self.logger.error("Precipitation chart frame does not exist")
-                self._show_chart_error("Precipitation chart frame not available")
-        except Exception as e:
-            self.logger.error(f"Error displaying precipitation chart: {e}")
+        # Use helper method for proper canvas creation
+        canvas = self._create_canvas_with_proper_sizing(fig, self.precip_chart_frame, "Precipitation")
+        if not canvas:
             self._show_chart_error("Precipitation chart display failed")
     
     def _create_humidity_chart(self):
@@ -1006,20 +1009,9 @@ class HistoryComponent:
         
         fig.tight_layout()
         
-        try:
-            if self.humidity_chart_frame and self.humidity_chart_frame.winfo_exists():
-                # Clear existing widgets in frame
-                for widget in self.humidity_chart_frame.winfo_children():
-                    widget.destroy()
-                
-                canvas = FigureCanvasTkAgg(fig, self.humidity_chart_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill=BOTH, expand=True, padx=5, pady=5)
-            else:
-                self.logger.error("Humidity chart frame does not exist")
-                self._show_chart_error("Humidity chart frame not available")
-        except Exception as e:
-            self.logger.error(f"Error displaying humidity chart: {e}")
+        # Use helper method for proper canvas creation
+        canvas = self._create_canvas_with_proper_sizing(fig, self.humidity_chart_frame, "Humidity")
+        if not canvas:
             self._show_chart_error("Humidity chart display failed")
     
     def _create_weather_type_chart(self):
@@ -1091,16 +1083,9 @@ class HistoryComponent:
         
         fig.tight_layout()
         
-        try:
-            if self.weather_chart_frame and self.weather_chart_frame.winfo_exists():
-                canvas = FigureCanvasTkAgg(fig, self.weather_chart_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill=BOTH, expand=True)
-            else:
-                self.logger.error("Weather chart frame does not exist")
-                self._show_chart_error("Weather chart frame not available")
-        except Exception as e:
-            self.logger.error(f"Error displaying weather chart: {e}")
+        # Use helper method for proper canvas creation
+        canvas = self._create_canvas_with_proper_sizing(fig, self.weather_chart_frame, "Weather Type")
+        if not canvas:
             self._show_chart_error("Weather chart display failed")
     
     def _create_weather_type_bar_chart(self):
@@ -1160,13 +1145,10 @@ class HistoryComponent:
             
             fig.tight_layout()
             
-            if self.weather_chart_frame and self.weather_chart_frame.winfo_exists():
-                canvas = FigureCanvasTkAgg(fig, self.weather_chart_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill=BOTH, expand=True)
-            else:
-                self.logger.error("Weather chart frame does not exist for fallback chart")
-                self._show_chart_error("Weather chart frame not available")
+            # Use helper method for proper canvas creation
+            canvas = self._create_canvas_with_proper_sizing(fig, self.weather_chart_frame, "Weather Bar")
+            if not canvas:
+                self._show_chart_error("Weather chart creation failed")
             
         except Exception as e:
             self.logger.error(f"Error creating fallback weather chart: {e}")

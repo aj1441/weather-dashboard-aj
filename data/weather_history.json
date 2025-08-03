@@ -853,5 +853,43 @@
     "visibility": 10000,
     "timestamp": "2025-08-02T19:38:46.457410",
     "unit": "°F"
+  },
+  {
+    "city": "Scottsdale",
+    "state": "AZ",
+    "country": "US",
+    "latitude": 33.4942189,
+    "longitude": -111.9260184,
+    "temperature": 103.24,
+    "feels_like": 98.46,
+    "humidity": 12,
+    "pressure": 1013.0,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01d",
+    "wind_speed": 10.0,
+    "wind_direction": 152,
+    "visibility": 10000,
+    "timestamp": "2025-08-03T11:20:03.071254",
+    "unit": "°F"
+  },
+  {
+    "city": "Scottsdale",
+    "state": "AZ",
+    "country": "US",
+    "latitude": 33.4942189,
+    "longitude": -111.9260184,
+    "temperature": 104.77,
+    "feels_like": 99.7,
+    "humidity": 11,
+    "pressure": 1012.0,
+    "weather_main": "Clear",
+    "weather_description": "clear sky",
+    "weather_icon": "01d",
+    "wind_speed": 7.0,
+    "wind_direction": 177,
+    "visibility": 10000,
+    "timestamp": "2025-08-03T11:47:59.074936",
+    "unit": "°F"
   }
 ]
