@@ -14,10 +14,11 @@ Figure = None
 NavigationToolbar2Tk = None
 sns = None
 np = None
+mplcursors = None
 
 
 def _import_matplotlib():
-    global MATPLOTLIB_AVAILABLE, plt, FigureCanvasTkAgg, Figure, NavigationToolbar2Tk, sns, np
+    global MATPLOTLIB_AVAILABLE, plt, FigureCanvasTkAgg, Figure, NavigationToolbar2Tk, sns, np, mplcursors
     if MATPLOTLIB_AVAILABLE:
         return True
     try:
@@ -28,6 +29,10 @@ def _import_matplotlib():
         from matplotlib.figure import Figure  # type: ignore
         import seaborn as sns  # type: ignore
         import numpy as np  # type: ignore
+        try:
+            import mplcursors as mplc
+        except Exception:
+            mplc = None
         MATPLOTLIB_AVAILABLE = True
         globals()['plt'] = plt
         globals()['FigureCanvasTkAgg'] = FigureCanvasTkAgg
@@ -35,6 +40,7 @@ def _import_matplotlib():
         globals()['Figure'] = Figure
         globals()['sns'] = sns
         globals()['np'] = np
+        globals()['mplcursors'] = mplc
         return True
     except Exception:
         return False
@@ -119,6 +125,9 @@ class HistoricalAnalysisWindow(tb.Toplevel):
 
     def _on_chart_type_changed(self, event=None) -> None:
         self._rebuild_options()
+        # Auto-generate if there are selected cities
+        if any(var.get() for var in getattr(self, 'city_vars', {}).values()):
+            self._render_chart(self.chart_type_var.get(), self._get_selected_cities())
 
     def _rebuild_options(self) -> None:
         # Clear options
@@ -171,7 +180,12 @@ class HistoricalAnalysisWindow(tb.Toplevel):
         for name in sorted_names:
             var = tk.BooleanVar(value=(name in self.preselected_cities))
             self.city_vars[name] = var
-            tb.Checkbutton(self.checkbox_frame, text=name, variable=var).pack(anchor='w')
+            tb.Checkbutton(self.checkbox_frame, text=name, variable=var, command=self._on_city_toggle).pack(anchor='w')
+
+    def _on_city_toggle(self) -> None:
+        # Live update chart when city selection changes and at least one city is selected
+        if any(var.get() for var in self.city_vars.values()):
+            self._render_chart(self.chart_type_var.get(), self._get_selected_cities())
 
     def _select_all_cities(self) -> None:
         for var in self.city_vars.values():
@@ -239,6 +253,7 @@ class HistoricalAnalysisWindow(tb.Toplevel):
         start = '2010-01-01'
         end = datetime.now().strftime('%Y-%m-%d')
 
+        lines = []
         # Query and plot one line per city for the chosen season
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
@@ -274,7 +289,8 @@ class HistoricalAnalysisWindow(tb.Toplevel):
                 if sdf.empty:
                     continue
                 y = sdf.groupby('year')['temperature_mean'].mean().sort_index()
-                ax.plot(y.index, y.values, label=city['display_name'])
+                line, = ax.plot(y.index, y.values, label=city['display_name'], picker=True, pickradius=5)
+                lines.append(line)
                 # Optional rolling average
                 if self.trendline_var.get():
                     k = max(2, int(self.rolling_window_var.get()))
@@ -285,7 +301,55 @@ class HistoricalAnalysisWindow(tb.Toplevel):
         ax.set_xlabel("Year")
         ax.set_ylabel("Avg Temperature (°F)")
         ax.grid(True, alpha=0.3)
-        ax.legend(loc='upper left', fontsize='small')
+        legend = ax.legend(loc='upper left', fontsize='small')
+
+        # Clickable legend to toggle series visibility
+        lined = {}
+        try:
+            leg_lines = legend.get_lines()
+            for legline, origline in zip(leg_lines, lines):
+                legline.set_picker(True)
+                legline.set_pickradius(5)
+                lined[legline] = origline
+
+            def on_pick(event):
+                legline = event.artist
+                if legline in lined:
+                    origline = lined[legline]
+                    vis = not origline.get_visible()
+                    origline.set_visible(vis)
+                    legline.set_alpha(1.0 if vis else 0.3)
+                    self.canvas.draw_idle()
+            self.figure.canvas.mpl_connect('pick_event', on_pick)
+        except Exception:
+            pass
+
+        # Hover tooltips on data lines
+        if mplcursors and lines:
+            try:
+                cursor = mplcursors.cursor(lines, hover=True)
+                @cursor.connect("add")
+                def _on_add(sel):
+                    x, y = sel.target
+                    sel.annotation.set_text(f"Year: {int(round(x))}\nAvg: {y:.1f}°")
+            except Exception:
+                pass
+
+        # Brushing (drag to zoom x-range), double-click to reset
+        try:
+            from matplotlib.widgets import SpanSelector
+            def onselect(xmin, xmax):
+                ax.set_xlim(xmin, xmax)
+                self.canvas.draw_idle()
+            span = SpanSelector(ax, onselect, 'horizontal', useblit=True, alpha=0.15, rectprops=dict(facecolor='gray', alpha=0.2))
+            def on_dbl(event):
+                if event.dblclick and event.inaxes == ax:
+                    ax.relim(); ax.autoscale_view()
+                    self.canvas.draw_idle()
+            self.figure.canvas.mpl_connect('button_press_event', on_dbl)
+        except Exception:
+            pass
+
         self.canvas.draw()
 
     def _render_extreme_events(self, cities: List[Dict]) -> None:
@@ -323,6 +387,7 @@ class HistoricalAnalysisWindow(tb.Toplevel):
                 if not rows:
                     continue
                 import pandas as pd
+                from collections import defaultdict
                 df = pd.DataFrame(rows)
                 df.columns = [col[0] for col in cursor.description]
                 df['date'] = pd.to_datetime(df['date'])
@@ -351,13 +416,66 @@ class HistoricalAnalysisWindow(tb.Toplevel):
                 ax = axes[idx]
                 bottom = np.zeros(len(plot_df))
                 colors = ['#E4572E', '#4C78A8', '#72B7B2', '#F1A208']
+                series_to_bars = defaultdict(list)
+                bar_artists = []
                 for i, col in enumerate(plot_df.columns):
-                    ax.bar(plot_df.index, plot_df[col].values, bottom=bottom, label=col, color=colors[i % len(colors)], width=0.8)
+                    bars = ax.bar(plot_df.index, plot_df[col].values, bottom=bottom, label=col, color=colors[i % len(colors)], width=0.8)
                     bottom = bottom + plot_df[col].values
+                    # Track bars for hover and toggling
+                    for j, rect in enumerate(bars):
+                        rect.set_gid((col, int(plot_df.index[j])))
+                        series_to_bars[col].append(rect)
+                        bar_artists.append(rect)
                 ax.set_ylabel(city['display_name'])
                 ax.grid(True, axis='y', alpha=0.3)
-                if idx == 0:
-                    ax.legend(loc='upper left', ncol=2, fontsize='x-small')
+
+                # Hover tooltips for bars
+                if mplcursors and bar_artists:
+                    try:
+                        cursor = mplcursors.cursor(bar_artists, hover=True)
+                        @cursor.connect("add")
+                        def _on_add(sel):
+                            series, year = sel.artist.get_gid()
+                            val = sel.artist.get_height()
+                            sel.annotation.set_text(f"{series}\n{year}: {int(val)} days")
+                    except Exception:
+                        pass
+
+        # Build clickable legend on first axes to toggle series across subplots
+        try:
+            first_ax = axes[0]
+            # Determine series labels from last plot_df in loop above; fallback to common set
+            labels = []
+            for h in first_ax.containers:
+                if h.get_label() not in labels and not h.get_label().startswith("_"):
+                    labels.append(h.get_label())
+            if not labels:
+                labels = ['Hot >100F', 'Rain >1in', 'WindGust >30', 'Cold <32F']
+            handles = [plt.Rectangle((0, 0), 1, 1, color=['#E4572E', '#4C78A8', '#72B7B2', '#F1A208'][i % 4]) for i, _ in enumerate(labels)]
+            legend = first_ax.legend(handles, labels, loc='upper left', ncol=2, fontsize='x-small')
+            legend_map = {h: lbl for h, lbl in zip(legend.legendHandles, labels)}
+            for h in legend.legendHandles:
+                h.set_picker(True)
+                h.set_pickradius(5)
+
+            def on_pick(event):
+                handle = event.artist
+                label = legend_map.get(handle)
+                if not label:
+                    return
+                # Toggle visibility of all rectangles with matching label across axes
+                new_vis = None
+                for ax in axes:
+                    for cont in ax.containers:
+                        if cont.get_label() == label:
+                            for rect in cont:
+                                new_vis = (not rect.get_visible()) if new_vis is None else new_vis
+                                rect.set_visible(new_vis)
+                handle.set_alpha(1.0 if (new_vis is None or new_vis) else 0.3)
+                self.canvas.draw_idle()
+            self.figure.canvas.mpl_connect('pick_event', on_pick)
+        except Exception:
+            pass
 
         axes[-1].set_xlabel("Year")
         self.figure.suptitle("Extreme Weather Frequency (stacked per city)")
@@ -411,7 +529,7 @@ class HistoricalAnalysisWindow(tb.Toplevel):
                 monthly_avg = df.groupby(['year', 'month'])['temperature_mean'].mean().unstack()
                 deviation = monthly_avg.subtract(baseline, axis=1)
                 ax = axes[idx]
-                sns.heatmap(
+                mesh = sns.heatmap(
                     deviation,
                     cmap="coolwarm",
                     center=0,
@@ -425,6 +543,25 @@ class HistoricalAnalysisWindow(tb.Toplevel):
                 ax.set_ylabel("Year")
                 ax.set_xticks([i + 0.5 for i in range(12)])
                 ax.set_xticklabels(["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"], rotation=45)
+
+                # Hover tooltips for heatmap cells
+                if mplcursors:
+                    try:
+                        cursor = mplcursors.cursor(ax.collections[0], hover=True)
+                        @cursor.connect("add")
+                        def _on_add(sel, d=deviation):
+                            # sel.index expected to be (row, col)
+                            try:
+                                i, j = sel.index
+                                year = int(d.index[i])
+                                month_idx = int(d.columns[j])
+                                month_name = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][month_idx - 1]
+                                val = d.iloc[i, j]
+                                sel.annotation.set_text(f"{month_name} {year}\nΔ {val:.1f}°")
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
 
         self.figure.suptitle("Monthly Deviation from Long-Term Avg")
         self.figure.tight_layout(rect=[0, 0.02, 1, 0.96])
