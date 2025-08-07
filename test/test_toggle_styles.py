@@ -12,8 +12,7 @@ import os
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from core.theme_manager import ThemeManager
-from core.custom_themes import register_custom_themes
+from core.theme.theme_system import ThemeManager
 
 class ThemeToggleTest(tk.Tk):
     def __init__(self):
@@ -21,6 +20,8 @@ class ThemeToggleTest(tk.Tk):
         
         # Initialize theme manager and register custom themes
         self.theme_manager = ThemeManager()
+        # Register custom themes - import locally to avoid circular imports
+        from core.theme import register_custom_themes
         register_custom_themes(self.theme_manager)
         
         # Setup window

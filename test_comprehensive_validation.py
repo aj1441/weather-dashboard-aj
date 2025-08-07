@@ -4,8 +4,7 @@ Tests the complete validation pipeline including edge cases and error handling.
 """
 
 import unittest
-from core.weather.data_validator import WeatherDataValidator
-from core.weather.validation_rules import ValidationRules
+from core.weather.data_validator import WeatherDataValidator, ValidationRules
 
 
 class TestComprehensiveValidation(unittest.TestCase):

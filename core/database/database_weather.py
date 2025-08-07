@@ -4,7 +4,7 @@ import logging
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 from contextlib import contextmanager
-from utils.performance_optimizer import monitor_performance
+from utils.performance.performance_optimizer import monitor_performance
 
 logger = logging.getLogger(__name__)
 

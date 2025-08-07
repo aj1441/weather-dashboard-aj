@@ -8,8 +8,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from core.weather.data_validator import WeatherDataValidator
-from core.weather.validation_rules import ValidationRules
+from core.weather.data_validator import WeatherDataValidator, ValidationRules
 
 
 def test_pop_validation_edge_cases():

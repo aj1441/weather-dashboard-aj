@@ -32,14 +32,14 @@ def test_theme_manager():
     logger.info("Testing ThemeManager...")
     
     # Import theme manager
-    from core.theme_manager import ThemeManager
+    from core.theme.theme_system import ThemeManager
     
     # Create instance
     theme_manager = ThemeManager()
     logger.info(f"Available themes: {theme_manager.style.theme_names()}")
     
     # Test custom theme registration
-    from core.custom_themes import register_custom_themes
+    from core.theme import register_custom_themes
     result = register_custom_themes()
     logger.info(f"Custom themes registration result: {result}")
     
@@ -134,7 +134,7 @@ class ThemeTestUI(tk.Tk):
             component_frame = tb.LabelFrame(main_frame, text="Theme Component Test", padding=10)
             component_frame.pack(fill=X, pady=10)
             
-            from gui.components.theme_component import ThemeComponent
+            from gui.shared.theme_component import ThemeComponent
             theme_comp = ThemeComponent(component_frame)
             logger.info("Successfully created ThemeComponent")
         except Exception as e:
