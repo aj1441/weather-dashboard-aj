@@ -329,37 +329,24 @@ class HistoryComponent:
         self.clear_charts_button.configure(state="normal" if has_chart_data else "disabled")
     
     def _on_analyze_clicked(self):
-        """Handle analyze button click"""
+        """Handle analyze button click - opens interactive analysis window"""
         try:
-            selected_city1 = self.city1_var.get()
-            selected_city2 = self.city2_var.get() if self.compare_mode.get() else None
+            # Import the analysis window
+            from gui.tabs.history_tab.historical_analysis_window import HistoricalAnalysisWindow
             
-            if not selected_city1:
-                return
+            # Open the interactive analysis window
+            analysis_window = HistoricalAnalysisWindow(
+                parent=self.main_frame,
+                db_path=self.db.db_path,
+                available_cities=self.cities_with_data
+            )
             
-            # Get city data
-            city1_data = next((city for city in self.cities_with_data 
-                             if city['display_name'] == selected_city1), None)
-            
-            city2_data = None
-            if selected_city2:
-                city2_data = next((city for city in self.cities_with_data 
-                                 if city['display_name'] == selected_city2), None)
-            
-            if not city1_data:
-                self._show_error_message("Selected city data not found")
-                return
-            
-            # Clear chart area and show loading
-            self._show_loading()
-            
-            # For now, show a placeholder chart message
-            # This is where the actual chart will be implemented later
-            self._show_chart_placeholder(city1_data, city2_data)
-            
+        except ImportError as e:
+            self.logger.error(f"Could not import analysis window: {e}")
+            self._show_error_message("Analysis window not available. Please check installation.")
         except Exception as e:
-            self.logger.error(f"Error analyzing historical data: {e}")
-            self._show_error_message("Failed to analyze historical data")
+            self.logger.error(f"Error opening analysis window: {e}")
+            self._show_error_message("Failed to open analysis window")
     
     def _show_placeholder(self):
         """Show initial placeholder message"""

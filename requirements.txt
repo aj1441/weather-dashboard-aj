@@ -12,3 +12,4 @@ pillow
 pygame
 openmeteo-requests
 psutil
+mplcursors
