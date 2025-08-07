@@ -32,6 +32,8 @@ def _import_matplotlib():
 from core.database.database import get_database
 from services.chart_data_service import ChartDataService
 from utils.decorators import log_execution_time
+# Add import for the new analysis window
+from gui.tabs.history_tab.historical_analysis_window import HistoricalAnalysisWindow
 
 logger = logging.getLogger(__name__)
 
@@ -350,12 +352,16 @@ class HistoryComponent:
                 self._show_error_message("Selected city data not found")
                 return
             
-            # Clear chart area and show loading
-            self._show_loading()
-            
-            # For now, show a placeholder chart message
-            # This is where the actual chart will be implemented later
-            self._show_chart_placeholder(city1_data, city2_data)
+            # Open the historical analysis window with selectable charts and cities
+            preselected = [city1_data['display_name']]
+            if city2_data:
+                preselected.append(city2_data['display_name'])
+            HistoricalAnalysisWindow(
+                parent=self.parent,
+                db=self.db,
+                cities_with_data=self.cities_with_data,
+                preselected_cities=preselected
+            )
             
         except Exception as e:
             self.logger.error(f"Error analyzing historical data: {e}")
