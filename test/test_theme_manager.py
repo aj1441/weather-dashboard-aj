@@ -14,7 +14,7 @@ def run_test():
     print("Testing ThemeManager functionality...")
     
     # Import after path is set up
-    from core.theme_manager import ThemeManager
+    from core.theme.theme_system import ThemeManager
     
     # Create a theme manager instance
     theme_manager = ThemeManager()
@@ -25,7 +25,7 @@ def run_test():
     print(f"Available themes: {available_themes}")
     
     # Try to register all custom themes
-    from core.custom_themes import register_custom_themes
+    from core.theme import register_custom_themes
     result = register_custom_themes()
     print(f"Custom themes registration result: {result}")
     

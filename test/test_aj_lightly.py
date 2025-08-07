@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
     import ttkbootstrap as tb
-    from core.custom_themes import register_custom_themes
+    from core.theme import register_custom_themes
     
     print("Testing aj_lightly theme...")
     

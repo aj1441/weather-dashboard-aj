@@ -202,7 +202,7 @@ def get_auto_theme() -> str:
         Theme name to use
     """
     try:
-        from core.theme_factory import create_theme_manager
+        from core.theme.theme_factory import create_theme_manager
         
         # Create theme manager with new system
         theme_manager = create_theme_manager()

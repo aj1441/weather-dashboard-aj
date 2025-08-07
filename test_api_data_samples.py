@@ -6,7 +6,7 @@ our weather data processing handles edge cases and invalid data properly.
 
 import json
 from core.weather.data_validator import WeatherDataValidator
-from core.weather.validation_rules import ValidationRules
+from core.weather.data_validator import ValidationRules
 
 # Sample API responses with various edge cases
 SAMPLE_WEATHER_RESPONSES = {
